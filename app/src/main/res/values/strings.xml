@@ -44,15 +44,18 @@
     <string name="progress_description">Aquí podrás consultar tu avance en las lecciones y prácticas.</string>
 
     <string name="settings_title">Configuración</string>
-    <string name="settings_description">Vista previa de las preferencias de accesibilidad y retroalimentación.</string>
+    <string name="settings_description">Personaliza la accesibilidad y la retroalimentación de toda la aplicación.</string>
     <string name="settings_sound">Sonido</string>
     <string name="settings_vibration">Vibración</string>
     <string name="settings_high_contrast">Modo de alto contraste</string>
     <string name="settings_text_size">Tamaño de texto</string>
-    <string name="settings_text_small">Pequeño</string>
-    <string name="settings_text_medium">Mediano</string>
+    <string name="settings_text_normal">Normal</string>
     <string name="settings_text_large">Grande</string>
-    <string name="settings_not_saved">Estos controles son provisionales. Los cambios todavía no se guardan ni modifican el aspecto de la aplicación.</string>
+    <string name="settings_text_very_large">Muy grande</string>
+    <string name="settings_state_enabled">Activado</string>
+    <string name="settings_state_disabled">Desactivado</string>
+    <string name="settings_state_selected">Seleccionado</string>
+    <string name="settings_state_not_selected">No seleccionado</string>
 
     <string name="about_title">Acerca de</string>
     <string name="about_app_name">Aplicación: Brailux Aprende</string>

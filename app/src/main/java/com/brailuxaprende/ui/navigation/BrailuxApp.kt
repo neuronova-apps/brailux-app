@@ -18,6 +18,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.brailuxaprende.R
+import com.brailuxaprende.data.settings.AccessibilityPreferences
+import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.HomeScreen
@@ -60,7 +62,13 @@ private val routesWithoutBottomBar = setOf(
 )
 
 @Composable
-fun BrailuxApp() {
+fun BrailuxApp(
+    preferences: AccessibilityPreferences,
+    onSoundEnabledChange: (Boolean) -> Unit,
+    onVibrationEnabledChange: (Boolean) -> Unit,
+    onHighContrastEnabledChange: (Boolean) -> Unit,
+    onTextSizeChange: (TextSizePreference) -> Unit,
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -78,6 +86,11 @@ fun BrailuxApp() {
     ) { innerPadding ->
         BrailuxNavHost(
             navController = navController,
+            preferences = preferences,
+            onSoundEnabledChange = onSoundEnabledChange,
+            onVibrationEnabledChange = onVibrationEnabledChange,
+            onHighContrastEnabledChange = onHighContrastEnabledChange,
+            onTextSizeChange = onTextSizeChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -109,6 +122,11 @@ private fun BrailuxBottomBar(
 @Composable
 private fun BrailuxNavHost(
     navController: NavHostController,
+    preferences: AccessibilityPreferences,
+    onSoundEnabledChange: (Boolean) -> Unit,
+    onVibrationEnabledChange: (Boolean) -> Unit,
+    onHighContrastEnabledChange: (Boolean) -> Unit,
+    onTextSizeChange: (TextSizePreference) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun goBack() {
@@ -170,7 +188,14 @@ private fun BrailuxNavHost(
             )
         }
         composable(BrailuxRoutes.SETTINGS) {
-            SettingsScreen(onBack = ::goBack)
+            SettingsScreen(
+                preferences = preferences,
+                onSoundEnabledChange = onSoundEnabledChange,
+                onVibrationEnabledChange = onVibrationEnabledChange,
+                onHighContrastEnabledChange = onHighContrastEnabledChange,
+                onTextSizeChange = onTextSizeChange,
+                onBack = ::goBack,
+            )
         }
         composable(BrailuxRoutes.ABOUT) {
             AboutScreen(onBack = ::goBack)

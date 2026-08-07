@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
@@ -21,36 +22,29 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
-
-private enum class TextSizeOption {
-    Small,
-    Medium,
-    Large,
-}
+import com.brailuxaprende.data.settings.AccessibilityPreferences
+import com.brailuxaprende.data.settings.TextSizePreference
 
 @Composable
 fun SettingsScreen(
+    preferences: AccessibilityPreferences,
+    onSoundEnabledChange: (Boolean) -> Unit,
+    onVibrationEnabledChange: (Boolean) -> Unit,
+    onHighContrastEnabledChange: (Boolean) -> Unit,
+    onTextSizeChange: (TextSizePreference) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var soundEnabled by remember { mutableStateOf(true) }
-    var vibrationEnabled by remember { mutableStateOf(true) }
-    var highContrastEnabled by remember { mutableStateOf(false) }
-    var textSize by remember { mutableStateOf(TextSizeOption.Medium) }
-
     Surface(modifier = modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -87,20 +81,20 @@ fun SettingsScreen(
             ) {
                 SettingsToggle(
                     label = stringResource(R.string.settings_sound),
-                    checked = soundEnabled,
-                    onCheckedChange = { soundEnabled = it },
+                    checked = preferences.soundEnabled,
+                    onCheckedChange = onSoundEnabledChange,
                 )
                 HorizontalDivider()
                 SettingsToggle(
                     label = stringResource(R.string.settings_vibration),
-                    checked = vibrationEnabled,
-                    onCheckedChange = { vibrationEnabled = it },
+                    checked = preferences.vibrationEnabled,
+                    onCheckedChange = onVibrationEnabledChange,
                 )
                 HorizontalDivider()
                 SettingsToggle(
                     label = stringResource(R.string.settings_high_contrast),
-                    checked = highContrastEnabled,
-                    onCheckedChange = { highContrastEnabled = it },
+                    checked = preferences.highContrastEnabled,
+                    onCheckedChange = onHighContrastEnabledChange,
                 )
                 Spacer(modifier = Modifier.height(20.dp))
                 Text(
@@ -108,36 +102,25 @@ fun SettingsScreen(
                     modifier = Modifier.semantics { heading() },
                     style = MaterialTheme.typography.titleMedium,
                 )
-                TextSizeOptionRow(
-                    label = stringResource(R.string.settings_text_small),
-                    selected = textSize == TextSizeOption.Small,
-                    onSelect = { textSize = TextSizeOption.Small },
-                )
-                TextSizeOptionRow(
-                    label = stringResource(R.string.settings_text_medium),
-                    selected = textSize == TextSizeOption.Medium,
-                    onSelect = { textSize = TextSizeOption.Medium },
-                )
-                TextSizeOptionRow(
-                    label = stringResource(R.string.settings_text_large),
-                    selected = textSize == TextSizeOption.Large,
-                    onSelect = { textSize = TextSizeOption.Large },
-                )
+                Column(modifier = Modifier.selectableGroup()) {
+                    TextSizeOptionRow(
+                        label = stringResource(R.string.settings_text_normal),
+                        selected = preferences.textSize == TextSizePreference.Normal,
+                        onSelect = { onTextSizeChange(TextSizePreference.Normal) },
+                    )
+                    TextSizeOptionRow(
+                        label = stringResource(R.string.settings_text_large),
+                        selected = preferences.textSize == TextSizePreference.Large,
+                        onSelect = { onTextSizeChange(TextSizePreference.Large) },
+                    )
+                    TextSizeOptionRow(
+                        label = stringResource(R.string.settings_text_very_large),
+                        selected = preferences.textSize == TextSizePreference.VeryLarge,
+                        onSelect = { onTextSizeChange(TextSizePreference.VeryLarge) },
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.settings_not_saved),
-                modifier = Modifier.widthIn(max = 520.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.content_coming_later),
-                modifier = Modifier.widthIn(max = 520.dp),
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
         }
     }
 }
@@ -148,16 +131,22 @@ private fun SettingsToggle(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
+    val state = stringResource(
+        if (checked) R.string.settings_state_enabled else R.string.settings_state_disabled,
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
+            .semantics(mergeDescendants = true) {
+                stateDescription = state
+            }
             .toggleable(
                 value = checked,
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
             )
-            .semantics(mergeDescendants = true) { }
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -179,16 +168,22 @@ private fun TextSizeOptionRow(
     selected: Boolean,
     onSelect: () -> Unit,
 ) {
+    val state = stringResource(
+        if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
+    )
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
+            .semantics(mergeDescendants = true) {
+                stateDescription = state
+            }
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
                 onClick = onSelect,
             )
-            .semantics(mergeDescendants = true) { }
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
