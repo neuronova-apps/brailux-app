@@ -10,78 +10,77 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
+import com.brailuxaprende.ui.components.BrailuxScreenHeader
+import com.brailuxaprende.ui.components.BrailuxSectionCard
 
 @Composable
 fun AboutScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier.fillMaxSize()) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TextButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.Start),
-            ) {
-                Text(stringResource(R.string.action_back))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.about_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
+            BrailuxScreenHeader(
+                title = stringResource(R.string.about_title),
+                onBack = onBack,
             )
-            Spacer(modifier = Modifier.height(20.dp))
-            Column(
+            Spacer(modifier = Modifier.height(22.dp))
+            BrailuxSectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 560.dp),
             ) {
                 AboutItem(R.string.about_app_name)
                 AboutItem(R.string.about_version)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 AboutItem(R.string.about_purpose)
                 AboutItem(R.string.about_offline)
                 AboutItem(R.string.about_educational_notice)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                 AboutItem(R.string.about_authorship_placeholder)
-                AboutItem(R.string.about_privacy_placeholder)
+                AboutItem(R.string.about_privacy_placeholder, hasBottomPadding = false)
             }
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.content_coming_later),
-                modifier = Modifier.widthIn(max = 520.dp),
+                modifier = Modifier
+                    .padding(top = 18.dp)
+                    .widthIn(max = 560.dp),
                 style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
 @Composable
-private fun AboutItem(@StringRes textResource: Int) {
+private fun AboutItem(
+    @StringRes textResource: Int,
+    hasBottomPadding: Boolean = true,
+) {
     Text(
         text = stringResource(textResource),
-        modifier = Modifier.padding(bottom = 16.dp),
+        modifier = Modifier.padding(bottom = if (hasBottomPadding) 14.dp else 0.dp),
         style = MaterialTheme.typography.bodyLarge,
-        fontWeight = FontWeight.Medium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

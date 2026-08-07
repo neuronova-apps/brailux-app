@@ -6,15 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,8 +20,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
+import com.brailuxaprende.ui.components.BrailuxMenuCard
+import com.brailuxaprende.ui.components.BrailuxPrimaryButton
+import com.brailuxaprende.ui.components.BrailuxSecondaryButton
+import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 
 @Composable
 fun HomeScreen(
@@ -38,91 +39,120 @@ fun HomeScreen(
     onStartLesson: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier.fillMaxSize()) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 24.dp),
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
                 text = stringResource(R.string.home_title),
                 modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.headlineLarge,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.home_welcome_message),
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .widthIn(max = 560.dp),
                 style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(24.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                    .widthIn(max = 560.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                MainAccessButton(R.string.home_access_learn, onLearn)
-                MainAccessButton(R.string.home_access_practice, onPractice)
-                MainAccessButton(R.string.home_access_play, onPlay)
-                MainAccessButton(R.string.home_access_progress, onProgress)
+                BrailuxMenuCard(
+                    title = stringResource(R.string.home_access_learn),
+                    description = stringResource(R.string.home_access_learn_description),
+                    iconResource = R.drawable.ic_learn,
+                    onClick = onLearn,
+                )
+                BrailuxMenuCard(
+                    title = stringResource(R.string.home_access_practice),
+                    description = stringResource(R.string.home_access_practice_description),
+                    iconResource = R.drawable.ic_practice,
+                    onClick = onPractice,
+                )
+                BrailuxMenuCard(
+                    title = stringResource(R.string.home_access_play),
+                    description = stringResource(R.string.home_access_play_description),
+                    iconResource = R.drawable.ic_play,
+                    onClick = onPlay,
+                )
+                BrailuxMenuCard(
+                    title = stringResource(R.string.home_access_progress),
+                    description = stringResource(R.string.home_access_progress_description),
+                    iconResource = R.drawable.ic_progress,
+                    onClick = onProgress,
+                )
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            FilledTonalButton(
+            Spacer(modifier = Modifier.height(20.dp))
+            BrailuxPrimaryButton(
+                text = stringResource(R.string.home_continue_lesson),
+                iconResource = R.drawable.ic_learn,
                 onClick = onStartLesson,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
-            ) {
-                Text(stringResource(R.string.home_continue_lesson))
-            }
-            Spacer(modifier = Modifier.height(24.dp))
+                    .widthIn(max = 560.dp),
+            )
+            Spacer(modifier = Modifier.height(28.dp))
             Text(
                 text = stringResource(R.string.home_more_options),
                 modifier = Modifier
-                    .align(Alignment.Start)
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp)
                     .semantics { heading() },
                 style = MaterialTheme.typography.titleMedium,
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onSettings,
+            Spacer(modifier = Modifier.height(10.dp))
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 560.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(stringResource(R.string.home_access_settings))
+                BrailuxSecondaryButton(
+                    text = stringResource(R.string.home_access_settings),
+                    iconResource = R.drawable.ic_settings,
+                    onClick = onSettings,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                BrailuxSecondaryButton(
+                    text = stringResource(R.string.home_access_about),
+                    iconResource = R.drawable.ic_info,
+                    onClick = onAbout,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedButton(
-                onClick = onAbout,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 520.dp),
-            ) {
-                Text(stringResource(R.string.home_access_about))
-            }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
 
+@Preview(name = "Inicio", showBackground = true, widthDp = 390, heightDp = 1000)
 @Composable
-private fun MainAccessButton(
-    textResource: Int,
-    onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 56.dp),
-    ) {
-        Text(
-            text = stringResource(textResource),
-            style = MaterialTheme.typography.titleMedium,
+private fun HomeScreenPreview() {
+    BrailuxAprendeTheme {
+        HomeScreen(
+            onLearn = {},
+            onPractice = {},
+            onPlay = {},
+            onProgress = {},
+            onSettings = {},
+            onAbout = {},
+            onStartLesson = {},
         )
     }
 }

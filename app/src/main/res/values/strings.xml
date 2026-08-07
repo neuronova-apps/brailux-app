@@ -12,9 +12,13 @@
     <string name="home_title">Inicio</string>
     <string name="home_welcome_message">Elige una sección para continuar aprendiendo Braille.</string>
     <string name="home_access_learn">Aprende</string>
+    <string name="home_access_learn_description">Descubre los fundamentos con lecciones guiadas.</string>
     <string name="home_access_practice">Practica</string>
+    <string name="home_access_practice_description">Refuerza lo aprendido con ejercicios accesibles.</string>
     <string name="home_access_play">Juega</string>
+    <string name="home_access_play_description">Pon a prueba tus conocimientos de forma amena.</string>
     <string name="home_access_progress">Mi progreso</string>
+    <string name="home_access_progress_description">Consulta tu avance en lecciones y prácticas.</string>
     <string name="home_continue_lesson">Lección de los seis puntos</string>
     <string name="home_more_options">Más opciones</string>
     <string name="home_access_settings">Configuración</string>
@@ -24,10 +28,9 @@
     <string name="nav_learn">Aprende</string>
     <string name="nav_play">Juega</string>
     <string name="nav_progress">Progreso</string>
-    <string name="nav_symbol_home">⌂</string>
-    <string name="nav_symbol_learn">A</string>
-    <string name="nav_symbol_play">▶</string>
-    <string name="nav_symbol_progress">●</string>
+    <string name="nav_selected">Seleccionado</string>
+    <string name="nav_not_selected">No seleccionado</string>
+    <string name="nav_selected_mark">✓</string>
 
     <string name="action_back">Volver</string>
     <string name="content_coming_later">El contenido completo se incorporará en próximas etapas.</string>
@@ -79,5 +82,6 @@
     <string name="exercise_incorrect">Revisa los puntos e inténtalo otra vez.</string>
     <string name="exercise_try_again">Intentar de nuevo</string>
     <string name="feedback_correct_symbol">✓</string>
+    <string name="feedback_warning_symbol">!</string>
     <string name="feedback_incorrect_symbol">!</string>
 </resources>

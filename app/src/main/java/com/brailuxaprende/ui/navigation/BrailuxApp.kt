@@ -1,17 +1,30 @@
 package com.brailuxaprende.ui.navigation
 
 import androidx.annotation.StringRes
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -45,14 +58,14 @@ object BrailuxRoutes {
 private data class BottomDestination(
     val route: String,
     @param:StringRes val label: Int,
-    @param:StringRes val symbol: Int,
+    @param:DrawableRes val icon: Int,
 )
 
 private val bottomDestinations = listOf(
-    BottomDestination(BrailuxRoutes.HOME, R.string.nav_home, R.string.nav_symbol_home),
-    BottomDestination(BrailuxRoutes.LEARN, R.string.nav_learn, R.string.nav_symbol_learn),
-    BottomDestination(BrailuxRoutes.PLAY, R.string.nav_play, R.string.nav_symbol_play),
-    BottomDestination(BrailuxRoutes.PROGRESS, R.string.nav_progress, R.string.nav_symbol_progress),
+    BottomDestination(BrailuxRoutes.HOME, R.string.nav_home, R.drawable.ic_home),
+    BottomDestination(BrailuxRoutes.LEARN, R.string.nav_learn, R.drawable.ic_learn),
+    BottomDestination(BrailuxRoutes.PLAY, R.string.nav_play, R.drawable.ic_play),
+    BottomDestination(BrailuxRoutes.PROGRESS, R.string.nav_progress, R.drawable.ic_progress),
 )
 
 private val routesWithoutBottomBar = setOf(
@@ -103,16 +116,66 @@ private fun BrailuxBottomBar(
 ) {
     NavigationBar {
         bottomDestinations.forEach { destination ->
+            val selected = currentRoute == destination.route
+            val state = stringResource(
+                if (selected) R.string.nav_selected else R.string.nav_not_selected,
+            )
             NavigationBarItem(
-                selected = currentRoute == destination.route,
+                selected = selected,
                 onClick = { onNavigate(destination.route) },
+                modifier = Modifier.semantics { stateDescription = state },
                 icon = {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clearAndSetSemantics { },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            shape = CircleShape,
+                            color = if (selected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.surface
+                            },
+                            contentColor = if (selected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            border = if (selected) {
+                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            } else {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(destination.icon),
+                                contentDescription = null,
+                                modifier = Modifier.padding(8.dp),
+                            )
+                        }
+                        if (selected) {
+                            Text(
+                                text = stringResource(R.string.nav_selected_mark),
+                                modifier = Modifier.align(Alignment.TopEnd),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        }
+                    }
+                },
+                label = {
                     Text(
-                        text = stringResource(destination.symbol),
-                        modifier = Modifier.clearAndSetSemantics { },
+                        text = stringResource(destination.label),
+                        style = if (selected) {
+                            MaterialTheme.typography.labelLarge
+                        } else {
+                            MaterialTheme.typography.labelMedium
+                        },
                     )
                 },
-                label = { Text(stringResource(destination.label)) },
                 alwaysShowLabel = true,
             )
         }

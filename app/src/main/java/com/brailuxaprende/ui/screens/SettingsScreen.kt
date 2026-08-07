@@ -20,7 +20,6 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -29,11 +28,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.TextSizePreference
+import com.brailuxaprende.ui.components.BrailuxScreenHeader
+import com.brailuxaprende.ui.components.BrailuxSectionCard
 
 @Composable
 fun SettingsScreen(
@@ -45,39 +45,27 @@ fun SettingsScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Surface(modifier = modifier.fillMaxSize()) {
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp),
+                .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TextButton(
-                onClick = onBack,
-                modifier = Modifier.align(Alignment.Start),
-            ) {
-                Text(stringResource(R.string.action_back))
-            }
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.settings_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
+            BrailuxScreenHeader(
+                title = stringResource(R.string.settings_title),
+                subtitle = stringResource(R.string.settings_description),
+                onBack = onBack,
             )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.settings_description),
-                modifier = Modifier.widthIn(max = 520.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Column(
+            Spacer(modifier = Modifier.height(22.dp))
+            BrailuxSectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 560.dp),
             ) {
                 SettingsToggle(
                     label = stringResource(R.string.settings_sound),
@@ -96,13 +84,23 @@ fun SettingsScreen(
                     checked = preferences.highContrastEnabled,
                     onCheckedChange = onHighContrastEnabledChange,
                 )
-                Spacer(modifier = Modifier.height(20.dp))
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            BrailuxSectionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+            ) {
                 Text(
                     text = stringResource(R.string.settings_text_size),
                     modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                 )
-                Column(modifier = Modifier.selectableGroup()) {
+                Column(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .selectableGroup(),
+                ) {
                     TextSizeOptionRow(
                         label = stringResource(R.string.settings_text_normal),
                         selected = preferences.textSize == TextSizePreference.Normal,
@@ -138,16 +136,14 @@ private fun SettingsToggle(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .semantics(mergeDescendants = true) {
-                stateDescription = state
-            }
+            .heightIn(min = 64.dp)
+            .semantics(mergeDescendants = true) { stateDescription = state }
             .toggleable(
                 value = checked,
                 role = Role.Switch,
                 onValueChange = onCheckedChange,
             )
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -155,10 +151,7 @@ private fun SettingsToggle(
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyLarge,
         )
-        Switch(
-            checked = checked,
-            onCheckedChange = null,
-        )
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 
@@ -176,21 +169,16 @@ private fun TextSizeOptionRow(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .semantics(mergeDescendants = true) {
-                stateDescription = state
-            }
+            .semantics(mergeDescendants = true) { stateDescription = state }
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
                 onClick = onSelect,
             )
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 4.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RadioButton(
-            selected = selected,
-            onClick = null,
-        )
+        RadioButton(selected = selected, onClick = null)
         Text(
             text = label,
             modifier = Modifier.padding(start = 12.dp),

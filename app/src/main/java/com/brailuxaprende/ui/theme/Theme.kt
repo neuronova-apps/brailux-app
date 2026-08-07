@@ -1,39 +1,46 @@
 package com.brailuxaprende.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.brailuxaprende.data.settings.TextSizePreference
 
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
-)
-
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
+    primary = BrailuxBlue,
     onPrimary = Color.White,
+    primaryContainer = Color(0xFFD8EBFF),
+    onPrimaryContainer = BrailuxBlueDark,
+    inversePrimary = BrailuxSky,
+    secondary = Color(0xFF1769AA),
     onSecondary = Color.White,
+    secondaryContainer = Color(0xFFDDEEFF),
+    onSecondaryContainer = BrailuxBlueDark,
+    tertiary = BrailuxSuccess,
     onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiaryContainer = BrailuxSuccessContainer,
+    onTertiaryContainer = Color(0xFF123915),
+    background = BrailuxBackground,
+    onBackground = BrailuxText,
+    surface = BrailuxSurface,
+    onSurface = BrailuxText,
+    surfaceVariant = BrailuxSurfaceVariant,
+    onSurfaceVariant = BrailuxTextSecondary,
+    surfaceTint = BrailuxBlue,
+    inverseSurface = BrailuxBlueDark,
+    inverseOnSurface = Color.White,
+    error = BrailuxError,
+    onError = Color.White,
+    errorContainer = BrailuxErrorContainer,
+    onErrorContainer = Color(0xFF410E0B),
+    outline = BrailuxOutline,
+    outlineVariant = Color(0xFFC0CDDA),
+    scrim = Color.Black,
 )
 
 private val HighContrastColorScheme = darkColorScheme(
@@ -46,10 +53,10 @@ private val HighContrastColorScheme = darkColorScheme(
     onSecondary = HighContrastBackground,
     secondaryContainer = HighContrastForeground,
     onSecondaryContainer = HighContrastBackground,
-    tertiary = HighContrastPrimary,
+    tertiary = HighContrastSuccess,
     onTertiary = HighContrastBackground,
-    tertiaryContainer = HighContrastForeground,
-    onTertiaryContainer = HighContrastBackground,
+    tertiaryContainer = HighContrastBackground,
+    onTertiaryContainer = HighContrastSuccess,
     background = HighContrastBackground,
     onBackground = HighContrastForeground,
     surface = HighContrastBackground,
@@ -61,43 +68,44 @@ private val HighContrastColorScheme = darkColorScheme(
     inverseOnSurface = HighContrastBackground,
     error = HighContrastError,
     onError = HighContrastBackground,
-    errorContainer = HighContrastForeground,
-    onErrorContainer = HighContrastBackground,
+    errorContainer = HighContrastBackground,
+    onErrorContainer = HighContrastError,
     outline = HighContrastForeground,
     outlineVariant = HighContrastOutlineVariant,
     scrim = HighContrastBackground,
 )
 
+object BrailuxTheme {
+    val statusColors: BrailuxStatusColors
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalBrailuxStatusColors.current
+}
+
 @Composable
 fun BrailuxAprendeTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     highContrast: Boolean = false,
     textSize: TextSizePreference = TextSizePreference.Normal,
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = when {
-        highContrast -> HighContrastColorScheme
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
     val currentDensity = LocalDensity.current
     val scaledDensity = Density(
         density = currentDensity.density,
         fontScale = currentDensity.fontScale * textSize.scaleFactor,
     )
 
-    CompositionLocalProvider(LocalDensity provides scaledDensity) {
+    CompositionLocalProvider(
+        LocalDensity provides scaledDensity,
+        LocalBrailuxStatusColors provides if (highContrast) {
+            HighContrastStatusColors
+        } else {
+            RegularStatusColors
+        },
+    ) {
         MaterialTheme(
-            colorScheme = colorScheme,
-            typography = Typography,
+            colorScheme = if (highContrast) HighContrastColorScheme else LightColorScheme,
+            typography = BrailuxTypography,
+            shapes = BrailuxShapes,
             content = content,
         )
     }

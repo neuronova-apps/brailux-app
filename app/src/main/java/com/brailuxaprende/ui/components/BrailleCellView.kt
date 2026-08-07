@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -27,7 +28,7 @@ import com.brailuxaprende.braille.BrailleRepository
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 
 private val PointTouchTargetSize = 56.dp
-private val PointVisualSize = 40.dp
+private val PointVisualSize = 42.dp
 
 @Composable
 fun BrailleCellView(
@@ -45,24 +46,31 @@ fun BrailleCellView(
         Modifier
     }
 
-    Column(
+    Surface(
         modifier = modifier.then(cellSemantics),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
     ) {
-        listOf(1 to 4, 2 to 5, 3 to 6).forEach { (leftPoint, rightPoint) ->
-            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                BraillePoint(
-                    point = leftPoint,
-                    active = cell.isPointActive(leftPoint),
-                    interactive = interactive,
-                    onClick = { onPointClick(leftPoint) },
-                )
-                BraillePoint(
-                    point = rightPoint,
-                    active = cell.isPointActive(rightPoint),
-                    interactive = interactive,
-                    onClick = { onPointClick(rightPoint) },
-                )
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            listOf(1 to 4, 2 to 5, 3 to 6).forEach { (leftPoint, rightPoint) ->
+                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                    BraillePoint(
+                        point = leftPoint,
+                        active = cell.isPointActive(leftPoint),
+                        interactive = interactive,
+                        onClick = { onPointClick(leftPoint) },
+                    )
+                    BraillePoint(
+                        point = rightPoint,
+                        active = cell.isPointActive(rightPoint),
+                        interactive = interactive,
+                        onClick = { onPointClick(rightPoint) },
+                    )
+                }
             }
         }
     }
@@ -115,12 +123,12 @@ private fun BraillePoint(
             border = BorderStroke(
                 width = if (active) 3.dp else 2.dp,
                 color = if (active) {
-                    MaterialTheme.colorScheme.primaryContainer
+                    MaterialTheme.colorScheme.onPrimary
                 } else {
                     MaterialTheme.colorScheme.outline
                 },
             ),
-            shadowElevation = if (active) 6.dp else 0.dp,
+            shadowElevation = if (active) 4.dp else 0.dp,
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
