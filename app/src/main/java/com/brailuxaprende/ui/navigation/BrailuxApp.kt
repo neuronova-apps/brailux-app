@@ -84,14 +84,16 @@ fun BrailuxApp(
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentRoute = backStackEntry?.destination?.route
+    val currentDestination = backStackEntry?.destination
+    val currentRoute = currentDestination?.route
+    val selectedMainRoute = selectedMainDestination(currentRoute)
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (currentRoute != null && currentRoute !in routesWithoutBottomBar) {
                 BrailuxBottomBar(
-                    currentRoute = currentRoute,
+                    selectedRoute = selectedMainRoute,
                     onNavigate = { route -> navController.navigateToMainDestination(route) },
                 )
             }
@@ -111,12 +113,12 @@ fun BrailuxApp(
 
 @Composable
 private fun BrailuxBottomBar(
-    currentRoute: String,
+    selectedRoute: String?,
     onNavigate: (String) -> Unit,
 ) {
     NavigationBar {
         bottomDestinations.forEach { destination ->
-            val selected = currentRoute == destination.route
+            val selected = selectedRoute == destination.route
             val state = stringResource(
                 if (selected) R.string.nav_selected else R.string.nav_not_selected,
             )
@@ -276,9 +278,20 @@ private fun BrailuxNavHost(
 }
 
 private fun NavHostController.navigateToMainDestination(route: String) {
+    if (currentDestination?.route == route) return
+
+    val preserveDestinationState = shouldPreserveMainDestinationState(route)
     navigate(route) {
-        popUpTo(BrailuxRoutes.HOME) { saveState = true }
+        popUpTo(BrailuxRoutes.HOME) {
+            saveState = preserveDestinationState
+        }
         launchSingleTop = true
-        restoreState = true
+        restoreState = preserveDestinationState
     }
 }
+
+internal fun selectedMainDestination(currentRoute: String?): String? =
+    currentRoute?.takeIf { route -> bottomDestinations.any { it.route == route } }
+
+internal fun shouldPreserveMainDestinationState(route: String): Boolean =
+    route != BrailuxRoutes.HOME
