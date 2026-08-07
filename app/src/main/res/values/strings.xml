@@ -4,4 +4,23 @@
     <string name="braille_point_inactive">inactivo</string>
     <string name="braille_point_description">Punto %1$d, %2$s</string>
     <string name="braille_point_click_label">Cambiar el estado del punto %1$d</string>
+
+    <string name="home_subtitle">Aprende Braille paso a paso</string>
+    <string name="home_start">Comenzar</string>
+
+    <string name="action_back">Volver</string>
+    <string name="lesson_title">Los seis puntos Braille</string>
+    <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>
+    <string name="lesson_cell_description">Celda Braille informativa con los puntos numerados del 1 al 6</string>
+    <string name="lesson_practice_letter_a">Practicar la letra A</string>
+
+    <string name="exercise_title">Forma la letra A</string>
+    <string name="exercise_instruction">Activa los puntos correctos</string>
+    <string name="exercise_cell_description">Celda Braille interactiva para formar la letra A</string>
+    <string name="exercise_check">Comprobar</string>
+    <string name="exercise_correct">¡Muy bien! La letra A se forma con el punto 1.</string>
+    <string name="exercise_incorrect">Revisa los puntos e inténtalo otra vez.</string>
+    <string name="exercise_try_again">Intentar de nuevo</string>
+    <string name="feedback_correct_symbol">✓</string>
+    <string name="feedback_incorrect_symbol">!</string>
 </resources>
