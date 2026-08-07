@@ -1,14 +1,68 @@
 <resources>
     <string name="app_name">Brailux Aprende</string>
+
     <string name="braille_point_active">activo</string>
     <string name="braille_point_inactive">inactivo</string>
     <string name="braille_point_description">Punto %1$d, %2$s</string>
     <string name="braille_point_click_label">Cambiar el estado del punto %1$d</string>
 
-    <string name="home_subtitle">Aprende Braille paso a paso</string>
-    <string name="home_start">Comenzar</string>
+    <string name="welcome_subtitle">Aprende Braille paso a paso</string>
+    <string name="welcome_start">Comenzar</string>
+
+    <string name="home_title">Inicio</string>
+    <string name="home_welcome_message">Elige una sección para continuar aprendiendo Braille.</string>
+    <string name="home_access_learn">Aprende</string>
+    <string name="home_access_practice">Practica</string>
+    <string name="home_access_play">Juega</string>
+    <string name="home_access_progress">Mi progreso</string>
+    <string name="home_continue_lesson">Lección de los seis puntos</string>
+    <string name="home_more_options">Más opciones</string>
+    <string name="home_access_settings">Configuración</string>
+    <string name="home_access_about">Acerca de</string>
+
+    <string name="nav_home">Inicio</string>
+    <string name="nav_learn">Aprende</string>
+    <string name="nav_play">Juega</string>
+    <string name="nav_progress">Progreso</string>
+    <string name="nav_symbol_home">⌂</string>
+    <string name="nav_symbol_learn">A</string>
+    <string name="nav_symbol_play">▶</string>
+    <string name="nav_symbol_progress">●</string>
 
     <string name="action_back">Volver</string>
+    <string name="content_coming_later">El contenido completo se incorporará en próximas etapas.</string>
+
+    <string name="learn_title">Aprende</string>
+    <string name="learn_description">Conoce los fundamentos del sistema Braille mediante lecciones guiadas.</string>
+    <string name="learn_six_dots_lesson">Abrir lección de los seis puntos</string>
+
+    <string name="practice_title">Practica</string>
+    <string name="practice_description">Aquí podrás reforzar lo aprendido con ejercicios accesibles.</string>
+    <string name="play_title">Juega</string>
+    <string name="play_description">Aquí encontrarás juegos educativos para practicar Braille.</string>
+    <string name="progress_title">Mi progreso</string>
+    <string name="progress_description">Aquí podrás consultar tu avance en las lecciones y prácticas.</string>
+
+    <string name="settings_title">Configuración</string>
+    <string name="settings_description">Vista previa de las preferencias de accesibilidad y retroalimentación.</string>
+    <string name="settings_sound">Sonido</string>
+    <string name="settings_vibration">Vibración</string>
+    <string name="settings_high_contrast">Modo de alto contraste</string>
+    <string name="settings_text_size">Tamaño de texto</string>
+    <string name="settings_text_small">Pequeño</string>
+    <string name="settings_text_medium">Mediano</string>
+    <string name="settings_text_large">Grande</string>
+    <string name="settings_not_saved">Estos controles son provisionales. Los cambios todavía no se guardan ni modifican el aspecto de la aplicación.</string>
+
+    <string name="about_title">Acerca de</string>
+    <string name="about_app_name">Aplicación: Brailux Aprende</string>
+    <string name="about_version">Versión provisional: 0.1</string>
+    <string name="about_purpose">Propósito: enseñar los fundamentos del sistema Braille mediante lecciones, prácticas y juegos accesibles.</string>
+    <string name="about_offline">La aplicación funciona completamente sin conexión.</string>
+    <string name="about_educational_notice">Brailux Aprende es una herramienta educativa y no sustituye la formación especializada.</string>
+    <string name="about_authorship_placeholder">Autoría: espacio reservado para información de autoría.</string>
+    <string name="about_privacy_placeholder">Política de privacidad: espacio reservado para su publicación.</string>
+
     <string name="lesson_title">Los seis puntos Braille</string>
     <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>
     <string name="lesson_cell_description">Celda Braille informativa con los puntos numerados del 1 al 6</string>
