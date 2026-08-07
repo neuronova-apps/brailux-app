@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Brailux Aprende</string>
+    <string name="braille_point_active">activo</string>
+    <string name="braille_point_inactive">inactivo</string>
+    <string name="braille_point_description">Punto %1$d, %2$s</string>
+    <string name="braille_point_click_label">Cambiar el estado del punto %1$d</string>
 </resources>
