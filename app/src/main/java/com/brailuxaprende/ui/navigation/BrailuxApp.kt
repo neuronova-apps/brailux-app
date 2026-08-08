@@ -42,6 +42,10 @@ import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.CustomPracticeConfiguration
+import com.brailuxaprende.practice.EngagementProgress
+import com.brailuxaprende.practice.EngagementReward
+import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.BrailleChallengeScreen
@@ -49,6 +53,7 @@ import com.brailuxaprende.ui.screens.BrailleExplorerScreen
 import com.brailuxaprende.ui.screens.BrailleRecognizerScreen
 import com.brailuxaprende.ui.screens.CustomBraillePracticeScreen
 import com.brailuxaprende.ui.screens.CustomPracticeConfigurationScreen
+import com.brailuxaprende.ui.screens.DailyPracticeScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LetterAExerciseScreen
@@ -74,6 +79,7 @@ object BrailuxRoutes {
     const val BRAILLE_CHALLENGE = "practica_desafio_braille"
     const val CUSTOM_PRACTICE_CONFIGURATION = "configuracion_practica_personalizada"
     const val CUSTOM_PRACTICE = "practica_personalizada"
+    const val DAILY_PRACTICE = "practica_diaria"
 }
 
 private data class BottomDestination(
@@ -98,12 +104,15 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.BRAILLE_CHALLENGE,
     BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
     BrailuxRoutes.CUSTOM_PRACTICE,
+    BrailuxRoutes.DAILY_PRACTICE,
 )
 
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
     practiceProgress: PracticeProgress = PracticeProgress(),
+    engagementProgress: EngagementProgress = EngagementProgress(),
+    currentDate: PracticeDate = SystemPracticeClock.today(),
     seasonalEvent: SeasonalEvent? = null,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
@@ -118,6 +127,14 @@ fun BrailuxApp(
         { _, onRecorded -> onRecorded(true) },
     customPracticeConfiguration: CustomPracticeConfiguration = CustomPracticeConfiguration(),
     onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit = {},
+    onCustomSessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (Boolean) -> Unit,
+    ) -> Unit = { _, onRecorded -> onRecorded(true) },
+    onDailySessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit = { _, onRecorded -> onRecorded(null) },
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -140,6 +157,8 @@ fun BrailuxApp(
             navController = navController,
             preferences = preferences,
             practiceProgress = practiceProgress,
+            engagementProgress = engagementProgress,
+            currentDate = currentDate,
             seasonalEvent = seasonalEvent,
             onSoundEnabledChange = onSoundEnabledChange,
             onVibrationEnabledChange = onVibrationEnabledChange,
@@ -152,6 +171,8 @@ fun BrailuxApp(
             onLevel3SessionCompleted = onLevel3SessionCompleted,
             customPracticeConfiguration = customPracticeConfiguration,
             onCustomPracticeConfigurationUsed = onCustomPracticeConfigurationUsed,
+            onCustomSessionCompleted = onCustomSessionCompleted,
+            onDailySessionCompleted = onDailySessionCompleted,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -235,6 +256,8 @@ private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
     practiceProgress: PracticeProgress,
+    engagementProgress: EngagementProgress,
+    currentDate: PracticeDate,
     seasonalEvent: SeasonalEvent?,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
@@ -247,6 +270,14 @@ private fun BrailuxNavHost(
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     customPracticeConfiguration: CustomPracticeConfiguration,
     onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit,
+    onCustomSessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (Boolean) -> Unit,
+    ) -> Unit,
+    onDailySessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedPracticeModeName by rememberSaveable {
@@ -289,6 +320,12 @@ private fun BrailuxNavHost(
         }
     }
 
+    fun backToHome() {
+        if (!navController.popBackStack(BrailuxRoutes.HOME, inclusive = false)) {
+            navController.navigate(BrailuxRoutes.HOME) { launchSingleTop = true }
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = BrailuxRoutes.WELCOME,
@@ -306,6 +343,11 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.HOME) {
             HomeScreen(
                 seasonalEvent = seasonalEvent,
+                engagementProgress = engagementProgress,
+                currentDate = currentDate,
+                onStartDailyPractice = {
+                    navController.navigate(BrailuxRoutes.DAILY_PRACTICE)
+                },
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
                 onSettings = { navController.navigate(BrailuxRoutes.SETTINGS) },
@@ -348,6 +390,8 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.PROGRESS) {
             ProgressScreen(
                 progress = practiceProgress,
+                engagementProgress = engagementProgress,
+                currentDate = currentDate,
                 onStartPractice = {
                     navController.navigate(BrailuxRoutes.PRACTICE) { launchSingleTop = true }
                 },
@@ -413,6 +457,7 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.CUSTOM_PRACTICE) {
             CustomBraillePracticeScreen(
                 configuration = activeCustomConfiguration,
+                onSessionCompleted = onCustomSessionCompleted,
                 onChangeConfiguration = {
                     navController.popBackStack(
                         BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
@@ -420,6 +465,12 @@ private fun BrailuxNavHost(
                     )
                 },
                 onBackToPractice = ::backToPractice,
+            )
+        }
+        composable(BrailuxRoutes.DAILY_PRACTICE) {
+            DailyPracticeScreen(
+                onSessionCompleted = onDailySessionCompleted,
+                onBackToHome = ::backToHome,
             )
         }
     }

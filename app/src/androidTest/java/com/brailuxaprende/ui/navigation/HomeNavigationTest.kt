@@ -1,9 +1,8 @@
 package com.brailuxaprende.ui.navigation
 
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasNoClickAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -24,7 +23,7 @@ class HomeNavigationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun homeActionsNavigateAndFutureContentIsNotInteractive() {
+    fun homeActionsNavigateAndDailyPracticeIsAvailable() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             BrailuxAprendeTheme {
@@ -48,16 +47,14 @@ class HomeNavigationTest {
         composeRule.onAllNodesWithText(context.getString(R.string.nav_progress)).assertCountEquals(1)
         composeRule.onAllNodesWithText(context.getString(R.string.progress_title)).assertCountEquals(0)
 
-        val comingSoon = context.getString(R.string.home_coming_soon)
         composeRule.onNodeWithText(context.getString(R.string.home_daily_practice))
             .performScrollTo()
             .assertIsDisplayed()
-            .assert(hasNoClickAction())
-        composeRule.onNodeWithText(context.getString(R.string.home_daily_challenge))
-            .performScrollTo()
-            .assertIsDisplayed()
-            .assert(hasNoClickAction())
-        composeRule.onAllNodesWithText(comingSoon).assertCountEquals(2)
+            .assertHasClickAction()
+        composeRule.onAllNodesWithText(context.getString(R.string.home_daily_challenge))
+            .assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.home_coming_soon))
+            .assertCountEquals(0)
 
         composeRule.onNodeWithText(context.getString(R.string.home_continue_learning))
             .performScrollTo()

@@ -44,6 +44,7 @@ import com.brailuxaprende.R
 import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.practice.BrailleRow
 import com.brailuxaprende.practice.CustomPracticeConfiguration
+import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeContentGroup
 import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
@@ -67,6 +68,24 @@ import com.brailuxaprende.ui.theme.BrailuxTheme
 private enum class AnswerResult {
     Correct,
     Incorrect,
+}
+
+@Composable
+fun DailyPracticeScreen(
+    onSessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit,
+    onBackToHome: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.Daily,
+        sessionFactory = { PracticeSessionGenerator.generateDaily() },
+        onDailySessionCompleted = onSessionCompleted,
+        onBackToPractice = onBackToHome,
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -120,6 +139,7 @@ fun BrailleChallengeScreen(
 @Composable
 fun CustomBraillePracticeScreen(
     configuration: CustomPracticeConfiguration,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onChangeConfiguration: () -> Unit,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
@@ -127,7 +147,7 @@ fun CustomBraillePracticeScreen(
     BraillePracticeLevelScreen(
         level = PracticeLevel.Custom,
         sessionFactory = { PracticeSessionGenerator.generateCustom(configuration) },
-        onSessionCompleted = { _, onRecorded -> onRecorded(true) },
+        onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         customConfiguration = configuration,
         onChangeConfiguration = onChangeConfiguration,
@@ -139,7 +159,12 @@ fun CustomBraillePracticeScreen(
 private fun BraillePracticeLevelScreen(
     level: PracticeLevel,
     sessionFactory: () -> PracticeSession,
-    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onSessionCompleted: (
+        (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit
+    )? = null,
+    onDailySessionCompleted: (
+        (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit
+    )? = null,
     onBackToPractice: () -> Unit,
     customConfiguration: CustomPracticeConfiguration? = null,
     onChangeConfiguration: (() -> Unit)? = null,
@@ -150,6 +175,7 @@ private fun BraillePracticeLevelScreen(
     var state by remember(session) { mutableStateOf(PracticeSessionState(session)) }
     var completionPending by remember(session) { mutableStateOf(false) }
     var completionFailed by remember(session) { mutableStateOf(false) }
+    var engagementReward by remember(session) { mutableStateOf<EngagementReward?>(null) }
 
     if (state.isCompleted) {
         BraillePracticeSummary(
@@ -158,6 +184,7 @@ private fun BraillePracticeLevelScreen(
             onPracticeAgain = { sessionKey += 1 },
             customConfiguration = customConfiguration,
             onChangeConfiguration = onChangeConfiguration,
+            engagementReward = engagementReward,
             onBackToPractice = onBackToPractice,
             modifier = modifier,
         )
@@ -174,12 +201,24 @@ private fun BraillePracticeLevelScreen(
                     if (nextState.isCompleted) {
                         completionPending = true
                         completionFailed = false
-                        onSessionCompleted(nextState.summary()) { recorded ->
-                            completionPending = false
-                            if (recorded) {
-                                state = nextState
-                            } else {
-                                completionFailed = true
+                        if (onDailySessionCompleted != null) {
+                            onDailySessionCompleted(nextState.summary()) { reward ->
+                                completionPending = false
+                                if (reward != null) {
+                                    engagementReward = reward
+                                    state = nextState
+                                } else {
+                                    completionFailed = true
+                                }
+                            }
+                        } else {
+                            requireNotNull(onSessionCompleted)(nextState.summary()) { recorded ->
+                                completionPending = false
+                                if (recorded) {
+                                    state = nextState
+                                } else {
+                                    completionFailed = true
+                                }
                             }
                         }
                     } else {
@@ -602,6 +641,7 @@ private fun BraillePracticeSummary(
     onPracticeAgain: () -> Unit,
     customConfiguration: CustomPracticeConfiguration? = null,
     onChangeConfiguration: (() -> Unit)? = null,
+    engagementReward: EngagementReward? = null,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -671,13 +711,53 @@ private fun BraillePracticeSummary(
                             stringResource(customConfiguration.mode.titleResource()),
                         ),
                     )
-                } else {
+                } else if (level != PracticeLevel.Daily) {
                     SummaryLine(
                         stringResource(
                             R.string.practice_summary_letters,
                             summary.practicedLetters.joinToString(", "),
                         ),
                     )
+                }
+                if (level == PracticeLevel.Daily && engagementReward != null) {
+                    SummaryLine(
+                        stringResource(
+                            R.string.daily_practice_reward_xp,
+                            engagementReward.xpEarned,
+                        ),
+                    )
+                    SummaryLine(
+                        stringResource(
+                            if (engagementReward.addedPracticeDay) {
+                                R.string.daily_practice_reward_new_day
+                            } else {
+                                R.string.daily_practice_reward_day_already_counted
+                            },
+                        ),
+                    )
+                    SummaryLine(
+                        stringResource(
+                            R.string.daily_practice_reward_week,
+                            engagementReward.weeklyPracticeDays,
+                            com.brailuxaprende.practice.WeeklyPracticeTarget,
+                        ),
+                    )
+                    engagementReward.miniAchievementCompleted?.let { mini ->
+                        SummaryLine(
+                            stringResource(
+                                R.string.daily_practice_reward_mini,
+                                stringResource(mini.titleResource()),
+                            ),
+                        )
+                    }
+                    if (engagementReward.newlyUnlockedAchievements.isNotEmpty()) {
+                        SummaryLine(
+                            stringResource(
+                                R.string.daily_practice_reward_achievements,
+                                engagementReward.newlyUnlockedAchievements.size,
+                            ),
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(18.dp))
@@ -700,7 +780,13 @@ private fun BraillePracticeSummary(
             }
             Spacer(modifier = Modifier.height(10.dp))
             BrailuxSecondaryButton(
-                text = stringResource(R.string.practice_back_to_practice),
+                text = stringResource(
+                    if (level == PracticeLevel.Daily) {
+                        R.string.daily_practice_back_home
+                    } else {
+                        R.string.practice_back_to_practice
+                    },
+                ),
                 onClick = onBackToPractice,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -791,6 +877,7 @@ private fun activePointsText(character: BrailleCharacter): String =
 
 @androidx.annotation.StringRes
 private fun PracticeLevel.titleResource(): Int = when (this) {
+    PracticeLevel.Daily -> R.string.home_daily_practice
     PracticeLevel.BrailleExplorer -> R.string.practice_level_1_title
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_2_title
     PracticeLevel.BrailleChallenge -> R.string.practice_level_3_title
@@ -799,10 +886,23 @@ private fun PracticeLevel.titleResource(): Int = when (this) {
 
 @androidx.annotation.StringRes
 private fun PracticeLevel.completionTitleResource(): Int = when (this) {
+    PracticeLevel.Daily -> R.string.daily_practice_completed
     PracticeLevel.BrailleChallenge -> R.string.practice_challenge_completed
     PracticeLevel.Custom -> R.string.custom_practice_completed
     PracticeLevel.BrailleExplorer,
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_completed
+}
+
+@androidx.annotation.StringRes
+private fun com.brailuxaprende.practice.DailyMiniAchievement.titleResource(): Int = when (this) {
+    com.brailuxaprende.practice.DailyMiniAchievement.CompleteFiveExercises ->
+        R.string.mini_achievement_five_exercises
+    com.brailuxaprende.practice.DailyMiniAchievement.CompleteSession ->
+        R.string.mini_achievement_session
+    com.brailuxaprende.practice.DailyMiniAchievement.ThreeFirstAttemptCorrect ->
+        R.string.mini_achievement_three_correct
+    com.brailuxaprende.practice.DailyMiniAchievement.TwoModalities ->
+        R.string.mini_achievement_two_modalities
 }
 
 @androidx.annotation.StringRes

@@ -9,6 +9,13 @@ enum class PracticeLevel(
     val allowsPointNumberToggle: Boolean,
     val hintLimit: Int?,
 ) {
+    Daily(
+        exerciseCount = 5,
+        optionCount = 4,
+        showPointNumbersByDefault = true,
+        allowsPointNumberToggle = true,
+        hintLimit = null,
+    ),
     BrailleExplorer(
         exerciseCount = 10,
         optionCount = 4,
@@ -234,4 +241,5 @@ data class PracticeSessionSummary(
         PracticeContentGroup.SpanishAlphabet,
     ),
     val mode: PracticeMode? = null,
+    val longestFirstAttemptCorrectStreak: Int = 0,
 )

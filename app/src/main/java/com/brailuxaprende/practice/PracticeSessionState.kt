@@ -13,6 +13,8 @@ data class PracticeSessionState(
     val attemptsOnCurrentExercise: Int = 0,
     val firstAttemptCorrect: Int = 0,
     val errors: Int = 0,
+    val currentFirstAttemptCorrectStreak: Int = 0,
+    val longestFirstAttemptCorrectStreak: Int = 0,
     val validation: PracticeValidationState = PracticeValidationState.AwaitingAnswer,
     val showPointNumbers: Boolean = session.initialPointNumberVisibility,
     val revealedHintCount: Int = 0,
@@ -78,15 +80,23 @@ data class PracticeSessionState(
 
         val isCorrect = answer == currentExercise.target.printedCharacter
         return if (isCorrect) {
+            val firstAttempt = attemptsOnCurrentExercise == 0
+            val updatedStreak = if (firstAttempt) currentFirstAttemptCorrectStreak + 1 else 0
             copy(
                 attemptsOnCurrentExercise = attemptsOnCurrentExercise + 1,
-                firstAttemptCorrect = firstAttemptCorrect + if (attemptsOnCurrentExercise == 0) 1 else 0,
+                firstAttemptCorrect = firstAttemptCorrect + if (firstAttempt) 1 else 0,
+                currentFirstAttemptCorrectStreak = updatedStreak,
+                longestFirstAttemptCorrectStreak = maxOf(
+                    longestFirstAttemptCorrectStreak,
+                    updatedStreak,
+                ),
                 validation = PracticeValidationState.Correct,
             )
         } else {
             copy(
                 attemptsOnCurrentExercise = attemptsOnCurrentExercise + 1,
                 errors = errors + 1,
+                currentFirstAttemptCorrectStreak = 0,
                 validation = PracticeValidationState.Incorrect,
             )
         }
@@ -137,6 +147,7 @@ data class PracticeSessionState(
             practicedContentGroups = session.customConfiguration?.selectedContentGroups
                 ?: setOf(PracticeContentGroup.SpanishAlphabet),
             mode = session.mode,
+            longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
         )
     }
 }

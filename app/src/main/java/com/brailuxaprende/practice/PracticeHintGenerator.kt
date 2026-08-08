@@ -28,6 +28,7 @@ object PracticeHintGenerator {
         activePoints: Set<Int>,
     ): List<PracticeHint> {
         return when (level) {
+            PracticeLevel.Daily -> level1Hints(activePoints)
             PracticeLevel.BrailleExplorer -> level1Hints(activePoints)
             PracticeLevel.BrailleRecognizer -> level2Hints(activePoints)
             PracticeLevel.BrailleChallenge -> emptyList()
@@ -44,6 +45,7 @@ object PracticeHintGenerator {
         val range = alphabetRange(level, target)
         val comparison = alphabetComparison(target, exercise.options.map { it.printedCharacter })
         val prioritizedHints = when (level) {
+            PracticeLevel.Daily -> listOf(category, range, comparison)
             PracticeLevel.BrailleExplorer -> listOf(category, range, comparison)
             PracticeLevel.BrailleRecognizer -> listOf(range, category, comparison)
             PracticeLevel.BrailleChallenge -> emptyList()
@@ -80,6 +82,7 @@ object PracticeHintGenerator {
     private fun alphabetRange(level: PracticeLevel, target: Char): PracticeHint.AlphabetRange {
         val targetIndex = spanishAlphabet.indexOf(target)
         val ranges = when (level) {
+            PracticeLevel.Daily -> listOf(0..9, 10..18, 19..26)
             PracticeLevel.BrailleExplorer -> listOf(0..4, 5..9)
             PracticeLevel.BrailleRecognizer,
             PracticeLevel.BrailleChallenge,

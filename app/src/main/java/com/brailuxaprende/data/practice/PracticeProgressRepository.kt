@@ -7,6 +7,11 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import java.io.IOException
+import com.brailuxaprende.practice.EngagementSession
+import com.brailuxaprende.practice.EngagementUpdate
+import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.PracticeMode
+import com.brailuxaprende.practice.PracticeSessionKind
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -53,6 +58,11 @@ data class PracticeProgress(
         }
 }
 
+data class PracticeProgressRecord(
+    val practiceProgress: PracticeProgress,
+    val engagementUpdate: EngagementUpdate,
+)
+
 class PracticeProgressRepository(
     private val dataStore: DataStore<Preferences>,
 ) {
@@ -70,14 +80,27 @@ class PracticeProgressRepository(
         exercisesCompleted: Int,
         firstAttemptCorrect: Int,
         practiceDate: String,
-    ): PracticeProgress {
-        require(exercisesCompleted >= 0)
+        mode: PracticeMode = PracticeMode.SignToCharacter,
+        longestFirstAttemptCorrectStreak: Int = 0,
+    ): PracticeProgressRecord {
+        require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
         require(practiceDate.isNotBlank())
 
         var recordedProgress: PracticeProgress? = null
+        var engagementUpdate: EngagementUpdate? = null
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
+            engagementUpdate = preferences.recordEngagement(
+                session = EngagementSession(
+                    kind = PracticeSessionKind.Level1,
+                    exercisesCompleted = exercisesCompleted,
+                    firstAttemptCorrect = firstAttemptCorrect,
+                    mode = mode,
+                    longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                ),
+                date = requireNotNull(PracticeDate.parse(practiceDate)),
+            )
             val updatedProgress = currentProgress.copy(
                 level1CompletedSessions = currentProgress.level1CompletedSessions + 1,
                 level1TotalExercises = currentProgress.level1TotalExercises + exercisesCompleted,
@@ -91,7 +114,10 @@ class PracticeProgressRepository(
             preferences[Level1LastPracticeDateKey] = practiceDate
             recordedProgress = updatedProgress
         }
-        return checkNotNull(recordedProgress)
+        return PracticeProgressRecord(
+            practiceProgress = checkNotNull(recordedProgress),
+            engagementUpdate = checkNotNull(engagementUpdate),
+        )
     }
 
     suspend fun recordLevel2Session(
@@ -100,16 +126,31 @@ class PracticeProgressRepository(
         errors: Int,
         hintsUsed: Int,
         practiceDate: String,
-    ): PracticeProgress {
-        require(exercisesCompleted >= 0)
+        mode: PracticeMode = PracticeMode.SignToCharacter,
+        longestFirstAttemptCorrectStreak: Int = 0,
+    ): PracticeProgressRecord {
+        require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
         require(errors >= 0)
         require(hintsUsed in 0..3)
         require(practiceDate.isNotBlank())
 
         var recordedProgress: PracticeProgress? = null
+        var engagementUpdate: EngagementUpdate? = null
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
+            engagementUpdate = preferences.recordEngagement(
+                session = EngagementSession(
+                    kind = PracticeSessionKind.Level2,
+                    exercisesCompleted = exercisesCompleted,
+                    firstAttemptCorrect = firstAttemptCorrect,
+                    errors = errors,
+                    hintsUsed = hintsUsed,
+                    mode = mode,
+                    longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                ),
+                date = requireNotNull(PracticeDate.parse(practiceDate)),
+            )
             val updatedProgress = currentProgress.copy(
                 level2CompletedSessions = currentProgress.level2CompletedSessions + 1,
                 level2TotalExercises = currentProgress.level2TotalExercises + exercisesCompleted,
@@ -127,7 +168,10 @@ class PracticeProgressRepository(
             preferences[Level2LastPracticeDateKey] = practiceDate
             recordedProgress = updatedProgress
         }
-        return checkNotNull(recordedProgress)
+        return PracticeProgressRecord(
+            practiceProgress = checkNotNull(recordedProgress),
+            engagementUpdate = checkNotNull(engagementUpdate),
+        )
     }
 
     suspend fun recordLevel3Session(
@@ -135,15 +179,29 @@ class PracticeProgressRepository(
         firstAttemptCorrect: Int,
         errors: Int,
         practiceDate: String,
-    ): PracticeProgress {
-        require(exercisesCompleted >= 0)
+        mode: PracticeMode = PracticeMode.SignToCharacter,
+        longestFirstAttemptCorrectStreak: Int = 0,
+    ): PracticeProgressRecord {
+        require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
         require(errors >= 0)
         require(practiceDate.isNotBlank())
 
         var recordedProgress: PracticeProgress? = null
+        var engagementUpdate: EngagementUpdate? = null
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
+            engagementUpdate = preferences.recordEngagement(
+                session = EngagementSession(
+                    kind = PracticeSessionKind.Level3,
+                    exercisesCompleted = exercisesCompleted,
+                    firstAttemptCorrect = firstAttemptCorrect,
+                    errors = errors,
+                    mode = mode,
+                    longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                ),
+                date = requireNotNull(PracticeDate.parse(practiceDate)),
+            )
             val updatedProgress = currentProgress.copy(
                 level3CompletedSessions = currentProgress.level3CompletedSessions + 1,
                 level3TotalExercises = currentProgress.level3TotalExercises + exercisesCompleted,
@@ -159,7 +217,10 @@ class PracticeProgressRepository(
             preferences[Level3LastPracticeDateKey] = practiceDate
             recordedProgress = updatedProgress
         }
-        return checkNotNull(recordedProgress)
+        return PracticeProgressRecord(
+            practiceProgress = checkNotNull(recordedProgress),
+            engagementUpdate = checkNotNull(engagementUpdate),
+        )
     }
 
     private fun Preferences.toPracticeProgress(): PracticeProgress = PracticeProgress(

@@ -72,6 +72,17 @@
 - Resultado verificable: build de lanzamiento revisada, textos principales completos, iconografia y metadatos listos para revision.
 - Condicion para avanzar: no hay funciones remotas obligatorias, anuncios, compras ni cuentas pendientes para la primera version.
 
-## Incidencias pendientes
+## 12. Constancia, practica diaria y logros
 
-- Mi progreso continua mostrando `PlaceholderScreen` aunque existen datos persistidos e implementaciones de progreso. Revisar en una auditoria posterior de navegacion y estado.
+- Objetivo: fomentar una practica frecuente y flexible mediante una sesion diaria breve, metas y reconocimientos positivos.
+- Filosofia: la constancia se acompana sin castigos. Faltar un dia nunca elimina XP, logros, historial ni metas alcanzadas, y no bloquea la practica libre.
+- Practica breve: la practica diaria contiene 5 ejercicios de contenido ya disponible y esta pensada para aproximadamente 3 a 5 minutos. Mientras no existan datos suficientes por caracter, usa una seleccion equilibrada y segura.
+- Metas flexibles: la primera meta semanal registra dias practicados y usa 5 dias como valor inicial, con el modelo preparado para metas futuras de 3, 5 o 7 dias. La meta mensual inicial es de 100 ejercicios.
+- XP: representa practica acumulada y motivacion, no una certificacion de dominio. Los errores y el uso de pistas nunca restan XP ni reducen recompensas.
+- Logros: los logros permanentes se desbloquean una sola vez y nunca se pierden. El mini logro diario es opcional y no condiciona el cumplimiento de la practica diaria.
+- Resultado verificable: completar la practica diaria o cualquier sesion valida registra el dia una sola vez, actualiza XP, racha positiva, metas y logros de forma local y accesible.
+- Condicion para avanzar: los cambios de dia, semana, mes y ano estan cubiertos por pruebas y no requieren cuentas, conexion ni servicios remotos.
+
+## Incidencias resueltas
+
+- La ruta interna de Mi progreso fue auditada: actualmente renderiza `ProgressScreen` y no `PlaceholderScreen`. Los logros permanentes se integran en esa pantalla real.

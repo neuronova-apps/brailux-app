@@ -5,6 +5,30 @@ import com.brailuxaprende.braille.BrailleRepository
 import kotlin.random.Random
 
 object PracticeSessionGenerator {
+    fun generateDaily(
+        random: Random = Random.Default,
+    ): PracticeSession {
+        val characters = BrailleRepository.getLevel2Characters()
+        val targets = characters.shuffled(random).take(PracticeLevel.Daily.exerciseCount)
+        val exercises = targets.mapIndexed { index, target ->
+            PracticeExercise(
+                target = target,
+                type = exerciseType(PracticeMode.Mixed, index),
+                options = createPedagogicalOptions(
+                    target = target,
+                    characters = characters,
+                    optionCount = PracticeLevel.Daily.optionCount,
+                    random = random,
+                ),
+            )
+        }
+        return PracticeSession(
+            level = PracticeLevel.Daily,
+            mode = PracticeMode.Mixed,
+            exercises = exercises,
+        )
+    }
+
     fun generate(
         mode: PracticeMode = PracticeMode.SignToCharacter,
         random: Random = Random.Default,
@@ -65,6 +89,7 @@ object PracticeSessionGenerator {
             PracticeLevel.BrailleRecognizer -> BrailleRepository.getLevel2Characters()
             PracticeLevel.BrailleChallenge -> BrailleRepository.getLevel2Characters()
             PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
+            PracticeLevel.Daily -> error("Daily sessions use the balanced daily generator.")
         }
 
         val targets = when (level) {
@@ -77,6 +102,7 @@ object PracticeSessionGenerator {
                 }
             }
             PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
+            PracticeLevel.Daily -> error("Daily sessions use the balanced daily generator.")
         }
 
         val exercises = targets.mapIndexed { index, target ->

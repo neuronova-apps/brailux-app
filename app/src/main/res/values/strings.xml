@@ -16,6 +16,27 @@
     <string name="home_access_practice_description">Refuerza lo aprendido con ejercicios accesibles.</string>
     <string name="home_daily_practice">Práctica diaria</string>
     <string name="home_daily_practice_description">Aquí encontrarás una actividad breve para reforzar lo aprendido.</string>
+    <string name="home_daily_practice_details">5 ejercicios · 3-5 min</string>
+    <string name="home_daily_practice_pending">Pendiente</string>
+    <string name="home_daily_practice_completed_today">Completada hoy</string>
+    <string name="home_daily_practice_start">Comenzar</string>
+    <string name="home_consistency_title">Tu constancia</string>
+    <string name="home_weekly_practice_title">Esta semana</string>
+    <string name="home_weekly_practice_value">%1$d de %2$d días</string>
+    <string name="home_weekly_practice_accessibility">%1$d de %2$d días completados.</string>
+    <string name="home_streak_title">Racha</string>
+    <plurals name="home_streak_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="home_xp_title">XP</string>
+    <string name="home_xp_value">%1$d XP</string>
+    <string name="home_mini_achievement_title">Mini logro de hoy</string>
+    <string name="home_mini_achievement_progress">%1$d de %2$d</string>
+    <string name="home_mini_achievement_completed">Completado</string>
+    <string name="home_mini_achievement_progress_accessibility">%1$s. Progreso: %2$d de %3$d.</string>
+    <string name="home_mini_achievement_completed_accessibility">%1$s. Completado.</string>
+    <string name="home_metric_accessibility">%1$s: %2$s.</string>
     <string name="home_daily_challenge">Desafío del día</string>
     <string name="home_daily_challenge_description">Aquí encontrarás un reto de Braille para poner a prueba lo aprendido.</string>
     <string name="home_coming_soon">Próximamente</string>
@@ -136,6 +157,18 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_level_completed">Nivel completado</string>
     <string name="practice_challenge_completed">Desafío completado</string>
     <string name="custom_practice_completed">Práctica completada</string>
+    <string name="daily_practice_completed">Práctica diaria completada</string>
+    <string name="daily_practice_reward_xp">+%1$d XP</string>
+    <string name="daily_practice_reward_new_day">Hoy sumaste un nuevo día de práctica.</string>
+    <string name="daily_practice_reward_day_already_counted">El día de hoy ya estaba registrado en tu práctica.</string>
+    <string name="daily_practice_reward_week">Esta semana: %1$d de %2$d días</string>
+    <string name="daily_practice_reward_mini">Mini logro completado: %1$s</string>
+    <string name="daily_practice_reward_achievements">Logros permanentes obtenidos: %1$d</string>
+    <string name="daily_practice_back_home">Volver a Inicio</string>
+    <string name="mini_achievement_five_exercises">Completa 5 ejercicios</string>
+    <string name="mini_achievement_session">Completa una sesión</string>
+    <string name="mini_achievement_three_correct">Consigue 3 aciertos consecutivos al primer intento</string>
+    <string name="mini_achievement_two_modalities">Practica dos modalidades diferentes</string>
     <string name="practice_summary_completed">Ejercicios completados: %1$d</string>
     <string name="practice_summary_exercises_done">%1$d ejercicios realizados</string>
     <string name="practice_summary_accuracy">Precisión: %1$d%%</string>
@@ -174,6 +207,20 @@ Puntos 4, 5 y 6 a la derecha.</string>
         <item>nov</item>
         <item>dic</item>
     </string-array>
+    <string-array name="progress_month_names">
+        <item>enero</item>
+        <item>febrero</item>
+        <item>marzo</item>
+        <item>abril</item>
+        <item>mayo</item>
+        <item>junio</item>
+        <item>julio</item>
+        <item>agosto</item>
+        <item>septiembre</item>
+        <item>octubre</item>
+        <item>noviembre</item>
+        <item>diciembre</item>
+    </string-array>
     <string name="progress_sessions_completed">%1$d sesiones completadas</string>
     <string name="progress_exercises_completed">%1$d ejercicios realizados</string>
     <string name="progress_first_attempt_correct">%1$d aciertos al primer intento</string>
@@ -181,6 +228,31 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_accumulated_accuracy">Precisión acumulada: %1$d%%</string>
     <string name="progress_last_practice">Última práctica: %1$s</string>
     <string name="progress_no_last_practice">Sin prácticas completadas</string>
+    <string name="progress_value_accessibility">%1$s, %2$s</string>
+    <string name="progress_monthly_goal_title">Meta de %1$s</string>
+    <string name="progress_monthly_goal_value">%1$d de %2$d ejercicios</string>
+    <string name="progress_monthly_goal_completed">Completada</string>
+    <string name="progress_monthly_goal_in_progress">En progreso</string>
+    <string name="progress_monthly_goal_accessibility">%1$d de %2$d ejercicios completados. Estado: %3$s.</string>
+    <string name="progress_achievements_title">Logros permanentes</string>
+    <string name="progress_achievements_description">Cada logro se obtiene una sola vez y nunca se pierde.</string>
+    <string name="progress_no_achievements">Aún no has obtenido logros. Cada sesión completada cuenta.</string>
+    <string name="progress_achievement_unlocked">Obtenido</string>
+    <string name="progress_achievement_accessibility">%1$s. %2$s. Estado: %3$s.</string>
+    <string name="achievement_first_step_title">Primer paso</string>
+    <string name="achievement_first_step_description">Completa tu primera sesión.</string>
+    <string name="achievement_consistency_title">Constancia</string>
+    <string name="achievement_consistency_description">Practica 3 días distintos.</string>
+    <string name="achievement_week_in_motion_title">Una semana en marcha</string>
+    <string name="achievement_week_in_motion_description">Practica 5 días distintos dentro de una semana.</string>
+    <string name="achievement_explorer_title">Explorador</string>
+    <string name="achievement_explorer_description">Completa 5 sesiones de Nivel 1.</string>
+    <string name="achievement_recognizer_title">Reconocedor</string>
+    <string name="achievement_recognizer_description">Completa 5 sesiones de Nivel 2.</string>
+    <string name="achievement_challenger_title">Desafiante</string>
+    <string name="achievement_challenger_description">Completa 3 sesiones de Nivel 3.</string>
+    <string name="achievement_hundred_exercises_title">100 ejercicios</string>
+    <string name="achievement_hundred_exercises_description">Completa 100 ejercicios acumulados.</string>
 
     <string name="settings_title">Configuración</string>
     <string name="settings_description">Personaliza la apariencia, la accesibilidad y la retroalimentación de toda la aplicación.</string>

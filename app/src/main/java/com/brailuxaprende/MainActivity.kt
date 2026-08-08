@@ -13,6 +13,8 @@ import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
 import com.brailuxaprende.data.practice.CustomPracticePreferencesRepository
 import com.brailuxaprende.data.practice.CustomPracticePreferencesState
+import com.brailuxaprende.data.practice.EngagementProgressRepository
+import com.brailuxaprende.data.practice.EngagementProgressState
 import com.brailuxaprende.data.seasonal.AnnualDate
 import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
@@ -20,6 +22,9 @@ import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
+import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.PracticeSessionKind
+import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
@@ -47,6 +52,15 @@ class MainActivity : ComponentActivity() {
             scope = lifecycleScope,
         )
     }
+    private val engagementProgressState by lazy {
+        EngagementProgressState(
+            repository = EngagementProgressRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+            scope = lifecycleScope,
+            clock = SystemPracticeClock,
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,7 +70,12 @@ class MainActivity : ComponentActivity() {
             val practiceProgress by practiceProgressState.progress.collectAsState()
             val customPracticeConfiguration by
                 customPracticePreferencesState.configuration.collectAsState()
-            val currentDate = rememberCurrentAnnualDate()
+            val engagementProgress by engagementProgressState.progress.collectAsState()
+            val currentPracticeDate = rememberCurrentPracticeDate()
+            val currentDate = AnnualDate(
+                month = currentPracticeDate.month,
+                day = currentPracticeDate.day,
+            )
             val seasonalEvent = SeasonalThemeResolver.activeEvent(
                 date = currentDate,
                 eventsEnabled = preferences.seasonalThemesEnabled,
@@ -71,6 +90,8 @@ class MainActivity : ComponentActivity() {
                 BrailuxApp(
                     preferences = preferences,
                     practiceProgress = practiceProgress,
+                    engagementProgress = engagementProgress,
+                    currentDate = currentPracticeDate,
                     customPracticeConfiguration = customPracticeConfiguration,
                     seasonalEvent = seasonalEvent,
                     onSoundEnabledChange = settingsState::setSoundEnabled,
@@ -98,6 +119,20 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     onCustomPracticeConfigurationUsed = customPracticePreferencesState::save,
+                    onCustomSessionCompleted = { summary, onRecorded ->
+                        engagementProgressState.recordSession(
+                            summary = summary,
+                            kind = PracticeSessionKind.Custom,
+                            onRecorded = { reward -> onRecorded(reward != null) },
+                        )
+                    },
+                    onDailySessionCompleted = { summary, onRecorded ->
+                        engagementProgressState.recordSession(
+                            summary = summary,
+                            kind = PracticeSessionKind.Daily,
+                            onRecorded = onRecorded,
+                        )
+                    },
                 )
             }
         }
@@ -105,11 +140,11 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun rememberCurrentAnnualDate(): AnnualDate {
-    val date by produceState(initialValue = AnnualDate.today()) {
+private fun rememberCurrentPracticeDate(): PracticeDate {
+    val date by produceState(initialValue = SystemPracticeClock.today()) {
         while (true) {
             delay(60_000L)
-            value = AnnualDate.today()
+            value = SystemPracticeClock.today()
         }
     }
     return date

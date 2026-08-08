@@ -3,10 +3,10 @@ package com.brailuxaprende.data.practice
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.PracticeSessionSummary
+import com.brailuxaprende.practice.PracticeDate
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -170,6 +170,21 @@ class PracticeProgressRepositoryTest {
     }
 
     @Test
+    fun completedLevelSessionAtomicallyRegistersEngagementDayAndXp() = runBlocking {
+        val result = repository.recordLevel1Session(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 7,
+            practiceDate = "2026-08-09",
+        )
+        val engagement = EngagementProgressRepository(dataStore).progress.first()
+
+        assertEquals(1, result.practiceProgress.level1CompletedSessions)
+        assertEquals(30L, engagement.totalXp)
+        assertEquals(setOf(PracticeDate(2026, 8, 9)), engagement.activityDates)
+        assertEquals(result.engagementUpdate.progress, engagement)
+    }
+
+    @Test
     fun completedSessionsAccumulateAndPersist() = runBlocking {
         repository.recordLevel1Session(10, 8, "2026-08-06")
         repository.recordLevel1Session(10, 7, "2026-08-07")
@@ -203,12 +218,16 @@ class PracticeProgressRepositoryTest {
 
     @Test
     fun practiceProgressStatePublishesACompletedSessionToItsObservedFlow() = runBlocking {
-        val state = PracticeProgressState(repository, dataStoreScope)
+        val state = PracticeProgressState(
+            repository = repository,
+            scope = dataStoreScope,
+            clock = { PracticeDate(2026, 8, 9) },
+        )
         val updates = Channel<PracticeProgress>(capacity = Channel.UNLIMITED)
         val collector = launch(start = CoroutineStart.UNDISPATCHED) {
             state.progress.collect { progress -> updates.send(progress) }
         }
-        val progressAtCallback = CompletableDeferred<Pair<Boolean, PracticeProgress>>()
+        val progressAtCallback = CompletableDeferred<Boolean>()
 
         try {
             assertEquals(0, withTimeout(5_000L) { updates.receive() }.level1CompletedSessions)
@@ -220,18 +239,17 @@ class PracticeProgressRepositoryTest {
                     errors = 2,
                     accuracyPercentage = 80,
                     practicedLetters = ('A'..'J').toList(),
+                    longestFirstAttemptCorrectStreak = 3,
                 ),
-                practicedAt = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse("2026-08-07")!!,
                 onRecorded = { recorded ->
-                    progressAtCallback.complete(recorded to state.progress.value)
+                    progressAtCallback.complete(recorded)
                 },
             )
 
-            val (recorded, progressObservedByState) = withTimeout(5_000L) {
+            val recorded = withTimeout(5_000L) {
                 progressAtCallback.await()
             }
             assertTrue(recorded)
-            assertEquals(1, progressObservedByState.level1CompletedSessions)
             val progress = withTimeout(5_000L) {
                 var observed: PracticeProgress
                 do {
@@ -244,7 +262,14 @@ class PracticeProgressRepositoryTest {
             assertEquals(10, progress.level1TotalExercises)
             assertEquals(8, progress.level1FirstAttemptCorrect)
             assertEquals(80, progress.level1AccuracyPercentage)
-            assertEquals("2026-08-07", progress.level1LastPracticeDate)
+            assertEquals("2026-08-09", progress.level1LastPracticeDate)
+            val engagement = EngagementProgressRepository(dataStore).progress.first()
+            assertEquals(40L, engagement.totalXp)
+            assertEquals(
+                DailyMiniAchievement.ThreeFirstAttemptCorrect,
+                engagement.miniAchievementType,
+            )
+            assertTrue(engagement.miniAchievementCompleted)
         } finally {
             collector.cancelAndJoin()
         }
