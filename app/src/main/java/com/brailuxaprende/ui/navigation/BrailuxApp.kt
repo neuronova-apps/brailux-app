@@ -263,11 +263,8 @@ private fun BrailuxNavHost(
                 seasonalEvent = seasonalEvent,
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
-                onPlay = { navController.navigate(BrailuxRoutes.PLAY) },
-                onProgress = { navController.navigate(BrailuxRoutes.PROGRESS) },
                 onSettings = { navController.navigate(BrailuxRoutes.SETTINGS) },
                 onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
-                onStartLesson = { navController.navigate(BrailuxRoutes.SIX_DOTS_LESSON) },
             )
         }
         composable(BrailuxRoutes.LEARN) {
@@ -360,6 +357,8 @@ private fun NavHostController.navigateToMainDestination(route: String) {
 
 internal fun selectedMainDestination(currentRoute: String?): String? =
     currentRoute?.takeIf { route -> bottomDestinations.any { it.route == route } }
+
+internal fun bottomDestinationRoutes(): List<String> = bottomDestinations.map { it.route }
 
 internal fun shouldPreserveMainDestinationState(route: String): Boolean =
     route != BrailuxRoutes.HOME

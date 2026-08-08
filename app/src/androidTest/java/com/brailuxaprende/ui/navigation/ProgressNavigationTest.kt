@@ -5,7 +5,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.brailuxaprende.R
@@ -22,7 +21,7 @@ class ProgressNavigationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun homeCardAndBottomBarOpenTheFunctionalProgressScreen() {
+    fun bottomBarOpensTheFunctionalProgressScreen() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         composeRule.setContent {
             BrailuxAprendeTheme {
@@ -46,12 +45,6 @@ class ProgressNavigationTest {
         }
 
         composeRule.onNodeWithText(context.getString(R.string.welcome_start)).performClick()
-        composeRule.onNodeWithText(context.getString(R.string.home_access_progress))
-            .performScrollTo()
-            .performClick()
-        assertFunctionalProgressScreen()
-
-        composeRule.onNodeWithText(context.getString(R.string.nav_home)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.nav_progress)).performClick()
         assertFunctionalProgressScreen()
     }

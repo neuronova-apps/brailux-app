@@ -37,11 +37,48 @@ enum class PracticeExerciseType {
     CharacterToSign,
 }
 
-enum class PracticeHint {
-    OnePoint,
-    TwoPoints,
-    ThreePoints,
-    FourPoints,
+enum class BrailleRow {
+    Top,
+    Middle,
+    Bottom,
+}
+
+sealed interface PracticeHint {
+    data class ActivePointCount(
+        val count: Int,
+    ) : PracticeHint {
+        init {
+            require(count in 0..6) { "Active point count must be between 0 and 6." }
+        }
+    }
+
+    data class ColumnDistribution(
+        val leftCount: Int,
+        val rightCount: Int,
+    ) : PracticeHint {
+        init {
+            require(leftCount in 0..3) { "Left column point count must be between 0 and 3." }
+            require(rightCount in 0..3) { "Right column point count must be between 0 and 3." }
+        }
+    }
+
+    data class RowState(
+        val row: BrailleRow,
+        val activeCount: Int,
+    ) : PracticeHint {
+        init {
+            require(activeCount in 0..2) { "Row point count must be between 0 and 2." }
+        }
+    }
+
+    data class PointState(
+        val point: Int,
+        val isActive: Boolean,
+    ) : PracticeHint {
+        init {
+            require(point in 1..6) { "Braille point must be between 1 and 6." }
+        }
+    }
 }
 
 data class PracticeExercise(
@@ -55,14 +92,6 @@ data class PracticeExercise(
             "Exercise options must not contain duplicate characters."
         }
     }
-
-    val hint: PracticeHint
-        get() = when (target.cell.activePoints().size) {
-            1 -> PracticeHint.OnePoint
-            2 -> PracticeHint.TwoPoints
-            3 -> PracticeHint.ThreePoints
-            else -> PracticeHint.FourPoints
-        }
 }
 
 data class PracticeSession(

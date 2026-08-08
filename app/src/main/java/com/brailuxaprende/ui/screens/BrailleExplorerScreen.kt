@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.brailuxaprende.R
 import com.brailuxaprende.braille.BrailleCharacter
+import com.brailuxaprende.practice.BrailleRow
 import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
 import com.brailuxaprende.practice.PracticeHint
@@ -315,14 +316,20 @@ private fun BraillePracticeExercise(
                 }
             }
 
-            if (state.hintVisible) {
+            if (state.visibleHints.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(14.dp))
-                BrailuxFeedbackCard(
-                    message = hintText(exercise.hint),
-                    type = BrailuxFeedbackType.Warning,
-                    announceForAccessibility = true,
+                Column(
                     modifier = Modifier.widthIn(max = 560.dp),
-                )
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    state.visibleHints.forEachIndexed { index, hint ->
+                        BrailuxFeedbackCard(
+                            message = hintText(hint),
+                            type = BrailuxFeedbackType.Warning,
+                            announceForAccessibility = index == state.visibleHints.lastIndex,
+                        )
+                    }
+                }
             }
 
             if (state.validation != PracticeValidationState.AwaitingAnswer) {
@@ -360,7 +367,7 @@ private fun BraillePracticeExercise(
                 BrailuxSecondaryButton(
                     text = stringResource(R.string.practice_show_hint),
                     onClick = { onStateChange(state.showHint()) },
-                    enabled = state.hintsRemaining != 0 && !state.hintVisible,
+                    enabled = state.canShowHint,
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 560.dp),
@@ -656,14 +663,49 @@ private fun SummaryLine(text: String) {
 }
 
 @Composable
-private fun hintText(hint: PracticeHint): String = stringResource(
-    when (hint) {
-        PracticeHint.OnePoint -> R.string.practice_hint_one_point
-        PracticeHint.TwoPoints -> R.string.practice_hint_two_points
-        PracticeHint.ThreePoints -> R.string.practice_hint_three_points
-        PracticeHint.FourPoints -> R.string.practice_hint_four_points
-    },
-)
+private fun hintText(hint: PracticeHint): String = when (hint) {
+    is PracticeHint.ActivePointCount -> stringResource(
+        if (hint.count == 1) {
+            R.string.practice_hint_point_count_one
+        } else {
+            R.string.practice_hint_point_count_many
+        },
+        hint.count,
+    )
+    is PracticeHint.ColumnDistribution -> stringResource(
+        when {
+            hint.leftCount > 0 && hint.rightCount > 0 -> R.string.practice_hint_both_columns
+            hint.leftCount > 0 -> R.string.practice_hint_left_column
+            hint.rightCount > 0 -> R.string.practice_hint_right_column
+            else -> R.string.practice_hint_no_active_points
+        },
+    )
+    is PracticeHint.RowState -> {
+        val rowName = stringResource(
+            when (hint.row) {
+                BrailleRow.Top -> R.string.practice_hint_row_top
+                BrailleRow.Middle -> R.string.practice_hint_row_middle
+                BrailleRow.Bottom -> R.string.practice_hint_row_bottom
+            },
+        )
+        stringResource(
+            when (hint.activeCount) {
+                0 -> R.string.practice_hint_row_empty
+                1 -> R.string.practice_hint_row_one_point
+                else -> R.string.practice_hint_row_two_points
+            },
+            rowName,
+        )
+    }
+    is PracticeHint.PointState -> stringResource(
+        if (hint.isActive) {
+            R.string.practice_hint_point_active
+        } else {
+            R.string.practice_hint_point_inactive
+        },
+        hint.point,
+    )
+}
 
 private fun activePointsText(character: BrailleCharacter): String =
     character.cell.activePoints().joinToString(", ")

@@ -14,6 +14,8 @@ class PracticeSessionStateTest {
         assertFalse(state.showPointNumbers)
         assertFalse(state.togglePointNumbers().showPointNumbers)
         assertEquals(0, state.hintsRemaining)
+        assertTrue(state.availableHints.isEmpty())
+        assertFalse(state.canShowHint)
         assertFalse(state.showHint().hintVisible)
         assertEquals(0, state.showHint().hintsUsed)
     }
@@ -60,21 +62,70 @@ class PracticeSessionStateTest {
     }
 
     @Test
-    fun level2LimitsHintsToThreeAndDoesNotSpendTwiceOnSameExercise() {
+    fun level2RevealsThreeProgressiveHintsAndThenReachesZero() {
         var state = newLevel2State()
 
-        state = state.showHint().showHint()
-        assertEquals(1, state.hintsUsed)
-
-        repeat(2) {
-            state = answerCorrectlyAndAdvance(state).showHint()
+        repeat(3) { revealedHints ->
+            state = state.showHint()
+            assertEquals(revealedHints + 1, state.visibleHints.size)
+            assertEquals(2 - revealedHints, state.hintsRemaining)
         }
 
         assertEquals(3, state.hintsUsed)
         assertEquals(0, state.hintsRemaining)
+        assertFalse(state.canShowHint)
+        assertEquals(state, state.showHint())
+    }
+
+    @Test
+    fun level2HintLimitIsGlobalAndVisibleHintsResetOnAdvance() {
+        var state = newLevel2State().showHint().showHint()
+
         state = answerCorrectlyAndAdvance(state)
-        assertFalse(state.showHint().hintVisible)
-        assertEquals(3, state.showHint().hintsUsed)
+
+        assertTrue(state.visibleHints.isEmpty())
+        assertEquals(1, state.hintsRemaining)
+        state = state.showHint()
+        assertEquals(1, state.visibleHints.size)
+        assertEquals(0, state.hintsRemaining)
+    }
+
+    @Test
+    fun level1RevealsAllHintsWithoutSpendingTheSessionCounter() {
+        var state = newState()
+
+        repeat(3) {
+            state = state.showHint()
+        }
+
+        assertEquals(state.availableHints, state.visibleHints)
+        assertEquals(3, state.visibleHints.size)
+        assertEquals(0, state.hintsUsed)
+        assertEquals(null, state.hintsRemaining)
+        assertFalse(state.canShowHint)
+    }
+
+    @Test
+    fun level1VisibleHintsResetWhenAdvancingToANewExercise() {
+        val state = answerCorrectlyAndAdvance(newState().showHint().showHint())
+
+        assertTrue(state.visibleHints.isEmpty())
+        assertTrue(state.canShowHint)
+        assertEquals(0, state.hintsUsed)
+    }
+
+    @Test
+    fun correctAnswerBlocksHintsWithoutSpendingOne() {
+        val checked = newLevel2State().let { state ->
+            state.selectAnswer(state.currentExercise.target.printedCharacter).checkAnswer()
+        }
+
+        val afterHintRequest = checked.showHint()
+
+        assertFalse(checked.canShowHint)
+        assertEquals(checked, afterHintRequest)
+        assertEquals(0, afterHintRequest.hintsUsed)
+        assertTrue(afterHintRequest.visibleHints.isEmpty())
     }
 
     @Test

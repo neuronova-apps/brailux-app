@@ -15,7 +15,7 @@ data class PracticeSessionState(
     val errors: Int = 0,
     val validation: PracticeValidationState = PracticeValidationState.AwaitingAnswer,
     val showPointNumbers: Boolean = session.level.showPointNumbersByDefault,
-    val hintVisible: Boolean = false,
+    val revealedHintCount: Int = 0,
     val hintsUsed: Int = 0,
     val isCompleted: Boolean = false,
 ) {
@@ -41,6 +41,21 @@ data class PracticeSessionState(
 
     val hintsRemaining: Int?
         get() = session.level.hintLimit?.let { limit -> (limit - hintsUsed).coerceAtLeast(0) }
+
+    val availableHints: List<PracticeHint>
+        get() = PracticeHintGenerator.generate(session.level, currentExercise.target.cell)
+
+    val visibleHints: List<PracticeHint>
+        get() = availableHints.take(revealedHintCount)
+
+    val hintVisible: Boolean
+        get() = visibleHints.isNotEmpty()
+
+    val canShowHint: Boolean
+        get() = !isCompleted &&
+            validation != PracticeValidationState.Correct &&
+            revealedHintCount < availableHints.size &&
+            hintsRemaining != 0
 
     fun selectAnswer(character: Char): PracticeSessionState {
         if (validation == PracticeValidationState.Correct || isCompleted) return this
@@ -84,7 +99,7 @@ data class PracticeSessionState(
             selectedCharacter = null,
             attemptsOnCurrentExercise = 0,
             validation = PracticeValidationState.AwaitingAnswer,
-            hintVisible = false,
+            revealedHintCount = 0,
         )
     }
 
@@ -94,9 +109,9 @@ data class PracticeSessionState(
     }
 
     fun showHint(): PracticeSessionState {
-        if (hintVisible || hintsRemaining == 0) return this
+        if (!canShowHint) return this
         return copy(
-            hintVisible = true,
+            revealedHintCount = revealedHintCount + 1,
             hintsUsed = hintsUsed + if (session.level.hintLimit == null) 0 else 1,
         )
     }

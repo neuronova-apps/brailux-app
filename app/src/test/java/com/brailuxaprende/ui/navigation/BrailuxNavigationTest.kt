@@ -9,11 +9,25 @@ import org.junit.Test
 class BrailuxNavigationTest {
 
     @Test
+    fun `bottom navigation keeps the four main destinations in order`() {
+        assertEquals(
+            listOf(
+                BrailuxRoutes.HOME,
+                BrailuxRoutes.LEARN,
+                BrailuxRoutes.PLAY,
+                BrailuxRoutes.PROGRESS,
+            ),
+            bottomDestinationRoutes(),
+        )
+    }
+
+    @Test
     fun `bottom navigation selects only the active main destination`() {
         assertEquals(BrailuxRoutes.HOME, selectedMainDestination(BrailuxRoutes.HOME))
         assertEquals(BrailuxRoutes.LEARN, selectedMainDestination(BrailuxRoutes.LEARN))
         assertEquals(BrailuxRoutes.PLAY, selectedMainDestination(BrailuxRoutes.PLAY))
         assertEquals(BrailuxRoutes.PROGRESS, selectedMainDestination(BrailuxRoutes.PROGRESS))
+        assertNull(selectedMainDestination(BrailuxRoutes.PRACTICE))
     }
 
     @Test
