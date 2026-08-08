@@ -71,6 +71,7 @@
 - Objetivo: preparar la aplicacion para distribucion inicial.
 - Resultado verificable: build de lanzamiento revisada, textos principales completos, iconografia y metadatos listos para revision.
 - Condicion para avanzar: no hay funciones remotas obligatorias, anuncios, compras ni cuentas pendientes para la primera version.
+- Trabajo futuro: publicar una web especifica de Brailux Aprende, definir la matriz general que agrupara las aplicaciones y publicar la web de esa matriz sin comprometer el funcionamiento offline de la aplicacion.
 
 ## 12. Constancia, practica diaria y logros
 

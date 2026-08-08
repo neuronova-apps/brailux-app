@@ -2,6 +2,7 @@ package com.brailuxaprende.ui.navigation
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -14,6 +15,7 @@ import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import org.junit.Rule
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -51,10 +53,35 @@ class HomeNavigationTest {
             .performScrollTo()
             .assertIsDisplayed()
             .assertHasClickAction()
-        composeRule.onAllNodesWithText(context.getString(R.string.home_daily_challenge))
+        composeRule.onNodeWithText(context.getString(R.string.home_access_practice))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasClickAction()
+        composeRule.onAllNodesWithText(context.getString(R.string.home_xp_title))
             .assertCountEquals(0)
-        composeRule.onAllNodesWithText(context.getString(R.string.home_coming_soon))
+        composeRule.onAllNodesWithText(context.getString(R.string.home_streak_title))
             .assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.home_weekly_practice_title))
+            .assertCountEquals(0)
+        composeRule.onNodeWithText(context.getString(R.string.home_daily_challenge))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasNoClickAction()
+        composeRule.onNodeWithText(context.getString(R.string.home_coming_soon))
+            .assertIsDisplayed()
+            .assertHasNoClickAction()
+
+        val dailyTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_daily_practice))
+            .fetchSemanticsNode().boundsInRoot.top
+        val practiceTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_access_practice))
+            .fetchSemanticsNode().boundsInRoot.top
+        val learnTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_continue_learning))
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(practiceTop > dailyTop)
+        assertTrue(learnTop > practiceTop)
 
         composeRule.onNodeWithText(context.getString(R.string.home_continue_learning))
             .performScrollTo()

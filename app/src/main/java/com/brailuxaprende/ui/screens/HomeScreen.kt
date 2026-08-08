@@ -1,6 +1,5 @@
 package com.brailuxaprende.ui.screens
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,9 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -31,11 +28,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -46,14 +40,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.seasonal.SeasonalEvent
-import com.brailuxaprende.practice.DailyMiniAchievement
-import com.brailuxaprende.practice.DailyMiniAchievementStatus
 import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.SystemPracticeClock
-import com.brailuxaprende.practice.WeeklyPracticeTarget
 import com.brailuxaprende.ui.components.BrailuxMenuCard
-import com.brailuxaprende.ui.components.BrailuxPrimaryButton
 import com.brailuxaprende.ui.components.BrailuxSecondaryButton
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 import com.brailuxaprende.ui.components.SeasonalBanner
@@ -71,12 +61,6 @@ fun HomeScreen(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val weeklyPracticeDays = engagementProgress
-        .weeklyPracticeDays(currentDate)
-        .coerceIn(0, WeeklyPracticeTarget)
-    val currentStreak = engagementProgress.displayedStreak(currentDate).coerceAtLeast(0)
-    val miniAchievement = engagementProgress.miniAchievement(currentDate)
-
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -120,35 +104,15 @@ fun HomeScreen(
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
-            DailyPracticeCard(
-                completedToday = engagementProgress.isDailyPracticeCompleted(currentDate),
-                onClick = onStartDailyPractice,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            EngagementOverviewCard(
-                weeklyPracticeDays = weeklyPracticeDays,
-                currentStreak = currentStreak,
-                totalXp = engagementProgress.totalXp.coerceAtLeast(0),
-                miniAchievement = miniAchievement,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            )
-            Spacer(modifier = Modifier.height(18.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                BrailuxPrimaryButton(
-                    text = stringResource(R.string.home_continue_learning),
-                    iconResource = R.drawable.ic_learn,
-                    onClick = onLearn,
-                    modifier = Modifier.fillMaxWidth(),
+                DailyPracticeCard(
+                    completedToday = engagementProgress.isDailyPracticeCompleted(currentDate),
+                    onClick = onStartDailyPractice,
                 )
                 BrailuxMenuCard(
                     title = stringResource(R.string.home_access_practice),
@@ -156,6 +120,13 @@ fun HomeScreen(
                     iconResource = R.drawable.ic_practice,
                     onClick = onPractice,
                 )
+                BrailuxMenuCard(
+                    title = stringResource(R.string.home_continue_learning),
+                    description = stringResource(R.string.home_continue_learning_description),
+                    iconResource = R.drawable.ic_learn,
+                    onClick = onLearn,
+                )
+                DailyChallengeCard()
             }
             Spacer(modifier = Modifier.height(28.dp))
             Text(
@@ -208,6 +179,7 @@ private fun DailyPracticeCard(
     Card(
         onClick = onClick,
         modifier = modifier
+            .fillMaxWidth()
             .heightIn(min = 172.dp)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
@@ -276,162 +248,27 @@ private fun DailyPracticeCard(
 }
 
 @Composable
-private fun EngagementOverviewCard(
-    weeklyPracticeDays: Int,
-    currentStreak: Int,
-    totalXp: Long,
-    miniAchievement: DailyMiniAchievementStatus,
-    modifier: Modifier = Modifier,
-) {
-    val weeklyText = stringResource(
-        R.string.home_weekly_practice_value,
-        weeklyPracticeDays,
-        WeeklyPracticeTarget,
-    )
-    val weeklyAccessibility = stringResource(
-        R.string.home_weekly_practice_accessibility,
-        weeklyPracticeDays,
-        WeeklyPracticeTarget,
-    )
-    val streakText = pluralStringResource(
-        R.plurals.home_streak_days,
-        currentStreak,
-        currentStreak,
-    )
-    val xpText = stringResource(R.string.home_xp_value, totalXp)
-    val miniTitle = stringResource(miniAchievement.type.titleResource())
-    val miniProgressText = if (miniAchievement.completed) {
-        stringResource(R.string.home_mini_achievement_completed)
-    } else {
-        stringResource(
-            R.string.home_mini_achievement_progress,
-            miniAchievement.progress,
-            miniAchievement.target,
-        )
-    }
-    val miniAccessibility = if (miniAchievement.completed) {
-        stringResource(R.string.home_mini_achievement_completed_accessibility, miniTitle)
-    } else {
-        stringResource(
-            R.string.home_mini_achievement_progress_accessibility,
-            miniTitle,
-            miniAchievement.progress,
-            miniAchievement.target,
-        )
-    }
-
-    BrailuxSectionCard(modifier = modifier) {
+private fun DailyChallengeCard(modifier: Modifier = Modifier) {
+    BrailuxSectionCard(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = stringResource(R.string.home_consistency_title),
+            text = stringResource(R.string.home_daily_challenge),
             modifier = Modifier.semantics { heading() },
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
         )
         Text(
-            text = stringResource(R.string.home_weekly_practice_title),
-            modifier = Modifier.padding(top = 16.dp),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = weeklyText,
-            modifier = Modifier.padding(top = 4.dp),
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        AccessibleProgressBar(
-            progress = weeklyPracticeDays / WeeklyPracticeTarget.toFloat(),
-            description = weeklyAccessibility,
-            modifier = Modifier.padding(top = 10.dp),
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        HomeMetric(
-            label = stringResource(R.string.home_streak_title),
-            value = streakText,
-        )
-        Spacer(modifier = Modifier.height(14.dp))
-        HomeMetric(
-            label = stringResource(R.string.home_xp_title),
-            value = xpText,
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-        Text(
-            text = stringResource(R.string.home_mini_achievement_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = miniTitle,
+            text = stringResource(R.string.home_daily_challenge_description),
             modifier = Modifier.padding(top = 6.dp),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = miniProgressText,
-            modifier = Modifier.padding(top = 4.dp),
+            text = stringResource(R.string.home_coming_soon),
+            modifier = Modifier.padding(top = 10.dp),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
         )
-        AccessibleProgressBar(
-            progress = miniAchievement.progress / miniAchievement.target.toFloat(),
-            description = miniAccessibility,
-            modifier = Modifier.padding(top = 10.dp),
-        )
     }
-}
-
-@Composable
-private fun HomeMetric(
-    label: String,
-    value: String,
-    modifier: Modifier = Modifier,
-) {
-    val accessibilityText = stringResource(R.string.home_metric_accessibility, label, value)
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .clearAndSetSemantics { contentDescription = accessibilityText },
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            text = value,
-            modifier = Modifier.padding(top = 4.dp),
-            style = MaterialTheme.typography.headlineSmall,
-        )
-    }
-}
-
-@Composable
-private fun AccessibleProgressBar(
-    progress: Float,
-    description: String,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-        color = MaterialTheme.colorScheme.surface,
-    ) {
-        LinearProgressIndicator(
-            progress = { progress.coerceIn(0f, 1f) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(16.dp)
-                .padding(2.dp)
-                .clearAndSetSemantics { contentDescription = description },
-        )
-    }
-}
-
-@StringRes
-private fun DailyMiniAchievement.titleResource(): Int = when (this) {
-    DailyMiniAchievement.CompleteFiveExercises -> R.string.mini_achievement_five_exercises
-    DailyMiniAchievement.CompleteSession -> R.string.mini_achievement_session
-    DailyMiniAchievement.ThreeFirstAttemptCorrect -> R.string.mini_achievement_three_correct
-    DailyMiniAchievement.TwoModalities -> R.string.mini_achievement_two_modalities
 }
 
 @Preview(name = "Inicio", showBackground = true, widthDp = 390, heightDp = 1200)
@@ -440,15 +277,7 @@ private fun HomeScreenPreview() {
     val currentDate = PracticeDate(year = 2026, month = 8, day = 8)
     BrailuxPreviewTheme {
         HomeScreen(
-            engagementProgress = EngagementProgress(
-                totalXp = 86,
-                activityDates = setOf(currentDate, currentDate.plusDays(-1)),
-                lastActivityDate = currentDate,
-                currentStreak = 2,
-                miniAchievementDate = currentDate,
-                miniAchievementType = DailyMiniAchievement.CompleteFiveExercises,
-                miniAchievementProgress = 3,
-            ),
+            engagementProgress = EngagementProgress(dailyPracticeDates = setOf(currentDate)),
             currentDate = currentDate,
             onLearn = {},
             onPractice = {},

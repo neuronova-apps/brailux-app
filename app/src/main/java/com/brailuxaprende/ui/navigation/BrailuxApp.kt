@@ -434,11 +434,9 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.PROGRESS) {
             ProgressScreen(
                 progress = practiceProgress,
+                learningProgress = learningProgress,
                 engagementProgress = engagementProgress,
                 currentDate = currentDate,
-                onStartPractice = {
-                    navController.navigate(BrailuxRoutes.PRACTICE) { launchSingleTop = true }
-                },
                 onBack = ::goBack,
             )
         }
