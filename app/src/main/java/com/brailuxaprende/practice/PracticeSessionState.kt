@@ -6,6 +6,11 @@ enum class PracticeValidationState {
     Incorrect,
 }
 
+data class PracticeCompletedAnswer(
+    val exerciseIndex: Int,
+    val responses: List<Char>,
+)
+
 data class PracticeSessionState(
     val session: PracticeSession,
     val currentExerciseIndex: Int = 0,
@@ -20,6 +25,9 @@ data class PracticeSessionState(
     val revealedHintCount: Int = 0,
     val hintsUsed: Int = 0,
     val isCompleted: Boolean = false,
+    val completedAnswers: List<PracticeCompletedAnswer> = emptyList(),
+    val currentExerciseAnswers: List<Char> = emptyList(),
+    val sessionId: String = newPracticeSessionId(),
 ) {
     val currentExercise: PracticeExercise
         get() = session.exercises[currentExerciseIndex]
@@ -84,6 +92,7 @@ data class PracticeSessionState(
             val updatedStreak = if (firstAttempt) currentFirstAttemptCorrectStreak + 1 else 0
             copy(
                 attemptsOnCurrentExercise = attemptsOnCurrentExercise + 1,
+                currentExerciseAnswers = currentExerciseAnswers + answer,
                 firstAttemptCorrect = firstAttemptCorrect + if (firstAttempt) 1 else 0,
                 currentFirstAttemptCorrectStreak = updatedStreak,
                 longestFirstAttemptCorrectStreak = maxOf(
@@ -95,6 +104,7 @@ data class PracticeSessionState(
         } else {
             copy(
                 attemptsOnCurrentExercise = attemptsOnCurrentExercise + 1,
+                currentExerciseAnswers = currentExerciseAnswers + answer,
                 errors = errors + 1,
                 currentFirstAttemptCorrectStreak = 0,
                 validation = PracticeValidationState.Incorrect,
@@ -104,8 +114,16 @@ data class PracticeSessionState(
 
     fun nextExercise(): PracticeSessionState {
         if (validation != PracticeValidationState.Correct || isCompleted) return this
+        val completedAnswer = PracticeCompletedAnswer(
+            exerciseIndex = currentExerciseIndex,
+            responses = currentExerciseAnswers,
+        )
+        val updatedCompletedAnswers = completedAnswers + completedAnswer
         if (currentExerciseIndex == session.exercises.lastIndex) {
-            return copy(isCompleted = true)
+            return copy(
+                isCompleted = true,
+                completedAnswers = updatedCompletedAnswers,
+            )
         }
 
         return copy(
@@ -114,6 +132,8 @@ data class PracticeSessionState(
             attemptsOnCurrentExercise = 0,
             validation = PracticeValidationState.AwaitingAnswer,
             revealedHintCount = 0,
+            completedAnswers = updatedCompletedAnswers,
+            currentExerciseAnswers = emptyList(),
         )
     }
 
@@ -148,6 +168,7 @@ data class PracticeSessionState(
                 ?: setOf(PracticeContentGroup.SpanishAlphabet),
             mode = session.mode,
             longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+            sessionId = sessionId,
         )
     }
 }

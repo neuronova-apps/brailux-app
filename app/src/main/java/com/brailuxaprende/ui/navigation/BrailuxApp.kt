@@ -36,6 +36,7 @@ import androidx.navigation.compose.rememberNavController
 import com.brailuxaprende.R
 import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.data.practice.PracticeProgress
+import com.brailuxaprende.data.practice.StoredPracticeSessions
 import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
@@ -46,6 +47,8 @@ import com.brailuxaprende.practice.CustomPracticeConfiguration
 import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.PracticeLevel
+import com.brailuxaprende.practice.PracticeSessionSnapshot
 import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
@@ -125,6 +128,10 @@ fun BrailuxApp(
     learningProgress: LearningProgress = LearningProgress(),
     practiceProgress: PracticeProgress = PracticeProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
+    practiceSessions: StoredPracticeSessions = StoredPracticeSessions(
+        isLoaded = true,
+        snapshots = emptyMap(),
+    ),
     currentDate: PracticeDate = SystemPracticeClock.today(),
     seasonalEvent: SeasonalEvent? = null,
     onSoundEnabledChange: (Boolean) -> Unit,
@@ -149,6 +156,13 @@ fun BrailuxApp(
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit = { _, onRecorded -> onRecorded(null) },
+    onPracticeSessionChanged: (PracticeSessionSnapshot) -> Unit = {},
+    onPracticeSessionReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit = { _, onPersisted -> onPersisted(true) },
+    onPracticeSessionCreditResolved: (PracticeSessionSnapshot) -> Unit = {},
+    onPracticeSessionCleared: (PracticeLevel) -> Unit = {},
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -173,6 +187,7 @@ fun BrailuxApp(
             learningProgress = learningProgress,
             practiceProgress = practiceProgress,
             engagementProgress = engagementProgress,
+            practiceSessions = practiceSessions,
             currentDate = currentDate,
             seasonalEvent = seasonalEvent,
             onSoundEnabledChange = onSoundEnabledChange,
@@ -189,6 +204,10 @@ fun BrailuxApp(
             onCustomPracticeConfigurationUsed = onCustomPracticeConfigurationUsed,
             onCustomSessionCompleted = onCustomSessionCompleted,
             onDailySessionCompleted = onDailySessionCompleted,
+            onPracticeSessionChanged = onPracticeSessionChanged,
+            onPracticeSessionReadyForCredit = onPracticeSessionReadyForCredit,
+            onPracticeSessionCreditResolved = onPracticeSessionCreditResolved,
+            onPracticeSessionCleared = onPracticeSessionCleared,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -274,6 +293,7 @@ private fun BrailuxNavHost(
     learningProgress: LearningProgress,
     practiceProgress: PracticeProgress,
     engagementProgress: EngagementProgress,
+    practiceSessions: StoredPracticeSessions,
     currentDate: PracticeDate,
     seasonalEvent: SeasonalEvent?,
     onSoundEnabledChange: (Boolean) -> Unit,
@@ -296,6 +316,13 @@ private fun BrailuxNavHost(
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit,
+    onPracticeSessionChanged: (PracticeSessionSnapshot) -> Unit,
+    onPracticeSessionReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onPracticeSessionCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onPracticeSessionCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedPracticeModeName by rememberSaveable {
@@ -309,6 +336,10 @@ private fun BrailuxNavHost(
         >(
             save = { configuration ->
                 listOf(
+                    configuration.additionalContentGroups
+                        .map { it.name }
+                        .sorted()
+                        .joinToString(","),
                     configuration.exerciseCount.name,
                     configuration.mode.name,
                     configuration.hintsEnabled.toString(),
@@ -316,11 +347,27 @@ private fun BrailuxNavHost(
                 )
             },
             restore = { values ->
+                val hasStoredGroups = values.size >= 5
+                val valueOffset = if (hasStoredGroups) 1 else 0
+                val additionalGroups = if (hasStoredGroups) {
+                    values[0].split(',').mapNotNull { storedName ->
+                        com.brailuxaprende.practice.PracticeContentGroup.entries.firstOrNull {
+                            it.name == storedName &&
+                                it != com.brailuxaprende.practice.PracticeContentGroup.SpanishAlphabet &&
+                                it.isAvailable
+                        }
+                    }.toSet()
+                } else {
+                    emptySet()
+                }
                 CustomPracticeConfiguration(
-                    exerciseCount = com.brailuxaprende.practice.CustomExerciseCount.valueOf(values[0]),
-                    mode = PracticeMode.valueOf(values[1]),
-                    hintsEnabled = values[2].toBoolean(),
-                    showPointNumbers = values[3].toBoolean(),
+                    additionalContentGroups = additionalGroups,
+                    exerciseCount = com.brailuxaprende.practice.CustomExerciseCount.valueOf(
+                        values[valueOffset],
+                    ),
+                    mode = PracticeMode.valueOf(values[valueOffset + 1]),
+                    hintsEnabled = values[valueOffset + 2].toBoolean(),
+                    showPointNumbers = values[valueOffset + 3].toBoolean(),
                 )
             },
         ),
@@ -518,6 +565,12 @@ private fun BrailuxNavHost(
                 mode = selectedPracticeMode,
                 onSessionCompleted = onLevel1SessionCompleted,
                 onBackToPractice = ::backToPractice,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.BrailleExplorer],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
             )
         }
         composable(BrailuxRoutes.BRAILLE_RECOGNIZER) {
@@ -525,6 +578,12 @@ private fun BrailuxNavHost(
                 mode = selectedPracticeMode,
                 onSessionCompleted = onLevel2SessionCompleted,
                 onBackToPractice = ::backToPractice,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.BrailleRecognizer],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
             )
         }
         composable(BrailuxRoutes.BRAILLE_CHALLENGE) {
@@ -532,6 +591,12 @@ private fun BrailuxNavHost(
                 mode = selectedPracticeMode,
                 onSessionCompleted = onLevel3SessionCompleted,
                 onBackToPractice = ::backToPractice,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.BrailleChallenge],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
             )
         }
         composable(BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION) {
@@ -556,12 +621,24 @@ private fun BrailuxNavHost(
                     )
                 },
                 onBackToPractice = ::backToPractice,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.Custom],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
             )
         }
         composable(BrailuxRoutes.DAILY_PRACTICE) {
             DailyPracticeScreen(
                 onSessionCompleted = onDailySessionCompleted,
                 onBackToHome = ::backToHome,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.Daily],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
             )
         }
     }

@@ -236,6 +236,46 @@ class PracticeSessionStateTest {
         assertFalse(state.togglePointNumbers().showPointNumbers)
     }
 
+    @Test
+    fun recordsCurrentResponsesAndMovesThemToCompletedHistory() {
+        val initial = newState()
+        val incorrect = incorrectAnswer(initial)
+        val checkedIncorrect = initial.selectAnswer(incorrect).checkAnswer()
+        val checkedCorrect = checkedIncorrect
+            .selectAnswer(initial.currentExercise.target.printedCharacter)
+            .checkAnswer()
+
+        assertEquals(
+            listOf(incorrect, initial.currentExercise.target.printedCharacter),
+            checkedCorrect.currentExerciseAnswers,
+        )
+        assertTrue(checkedCorrect.completedAnswers.isEmpty())
+
+        val advanced = checkedCorrect.nextExercise()
+
+        assertEquals(1, advanced.completedAnswers.size)
+        assertEquals(0, advanced.completedAnswers.single().exerciseIndex)
+        assertEquals(
+            checkedCorrect.currentExerciseAnswers,
+            advanced.completedAnswers.single().responses,
+        )
+        assertTrue(advanced.currentExerciseAnswers.isEmpty())
+    }
+
+    @Test
+    fun summaryReusesTheStableSessionId() {
+        var state = PracticeSessionState(
+            session = PracticeSessionGenerator.generate(random = Random(22)),
+            sessionId = "stable-session-id",
+        )
+        repeat(state.session.exercises.size) {
+            state = answerCorrectlyAndAdvance(state)
+        }
+
+        assertEquals("stable-session-id", state.summary().sessionId)
+        assertEquals(state.summary().sessionId, state.summary().sessionId)
+    }
+
     private fun newState(): PracticeSessionState = PracticeSessionState(
         PracticeSessionGenerator.generate(random = Random(12)),
     )

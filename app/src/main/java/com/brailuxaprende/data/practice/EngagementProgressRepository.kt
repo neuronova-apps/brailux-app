@@ -9,9 +9,11 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.EngagementEngine
 import com.brailuxaprende.practice.EngagementProgress
+import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.EngagementSession
 import com.brailuxaprende.practice.EngagementUpdate
 import com.brailuxaprende.practice.PermanentAchievement
@@ -35,21 +37,87 @@ class EngagementProgressRepository(
         session: EngagementSession,
         date: PracticeDate,
     ): EngagementUpdate {
-        var update: EngagementUpdate? = null
+        var record: EngagementRecordResult? = null
         dataStore.edit { preferences ->
-            update = preferences.recordEngagement(session, date)
+            record = preferences.recordEngagement(session, date)
         }
-        return checkNotNull(update)
+        return checkNotNull(record).update
     }
 }
+
+internal data class EngagementRecordResult(
+    val update: EngagementUpdate,
+    val isNewlyRecorded: Boolean,
+)
 
 internal fun MutablePreferences.recordEngagement(
     session: EngagementSession,
     date: PracticeDate,
-): EngagementUpdate {
-    val update = EngagementEngine.recordSession(toEngagementProgress(), session, date)
+): EngagementRecordResult {
+    val current = toEngagementProgress()
+    if (session.id in this[RecordedSessionIdsKey].orEmpty()) {
+        val reward = this[recordedRewardKey(session.id)]
+            ?.toEngagementReward()
+            ?: EngagementReward(
+                xpEarned = 0,
+                addedPracticeDay = false,
+                weeklyPracticeDays = current.weeklyPracticeDays(date),
+                currentStreak = current.currentStreak,
+                miniAchievementCompleted = null,
+                newlyUnlockedAchievements = emptySet(),
+            )
+        return EngagementRecordResult(
+            update = EngagementUpdate(progress = current, reward = reward),
+            isNewlyRecorded = false,
+        )
+    }
+
+    val update = EngagementEngine.recordSession(current, session, date)
     writeEngagement(update.progress)
-    return update
+    this[RecordedSessionIdsKey] = this[RecordedSessionIdsKey].orEmpty() + session.id
+    this[recordedRewardKey(session.id)] = update.reward.toStoredValue()
+    return EngagementRecordResult(update = update, isNewlyRecorded = true)
+}
+
+private fun EngagementReward.toStoredValue(): String = listOf(
+    xpEarned.toString(),
+    addedPracticeDay.toString(),
+    weeklyPracticeDays.toString(),
+    currentStreak.toString(),
+    miniAchievementCompleted?.name.orEmpty(),
+    newlyUnlockedAchievements.map { it.name }.sorted().joinToString(","),
+).joinToString("|")
+
+private fun String.toEngagementReward(): EngagementReward? {
+    val parts = split('|', limit = StoredRewardPartCount)
+    if (parts.size != StoredRewardPartCount) return null
+
+    val xpEarned = parts[0].toIntOrNull()?.takeIf { it >= 0 } ?: return null
+    val addedPracticeDay = when (parts[1]) {
+        "true" -> true
+        "false" -> false
+        else -> return null
+    }
+    val weeklyPracticeDays = parts[2].toIntOrNull()?.takeIf { it >= 0 } ?: return null
+    val currentStreak = parts[3].toIntOrNull()?.takeIf { it >= 0 } ?: return null
+    val miniAchievement = parts[4].takeIf(String::isNotEmpty)?.let { storedName ->
+        DailyMiniAchievement.entries.firstOrNull { it.name == storedName } ?: return null
+    }
+    val achievements = if (parts[5].isEmpty()) {
+        emptySet()
+    } else {
+        parts[5].split(',').map { storedName ->
+            PermanentAchievement.entries.firstOrNull { it.name == storedName } ?: return null
+        }.toSet()
+    }
+    return EngagementReward(
+        xpEarned = xpEarned,
+        addedPracticeDay = addedPracticeDay,
+        weeklyPracticeDays = weeklyPracticeDays,
+        currentStreak = currentStreak,
+        miniAchievementCompleted = miniAchievement,
+        newlyUnlockedAchievements = achievements,
+    )
 }
 
 internal fun Preferences.toEngagementProgress(): EngagementProgress {
@@ -249,4 +317,10 @@ private val MiniProgressKey = intPreferencesKey("engagement_mini_progress")
 private val MiniCompletedKey = booleanPreferencesKey("engagement_mini_completed")
 private val MiniRewardedDatesKey = stringPreferencesKey("engagement_mini_rewarded_dates")
 private val DailyModalitiesKey = stringPreferencesKey("engagement_daily_modalities")
+private val RecordedSessionIdsKey = stringSetPreferencesKey("engagement_recorded_session_ids")
 private val MonthKeyPattern = Regex("\\d{4}-(0[1-9]|1[0-2])")
+private const val RecordedRewardKeyPrefix = "engagement_recorded_session_reward_"
+private const val StoredRewardPartCount = 6
+
+private fun recordedRewardKey(sessionId: String) =
+    stringPreferencesKey(RecordedRewardKeyPrefix + sessionId)

@@ -1,5 +1,7 @@
 package com.brailuxaprende.practice
 
+import java.util.UUID
+
 const val WeeklyPracticeTarget = 5
 const val MonthlyExerciseTarget = 100
 const val XpPerCompletedExercise = 2
@@ -118,8 +120,10 @@ data class EngagementSession(
     val hintsUsed: Int = 0,
     val mode: PracticeMode = PracticeMode.SignToCharacter,
     val longestFirstAttemptCorrectStreak: Int = 0,
+    val id: String = UUID.randomUUID().toString(),
 ) {
     init {
+        require(id.isNotBlank())
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
         require(errors >= 0)

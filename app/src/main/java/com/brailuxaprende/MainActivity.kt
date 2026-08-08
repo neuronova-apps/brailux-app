@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -13,6 +14,7 @@ import com.brailuxaprende.data.learn.LearningProgressRepository
 import com.brailuxaprende.data.learn.LearningProgressState
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
+import com.brailuxaprende.data.practice.PracticeSessionRepository
 import com.brailuxaprende.data.practice.CustomPracticePreferencesRepository
 import com.brailuxaprende.data.practice.CustomPracticePreferencesState
 import com.brailuxaprende.data.practice.EngagementProgressRepository
@@ -23,6 +25,8 @@ import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
+import com.brailuxaprende.ui.screens.PracticeSessionViewModel
+import com.brailuxaprende.ui.screens.PracticeSessionViewModelFactory
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeSessionKind
@@ -30,6 +34,15 @@ import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    private val practiceSessionViewModel by viewModels<PracticeSessionViewModel> {
+        PracticeSessionViewModelFactory(
+            owner = this,
+            defaultArgs = null,
+            repository = PracticeSessionRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+        )
+    }
     private val settingsState by lazy {
         AccessibilitySettingsState(
             repository = AccessibilityPreferencesRepository(
@@ -82,6 +95,7 @@ class MainActivity : ComponentActivity() {
             val customPracticeConfiguration by
                 customPracticePreferencesState.configuration.collectAsState()
             val engagementProgress by engagementProgressState.progress.collectAsState()
+            val practiceSessions by practiceSessionViewModel.sessions.collectAsState()
             val currentPracticeDate = rememberCurrentPracticeDate()
             val currentDate = AnnualDate(
                 month = currentPracticeDate.month,
@@ -103,6 +117,7 @@ class MainActivity : ComponentActivity() {
                     learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,
+                    practiceSessions = practiceSessions,
                     currentDate = currentPracticeDate,
                     customPracticeConfiguration = customPracticeConfiguration,
                     seasonalEvent = seasonalEvent,
@@ -146,6 +161,12 @@ class MainActivity : ComponentActivity() {
                             onRecorded = onRecorded,
                         )
                     },
+                    onPracticeSessionChanged = practiceSessionViewModel::save,
+                    onPracticeSessionReadyForCredit =
+                        practiceSessionViewModel::saveBeforeCredit,
+                    onPracticeSessionCreditResolved =
+                        practiceSessionViewModel::resolveCredit,
+                    onPracticeSessionCleared = practiceSessionViewModel::clear,
                 )
             }
         }

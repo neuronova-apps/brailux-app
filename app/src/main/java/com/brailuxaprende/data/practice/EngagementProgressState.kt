@@ -50,6 +50,7 @@ class EngagementProgressState(
 internal fun PracticeSessionSummary.toEngagementSession(
     kind: PracticeSessionKind,
 ): EngagementSession = EngagementSession(
+    id = sessionId,
     kind = kind,
     exercisesCompleted = exercisesCompleted,
     firstAttemptCorrect = firstAttemptCorrect,

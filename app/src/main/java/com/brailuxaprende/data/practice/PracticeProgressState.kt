@@ -34,6 +34,7 @@ class PracticeProgressState(
                     practiceDate = practiceDate,
                     mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    sessionId = summary.sessionId,
                 )
                 onRecorded(true)
             } catch (exception: CancellationException) {
@@ -59,6 +60,7 @@ class PracticeProgressState(
                     practiceDate = practiceDate,
                     mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    sessionId = summary.sessionId,
                 )
                 onRecorded(true)
             } catch (exception: CancellationException) {
@@ -83,6 +85,7 @@ class PracticeProgressState(
                     practiceDate = practiceDate,
                     mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    sessionId = summary.sessionId,
                 )
                 onRecorded(true)
             } catch (exception: CancellationException) {

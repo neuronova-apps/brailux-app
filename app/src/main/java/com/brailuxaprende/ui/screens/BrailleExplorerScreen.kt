@@ -1,5 +1,6 @@
 package com.brailuxaprende.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,11 +24,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -53,6 +50,8 @@ import com.brailuxaprende.practice.PracticeLevel
 import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.PracticeSession
 import com.brailuxaprende.practice.PracticeSessionGenerator
+import com.brailuxaprende.practice.PracticeSessionPhase
+import com.brailuxaprende.practice.PracticeSessionSnapshot
 import com.brailuxaprende.practice.PracticeSessionState
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeValidationState
@@ -77,6 +76,15 @@ fun DailyPracticeScreen(
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit,
     onBackToHome: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
@@ -84,6 +92,12 @@ fun DailyPracticeScreen(
         sessionFactory = { PracticeSessionGenerator.generateDaily() },
         onDailySessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToHome,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
         modifier = modifier,
     )
 }
@@ -93,13 +107,32 @@ fun BrailleExplorerScreen(
     mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleExplorer,
-        sessionFactory = { PracticeSessionGenerator.generate(mode) },
+        sessionFactory = {
+            PracticeSessionGenerator.generate(
+                storedSnapshot?.state?.session?.mode ?: mode,
+            )
+        },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
         modifier = modifier,
     )
 }
@@ -109,13 +142,32 @@ fun BrailleRecognizerScreen(
     mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleRecognizer,
-        sessionFactory = { PracticeSessionGenerator.generateLevel2(mode) },
+        sessionFactory = {
+            PracticeSessionGenerator.generateLevel2(
+                storedSnapshot?.state?.session?.mode ?: mode,
+            )
+        },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
         modifier = modifier,
     )
 }
@@ -125,13 +177,32 @@ fun BrailleChallengeScreen(
     mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleChallenge,
-        sessionFactory = { PracticeSessionGenerator.generateLevel3(mode) },
+        sessionFactory = {
+            PracticeSessionGenerator.generateLevel3(
+                storedSnapshot?.state?.session?.mode ?: mode,
+            )
+        },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
         modifier = modifier,
     )
 }
@@ -142,15 +213,34 @@ fun CustomBraillePracticeScreen(
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onChangeConfiguration: () -> Unit,
     onBackToPractice: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.Custom,
-        sessionFactory = { PracticeSessionGenerator.generateCustom(configuration) },
+        sessionFactory = {
+            PracticeSessionGenerator.generateCustom(
+                storedSnapshot?.state?.session?.customConfiguration ?: configuration,
+            )
+        },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         customConfiguration = configuration,
         onChangeConfiguration = onChangeConfiguration,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
         modifier = modifier,
     )
 }
@@ -168,62 +258,125 @@ private fun BraillePracticeLevelScreen(
     onBackToPractice: () -> Unit,
     customConfiguration: CustomPracticeConfiguration? = null,
     onChangeConfiguration: (() -> Unit)? = null,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var sessionKey by rememberSaveable { mutableStateOf(0) }
-    val session = remember(sessionKey) { sessionFactory() }
-    var state by remember(session) { mutableStateOf(PracticeSessionState(session)) }
-    var completionPending by remember(session) { mutableStateOf(false) }
-    var completionFailed by remember(session) { mutableStateOf(false) }
-    var engagementReward by remember(session) { mutableStateOf<EngagementReward?>(null) }
+    LaunchedEffect(sessionsLoaded, level, storedSnapshot?.sessionId) {
+        if (sessionsLoaded && storedSnapshot == null) {
+            onSnapshotChanged(
+                PracticeSessionSnapshot(
+                    state = PracticeSessionState(sessionFactory()),
+                ),
+            )
+        }
+    }
 
-    if (state.isCompleted) {
+    val snapshot = storedSnapshot?.takeIf { it.level == level }
+    if (!sessionsLoaded || snapshot == null) return
+
+    LaunchedEffect(snapshot.sessionId, snapshot.phase) {
+        if (snapshot.phase == PracticeSessionPhase.AwaitingCredit) {
+            onSnapshotReadyForCredit(snapshot) { persisted ->
+                if (!persisted) {
+                    onSnapshotCreditResolved(
+                        snapshot.copy(phase = PracticeSessionPhase.CreditFailed),
+                    )
+                } else if (onDailySessionCompleted != null) {
+                    onDailySessionCompleted(requireNotNull(snapshot.summary)) { reward ->
+                        onSnapshotCreditResolved(
+                            if (reward == null) {
+                                snapshot.copy(phase = PracticeSessionPhase.CreditFailed)
+                            } else {
+                                snapshot.copy(
+                                    phase = PracticeSessionPhase.Credited,
+                                    engagementReward = reward,
+                                )
+                            },
+                        )
+                    }
+                } else {
+                    requireNotNull(onSessionCompleted)(requireNotNull(snapshot.summary)) { recorded ->
+                        onSnapshotCreditResolved(
+                            snapshot.copy(
+                                phase = if (recorded) {
+                                    PracticeSessionPhase.Credited
+                                } else {
+                                    PracticeSessionPhase.CreditFailed
+                                },
+                            ),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    val state = snapshot.state
+    if (snapshot.phase == PracticeSessionPhase.Credited) {
+        BackHandler {
+            onBackToPractice()
+            onSnapshotCleared(level)
+        }
         BraillePracticeSummary(
             level = level,
-            summary = state.summary(),
-            onPracticeAgain = { sessionKey += 1 },
-            customConfiguration = customConfiguration,
-            onChangeConfiguration = onChangeConfiguration,
-            engagementReward = engagementReward,
-            onBackToPractice = onBackToPractice,
+            summary = requireNotNull(snapshot.summary),
+            onPracticeAgain = {
+                onSnapshotChanged(
+                    PracticeSessionSnapshot(
+                        state = PracticeSessionState(sessionFactory()),
+                    ),
+                )
+            },
+            customConfiguration = state.session.customConfiguration ?: customConfiguration,
+            onChangeConfiguration = onChangeConfiguration?.let { changeConfiguration ->
+                {
+                    changeConfiguration()
+                    onSnapshotCleared(level)
+                }
+            },
+            engagementReward = snapshot.engagementReward,
+            onBackToPractice = {
+                onBackToPractice()
+                onSnapshotCleared(level)
+            },
             modifier = modifier,
         )
     } else {
         BraillePracticeExercise(
             level = level,
             state = state,
-            completionPending = completionPending,
-            completionFailed = completionFailed,
-            onStateChange = { state = it },
+            completionPending = snapshot.phase == PracticeSessionPhase.AwaitingCredit,
+            completionFailed = snapshot.phase == PracticeSessionPhase.CreditFailed,
+            onStateChange = { updatedState ->
+                onSnapshotChanged(snapshot.copy(state = updatedState))
+            },
             onNext = {
-                if (!completionPending) {
-                    val nextState = state.nextExercise()
-                    if (nextState.isCompleted) {
-                        completionPending = true
-                        completionFailed = false
-                        if (onDailySessionCompleted != null) {
-                            onDailySessionCompleted(nextState.summary()) { reward ->
-                                completionPending = false
-                                if (reward != null) {
-                                    engagementReward = reward
-                                    state = nextState
-                                } else {
-                                    completionFailed = true
-                                }
-                            }
-                        } else {
-                            requireNotNull(onSessionCompleted)(nextState.summary()) { recorded ->
-                                completionPending = false
-                                if (recorded) {
-                                    state = nextState
-                                } else {
-                                    completionFailed = true
-                                }
-                            }
-                        }
-                    } else {
-                        state = nextState
-                    }
+                if (snapshot.phase != PracticeSessionPhase.AwaitingCredit) {
+                    val nextState = if (state.isCompleted) state else state.nextExercise()
+                    onSnapshotChanged(
+                        snapshot.copy(
+                            state = nextState,
+                            phase = if (nextState.isCompleted) {
+                                PracticeSessionPhase.AwaitingCredit
+                            } else {
+                                PracticeSessionPhase.Active
+                            },
+                            creditAttempt = if (nextState.isCompleted) {
+                                snapshot.creditAttempt + 1
+                            } else {
+                                snapshot.creditAttempt
+                            },
+                            engagementReward = null,
+                        ),
+                    )
                 }
             },
             onBack = onBackToPractice,

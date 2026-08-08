@@ -185,6 +185,70 @@ class PracticeProgressRepositoryTest {
     }
 
     @Test
+    fun replayingStableIdsDoesNotDuplicateLevelProgressOrEngagement() = runBlocking {
+        val level1 = repository.recordLevel1Session(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 8,
+            practiceDate = "2026-08-09",
+            sessionId = "level-1-stable-session",
+        )
+        val level2 = repository.recordLevel2Session(
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 11,
+            errors = 4,
+            hintsUsed = 2,
+            practiceDate = "2026-08-09",
+            sessionId = "level-2-stable-session",
+        )
+        val level3 = repository.recordLevel3Session(
+            exercisesCompleted = 20,
+            firstAttemptCorrect = 15,
+            errors = 5,
+            practiceDate = "2026-08-09",
+            sessionId = "level-3-stable-session",
+        )
+        val engagementBeforeReplay = EngagementProgressRepository(dataStore).progress.first()
+
+        val reopened = reopenRepository()
+        val replayedLevel1 = reopened.recordLevel1Session(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 8,
+            practiceDate = "2026-08-09",
+            sessionId = "level-1-stable-session",
+        )
+        val replayedLevel2 = reopened.recordLevel2Session(
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 11,
+            errors = 4,
+            hintsUsed = 2,
+            practiceDate = "2026-08-09",
+            sessionId = "level-2-stable-session",
+        )
+        val replayedLevel3 = reopened.recordLevel3Session(
+            exercisesCompleted = 20,
+            firstAttemptCorrect = 15,
+            errors = 5,
+            practiceDate = "2026-08-09",
+            sessionId = "level-3-stable-session",
+        )
+
+        val progress = reopened.progress.first()
+        val engagementAfterReplay = EngagementProgressRepository(dataStore).progress.first()
+        assertEquals(1, progress.level1CompletedSessions)
+        assertEquals(10, progress.level1TotalExercises)
+        assertEquals(1, progress.level2CompletedSessions)
+        assertEquals(15, progress.level2TotalExercises)
+        assertEquals(1, progress.level3CompletedSessions)
+        assertEquals(20, progress.level3TotalExercises)
+        assertEquals(engagementBeforeReplay, engagementAfterReplay)
+        assertEquals(3, engagementAfterReplay.totalSessions)
+        assertEquals(45L, engagementAfterReplay.totalExercises)
+        assertEquals(level1.engagementUpdate.reward, replayedLevel1.engagementUpdate.reward)
+        assertEquals(level2.engagementUpdate.reward, replayedLevel2.engagementUpdate.reward)
+        assertEquals(level3.engagementUpdate.reward, replayedLevel3.engagementUpdate.reward)
+    }
+
+    @Test
     fun completedSessionsAccumulateAndPersist() = runBlocking {
         repository.recordLevel1Session(10, 8, "2026-08-06")
         repository.recordLevel1Session(10, 7, "2026-08-07")

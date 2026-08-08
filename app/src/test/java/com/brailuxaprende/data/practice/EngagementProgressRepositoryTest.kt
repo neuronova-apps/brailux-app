@@ -14,11 +14,15 @@ import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.PracticeSessionKind
 import java.io.File
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -110,16 +114,19 @@ class EngagementProgressRepositoryTest {
     }
 
     @Test
-    fun dailyCompletionRemainsFullyIdempotentAfterRestoration() = runBlocking {
+    fun dailyCompletionRemainsFullyIdempotentForANewSessionIdAfterRestoration() = runBlocking {
         val date = dateForMini(DailyMiniAchievement.ThreeFirstAttemptCorrect)
         val dailySession = session(
             kind = PracticeSessionKind.Daily,
             exercises = 5,
             firstAttemptCorrect = 0,
-        )
+        ).copy(id = "daily-session-original")
         val first = repository.recordSession(dailySession, date)
 
-        val repeated = reopenRepository().recordSession(dailySession, date)
+        val repeated = reopenRepository().recordSession(
+            dailySession.copy(id = "daily-session-new-attempt"),
+            date,
+        )
 
         assertEquals(20, first.reward.xpEarned)
         assertEquals(0, repeated.reward.xpEarned)
@@ -129,6 +136,92 @@ class EngagementProgressRepositoryTest {
         assertEquals(mapOf(date.monthKey to 5), repeated.progress.monthlyExerciseCounts)
         assertEquals(setOf(date), repeated.progress.dailyPracticeDates)
         assertEquals(1, repeated.progress.activityDates.size)
+    }
+
+    @Test
+    fun sameSessionIdReplaysOriginalRewardWithoutMutatingProgress() = runBlocking {
+        val date = dateForMini(DailyMiniAchievement.CompleteSession)
+        val dailySession = session(
+            kind = PracticeSessionKind.Daily,
+            exercises = 5,
+            firstAttemptCorrect = 5,
+            mode = PracticeMode.Mixed,
+        ).copy(id = "daily-session-replayed")
+        val first = repository.recordSession(dailySession, date)
+
+        val replayed = reopenRepository().recordSession(dailySession, date)
+        val restored = repository.progress.first()
+
+        assertEquals(first.reward, replayed.reward)
+        assertEquals(first.progress, replayed.progress)
+        assertEquals(first.progress, restored)
+        assertEquals(1, restored.totalSessions)
+        assertEquals(5L, restored.totalExercises)
+        assertEquals(setOf(date), restored.dailyPracticeDates)
+        assertEquals(DailyMiniAchievement.CompleteSession, replayed.reward.miniAchievementCompleted)
+        assertTrue(PermanentAchievement.FirstStep in replayed.reward.newlyUnlockedAchievements)
+    }
+
+    @Test
+    fun customSessionReplayAfterRestorationPreservesRewardWithoutDuplicatingProgress() = runBlocking {
+        val date = dateForMini(DailyMiniAchievement.CompleteFiveExercises)
+        val customSession = session(
+            kind = PracticeSessionKind.Custom,
+            exercises = 10,
+            firstAttemptCorrect = 7,
+            mode = PracticeMode.Mixed,
+        ).copy(id = "custom-session-replayed")
+        val first = repository.recordSession(customSession, date)
+
+        val replayed = reopenRepository().recordSession(customSession, date)
+        val restored = repository.progress.first()
+
+        assertEquals(first.reward, replayed.reward)
+        assertEquals(first.progress, replayed.progress)
+        assertEquals(first.progress, restored)
+        assertEquals(40L, restored.totalXp)
+        assertEquals(1, restored.totalSessions)
+        assertEquals(10L, restored.totalExercises)
+        assertEquals(1, restored.customSessions)
+        assertEquals(mapOf(date.monthKey to 10), restored.monthlyExerciseCounts)
+        assertEquals(first.progress.miniAchievement(date), restored.miniAchievement(date))
+        assertTrue(restored.miniAchievement(date).completed)
+        assertEquals(setOf(date), restored.miniRewardedDates)
+    }
+
+    @Test
+    fun concurrentRecordingsWithTheSameSessionIdCreditOnlyOnce() = runBlocking {
+        val date = dateForMini(DailyMiniAchievement.CompleteSession)
+        val customSession = session(
+            kind = PracticeSessionKind.Custom,
+            exercises = 10,
+            firstAttemptCorrect = 6,
+            mode = PracticeMode.Mixed,
+        ).copy(id = "custom-session-concurrent")
+        val start = CompletableDeferred<Unit>()
+
+        val results = coroutineScope {
+            val recordings = List(2) {
+                async(Dispatchers.Default) {
+                    start.await()
+                    repository.recordSession(customSession, date)
+                }
+            }
+            start.complete(Unit)
+            recordings.awaitAll()
+        }
+        val stored = repository.progress.first()
+
+        assertEquals(results[0].reward, results[1].reward)
+        assertEquals(stored, results[0].progress)
+        assertEquals(stored, results[1].progress)
+        assertEquals(40L, stored.totalXp)
+        assertEquals(1, stored.totalSessions)
+        assertEquals(10L, stored.totalExercises)
+        assertEquals(1, stored.customSessions)
+        assertEquals(mapOf(date.monthKey to 10), stored.monthlyExerciseCounts)
+        assertTrue(stored.miniAchievement(date).completed)
+        assertEquals(setOf(date), stored.miniRewardedDates)
     }
 
     @Test
