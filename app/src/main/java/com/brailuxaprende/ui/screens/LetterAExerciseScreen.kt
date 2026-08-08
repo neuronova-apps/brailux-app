@@ -37,13 +37,17 @@ private enum class ExerciseFeedback {
 }
 
 @Composable
-fun LetterAExerciseScreen(
-    onBack: () -> Unit,
+fun GuidedBrailleExercise(
+    character: Char,
+    continueLabel: String,
+    onSolved: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var selectedPoints by remember { mutableStateOf(emptySet<Int>()) }
-    var feedback by remember { mutableStateOf<ExerciseFeedback?>(null) }
-    val expectedCell = remember { requireNotNull(BrailleRepository.findVowel('A')).cell }
+    var selectedPoints by remember(character) { mutableStateOf(emptySet<Int>()) }
+    var feedback by remember(character) { mutableStateOf<ExerciseFeedback?>(null) }
+    val expectedCell = remember(character) {
+        requireNotNull(BrailleRepository.findCharacter(character)).cell
+    }
     val isAnswerLocked = feedback == ExerciseFeedback.Correct
 
     fun resetExercise() {
@@ -51,6 +55,77 @@ fun LetterAExerciseScreen(
         feedback = null
     }
 
+    Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        BrailuxSectionCard(modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp)) {
+            BrailleCellView(
+                cell = BrailleCell.fromPoints(selectedPoints),
+                interactive = !isAnswerLocked,
+                onPointClick = { point ->
+                    selectedPoints = if (point in selectedPoints) {
+                        selectedPoints - point
+                    } else {
+                        selectedPoints + point
+                    }
+                    feedback = null
+                },
+                contentDescription = stringResource(
+                    R.string.guided_exercise_cell_description,
+                    character.toString(),
+                ),
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+            BrailuxPrimaryButton(
+                text = stringResource(R.string.exercise_check),
+                onClick = {
+                    feedback = if (BrailleCell.fromPoints(selectedPoints) == expectedCell) {
+                        ExerciseFeedback.Correct
+                    } else {
+                        ExerciseFeedback.Incorrect
+                    }
+                },
+                enabled = !isAnswerLocked,
+                modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
+            )
+        }
+
+        feedback?.let { currentFeedback ->
+            Spacer(modifier = Modifier.height(16.dp))
+            BrailuxFeedbackCard(
+                message = if (currentFeedback == ExerciseFeedback.Correct) {
+                    stringResource(R.string.guided_exercise_correct, character.toString())
+                } else {
+                    stringResource(R.string.exercise_incorrect)
+                },
+                type = if (currentFeedback == ExerciseFeedback.Correct) {
+                    BrailuxFeedbackType.Success
+                } else {
+                    BrailuxFeedbackType.Warning
+                },
+                modifier = Modifier.widthIn(max = 560.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            if (currentFeedback == ExerciseFeedback.Correct) {
+                BrailuxPrimaryButton(
+                    text = continueLabel,
+                    onClick = onSolved,
+                    modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp),
+                )
+            } else {
+                BrailuxSecondaryButton(
+                    text = stringResource(R.string.exercise_try_again),
+                    onClick = ::resetExercise,
+                    modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LetterAExerciseScreen(
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -68,68 +143,11 @@ fun LetterAExerciseScreen(
                 onBack = onBack,
             )
             Spacer(modifier = Modifier.height(22.dp))
-            BrailuxSectionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            ) {
-                BrailleCellView(
-                    cell = BrailleCell.fromPoints(selectedPoints),
-                    interactive = !isAnswerLocked,
-                    onPointClick = { point ->
-                        selectedPoints = if (point in selectedPoints) {
-                            selectedPoints - point
-                        } else {
-                            selectedPoints + point
-                        }
-                        feedback = null
-                    },
-                    contentDescription = stringResource(R.string.exercise_cell_description),
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
-                )
-                BrailuxPrimaryButton(
-                    text = stringResource(R.string.exercise_check),
-                    onClick = {
-                        val answer = BrailleCell.fromPoints(selectedPoints)
-                        feedback = if (answer == expectedCell) {
-                            ExerciseFeedback.Correct
-                        } else {
-                            ExerciseFeedback.Incorrect
-                        }
-                    },
-                    enabled = !isAnswerLocked,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 24.dp),
-                )
-            }
-
-            feedback?.let { currentFeedback ->
-                Spacer(modifier = Modifier.height(18.dp))
-                BrailuxFeedbackCard(
-                    message = stringResource(
-                        if (currentFeedback == ExerciseFeedback.Correct) {
-                            R.string.exercise_correct
-                        } else {
-                            R.string.exercise_incorrect
-                        },
-                    ),
-                    type = if (currentFeedback == ExerciseFeedback.Correct) {
-                        BrailuxFeedbackType.Success
-                    } else {
-                        BrailuxFeedbackType.Error
-                    },
-                    modifier = Modifier.widthIn(max = 560.dp),
-                )
-                Spacer(modifier = Modifier.height(14.dp))
-                BrailuxSecondaryButton(
-                    text = stringResource(R.string.exercise_try_again),
-                    onClick = ::resetExercise,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
-                )
-            }
+            GuidedBrailleExercise(
+                character = 'A',
+                continueLabel = stringResource(R.string.action_back),
+                onSolved = onBack,
+            )
             Spacer(modifier = Modifier.height(20.dp))
         }
     }

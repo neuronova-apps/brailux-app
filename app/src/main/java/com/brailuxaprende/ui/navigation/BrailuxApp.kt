@@ -34,6 +34,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.brailuxaprende.R
+import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
@@ -46,6 +47,8 @@ import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.SystemPracticeClock
+import com.brailuxaprende.learning.LearningLesson
+import com.brailuxaprende.learning.LearningPath
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.BrailleChallengeScreen
@@ -56,7 +59,9 @@ import com.brailuxaprende.ui.screens.CustomPracticeConfigurationScreen
 import com.brailuxaprende.ui.screens.DailyPracticeScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
-import com.brailuxaprende.ui.screens.LetterAExerciseScreen
+import com.brailuxaprende.ui.screens.LettersAtoJLessonScreen
+import com.brailuxaprende.ui.screens.VowelsLessonScreen
+import com.brailuxaprende.ui.screens.ComingSoonLessonScreen
 import com.brailuxaprende.ui.screens.PlaceholderScreen
 import com.brailuxaprende.ui.screens.PracticeScreen
 import com.brailuxaprende.ui.screens.ProgressScreen
@@ -73,7 +78,10 @@ object BrailuxRoutes {
     const val SETTINGS = "configuracion"
     const val ABOUT = "acerca_de"
     const val SIX_DOTS_LESSON = "leccion_seis_puntos"
-    const val LETTER_A_EXERCISE = "ejercicio_letra_a"
+    const val VOWELS_LESSON = "leccion_vocales"
+    const val LETTERS_A_TO_J_LESSON = "leccion_letras_a_j"
+    const val LETTERS_K_TO_T_LESSON = "leccion_letras_k_t"
+    const val LETTERS_U_TO_Z_AND_ENYE_LESSON = "leccion_letras_u_z_enye"
     const val BRAILLE_EXPLORER = "practica_explorador_braille"
     const val BRAILLE_RECOGNIZER = "practica_reconocedor_braille"
     const val BRAILLE_CHALLENGE = "practica_desafio_braille"
@@ -98,7 +106,10 @@ private val bottomDestinations = listOf(
 private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.WELCOME,
     BrailuxRoutes.SIX_DOTS_LESSON,
-    BrailuxRoutes.LETTER_A_EXERCISE,
+    BrailuxRoutes.VOWELS_LESSON,
+    BrailuxRoutes.LETTERS_A_TO_J_LESSON,
+    BrailuxRoutes.LETTERS_K_TO_T_LESSON,
+    BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON,
     BrailuxRoutes.BRAILLE_EXPLORER,
     BrailuxRoutes.BRAILLE_RECOGNIZER,
     BrailuxRoutes.BRAILLE_CHALLENGE,
@@ -110,6 +121,7 @@ private val routesWithoutBottomBar = setOf(
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
+    learningProgress: LearningProgress = LearningProgress(),
     practiceProgress: PracticeProgress = PracticeProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
     currentDate: PracticeDate = SystemPracticeClock.today(),
@@ -120,6 +132,7 @@ fun BrailuxApp(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    onLearningLessonCompleted: (LearningLesson) -> Unit = {},
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
         { _, onRecorded -> onRecorded(true) },
@@ -156,6 +169,7 @@ fun BrailuxApp(
         BrailuxNavHost(
             navController = navController,
             preferences = preferences,
+            learningProgress = learningProgress,
             practiceProgress = practiceProgress,
             engagementProgress = engagementProgress,
             currentDate = currentDate,
@@ -166,6 +180,7 @@ fun BrailuxApp(
             onTextSizeChange = onTextSizeChange,
             onAppearanceChange = onAppearanceChange,
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
+            onLearningLessonCompleted = onLearningLessonCompleted,
             onLevel1SessionCompleted = onLevel1SessionCompleted,
             onLevel2SessionCompleted = onLevel2SessionCompleted,
             onLevel3SessionCompleted = onLevel3SessionCompleted,
@@ -255,6 +270,7 @@ private fun BrailuxBottomBar(
 private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
+    learningProgress: LearningProgress,
     practiceProgress: PracticeProgress,
     engagementProgress: EngagementProgress,
     currentDate: PracticeDate,
@@ -265,6 +281,7 @@ private fun BrailuxNavHost(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    onLearningLessonCompleted: (LearningLesson) -> Unit,
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
@@ -326,6 +343,24 @@ private fun BrailuxNavHost(
         }
     }
 
+    fun backToLearn() {
+        if (!navController.popBackStack(BrailuxRoutes.LEARN, inclusive = false)) {
+            navController.navigate(BrailuxRoutes.LEARN) { launchSingleTop = true }
+        }
+    }
+
+    fun openLearningLesson(lesson: LearningLesson) {
+        navController.navigate(learningRouteFor(lesson)) { launchSingleTop = true }
+    }
+
+    fun openNextLearningLesson(current: LearningLesson) {
+        val next = LearningPath.nextLesson(current) ?: return
+        navController.navigate(learningRouteFor(next)) {
+            popUpTo(BrailuxRoutes.LEARN)
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = BrailuxRoutes.WELCOME,
@@ -356,7 +391,8 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.LEARN) {
             LearnScreen(
-                onStartLesson = { navController.navigate(BrailuxRoutes.SIX_DOTS_LESSON) },
+                progress = learningProgress,
+                onOpenLesson = ::openLearningLesson,
                 onBack = ::goBack,
             )
         }
@@ -415,12 +451,50 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.SIX_DOTS_LESSON) {
             BrailleLessonScreen(
-                onPracticeLetterA = { navController.navigate(BrailuxRoutes.LETTER_A_EXERCISE) },
+                onCompleted = {
+                    onLearningLessonCompleted(LearningLesson.SixDots)
+                },
+                onNextLesson = {
+                    openNextLearningLesson(LearningLesson.SixDots)
+                },
+                onBackToLearn = ::backToLearn,
                 onBack = ::goBack,
             )
         }
-        composable(BrailuxRoutes.LETTER_A_EXERCISE) {
-            LetterAExerciseScreen(onBack = ::goBack)
+        composable(BrailuxRoutes.VOWELS_LESSON) {
+            VowelsLessonScreen(
+                onCompleted = {
+                    onLearningLessonCompleted(LearningLesson.Vowels)
+                },
+                onNextLesson = {
+                    openNextLearningLesson(LearningLesson.Vowels)
+                },
+                onBackToLearn = ::backToLearn,
+                onBack = ::goBack,
+            )
+        }
+        composable(BrailuxRoutes.LETTERS_A_TO_J_LESSON) {
+            LettersAtoJLessonScreen(
+                onCompleted = {
+                    onLearningLessonCompleted(LearningLesson.LettersAtoJ)
+                },
+                onBackToLearn = ::backToLearn,
+                onBack = ::goBack,
+            )
+        }
+        composable(BrailuxRoutes.LETTERS_K_TO_T_LESSON) {
+            ComingSoonLessonScreen(
+                lessonNumber = 4,
+                title = stringResource(R.string.learning_lesson_4_title),
+                onBack = ::goBack,
+            )
+        }
+        composable(BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON) {
+            ComingSoonLessonScreen(
+                lessonNumber = 5,
+                title = stringResource(R.string.learning_lesson_5_title),
+                onBack = ::goBack,
+            )
         }
         composable(BrailuxRoutes.BRAILLE_EXPLORER) {
             BrailleExplorerScreen(
@@ -496,3 +570,16 @@ internal fun bottomDestinationRoutes(): List<String> = bottomDestinations.map { 
 
 internal fun shouldPreserveMainDestinationState(route: String): Boolean =
     route != BrailuxRoutes.HOME
+
+internal fun learningRouteFor(lesson: LearningLesson): String = when (lesson) {
+    LearningLesson.SixDots -> BrailuxRoutes.SIX_DOTS_LESSON
+    LearningLesson.Vowels -> BrailuxRoutes.VOWELS_LESSON
+    LearningLesson.LettersAtoJ -> BrailuxRoutes.LETTERS_A_TO_J_LESSON
+    LearningLesson.LettersKtoT -> BrailuxRoutes.LETTERS_K_TO_T_LESSON
+    LearningLesson.LettersUtoZAndEnye -> BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON
+}
+
+internal fun nextLearningRoute(current: LearningLesson): String? =
+    LearningPath.nextLesson(current)?.let(::learningRouteFor)
+
+internal fun learningParentRoute(): String = BrailuxRoutes.LEARN

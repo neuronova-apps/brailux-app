@@ -1,5 +1,6 @@
 package com.brailuxaprende.ui.navigation
 
+import com.brailuxaprende.learning.LearningLesson
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -42,5 +43,38 @@ class BrailuxNavigationTest {
         assertTrue(shouldPreserveMainDestinationState(BrailuxRoutes.LEARN))
         assertTrue(shouldPreserveMainDestinationState(BrailuxRoutes.PLAY))
         assertTrue(shouldPreserveMainDestinationState(BrailuxRoutes.PROGRESS))
+    }
+
+    @Test
+    fun `lesson one continues to vowels`() {
+        assertEquals(
+            BrailuxRoutes.VOWELS_LESSON,
+            nextLearningRoute(LearningLesson.SixDots),
+        )
+    }
+
+    @Test
+    fun `vowels continue to letters A to J`() {
+        assertEquals(
+            BrailuxRoutes.LETTERS_A_TO_J_LESSON,
+            nextLearningRoute(LearningLesson.Vowels),
+        )
+    }
+
+    @Test
+    fun `back from a guided lesson returns to the learning path`() {
+        assertEquals(BrailuxRoutes.LEARN, learningParentRoute())
+    }
+
+    @Test
+    fun `future lessons use their own real destinations`() {
+        assertEquals(
+            BrailuxRoutes.LETTERS_K_TO_T_LESSON,
+            learningRouteFor(LearningLesson.LettersKtoT),
+        )
+        assertEquals(
+            BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON,
+            learningRouteFor(LearningLesson.LettersUtoZAndEnye),
+        )
     }
 }

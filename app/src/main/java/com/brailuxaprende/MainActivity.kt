@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
+import com.brailuxaprende.data.learn.LearningProgressRepository
+import com.brailuxaprende.data.learn.LearningProgressState
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
 import com.brailuxaprende.data.practice.CustomPracticePreferencesRepository
@@ -44,6 +46,14 @@ class MainActivity : ComponentActivity() {
             scope = lifecycleScope,
         )
     }
+    private val learningProgressState by lazy {
+        LearningProgressState(
+            repository = LearningProgressRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+            scope = lifecycleScope,
+        )
+    }
     private val customPracticePreferencesState by lazy {
         CustomPracticePreferencesState(
             repository = CustomPracticePreferencesRepository(
@@ -68,6 +78,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val preferences by settingsState.preferences.collectAsState()
             val practiceProgress by practiceProgressState.progress.collectAsState()
+            val learningProgress by learningProgressState.progress.collectAsState()
             val customPracticeConfiguration by
                 customPracticePreferencesState.configuration.collectAsState()
             val engagementProgress by engagementProgressState.progress.collectAsState()
@@ -89,6 +100,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 BrailuxApp(
                     preferences = preferences,
+                    learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,
                     currentDate = currentPracticeDate,
@@ -100,6 +112,7 @@ class MainActivity : ComponentActivity() {
                     onTextSizeChange = settingsState::setTextSize,
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
+                    onLearningLessonCompleted = learningProgressState::markCompleted,
                     onLevel1SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel1Session(
                             summary = summary,

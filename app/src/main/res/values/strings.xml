@@ -57,7 +57,15 @@
 
     <string name="learn_title">Aprende</string>
     <string name="learn_description">Conoce los fundamentos del sistema Braille mediante lecciones guiadas.</string>
-    <string name="learn_six_dots_lesson">Abrir lección de los seis puntos</string>
+    <string name="learning_lesson_1_title">Los seis puntos Braille</string>
+    <string name="learning_lesson_2_title">Vocales</string>
+    <string name="learning_lesson_3_title">Letras A-J</string>
+    <string name="learning_lesson_4_title">Letras K-T</string>
+    <string name="learning_lesson_5_title">Letras U-Z y Ñ</string>
+    <string name="learning_lesson_number">Lección %1$d</string>
+    <string name="learning_status_available">Disponible</string>
+    <string name="learning_status_completed">Completada</string>
+    <string name="learning_status_coming_soon">Próximamente</string>
 
     <string name="practice_title">Practica</string>
     <string name="practice_description">Refuerza el reconocimiento de letras Braille con ejercicios accesibles.</string>
@@ -306,10 +314,49 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="about_authorship_placeholder">Autoría: espacio reservado para información de autoría.</string>
     <string name="about_privacy_placeholder">Política de privacidad: espacio reservado para su publicación.</string>
 
-    <string name="lesson_title">Los seis puntos Braille</string>
     <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>
+    <string name="lesson_columns_explanation">La columna izquierda contiene los puntos 1, 2 y 3. La columna derecha contiene los puntos 4, 5 y 6. En ambas columnas la numeración avanza de arriba hacia abajo.</string>
     <string name="lesson_cell_description">Celda Braille informativa con los puntos numerados del 1 al 6</string>
-    <string name="lesson_practice_letter_a">Practicar la letra A</string>
+    <string name="lesson_start_check">Comprobar lo aprendido</string>
+    <string name="lesson_mini_check">Mini comprobación</string>
+    <string name="lesson_question_upper_left">¿Cuál es el punto superior izquierdo?</string>
+    <string name="lesson_question_lower_right">¿Cuál es el punto inferior derecho?</string>
+    <string name="lesson_point_answer">Punto %1$d</string>
+    <string name="lesson_check_correct">Correcto. Has identificado el punto.</string>
+    <string name="lesson_check_try_again">Observa de nuevo la posición y elige otra respuesta.</string>
+    <string name="lesson_next_question">Siguiente pregunta</string>
+    <string name="lesson_finish">Finalizar</string>
+    <string name="lesson_completed">Lección completada</string>
+    <string name="lesson_next_vowels">Siguiente: Vocales</string>
+    <string name="lesson_next_letters_a_j">Siguiente: Letras A-J</string>
+    <string name="lesson_repeat">Repetir lección</string>
+    <string name="lesson_back_to_learn">Volver a Aprende</string>
+    <string name="lesson_previous">Anterior</string>
+    <string name="lesson_next">Siguiente</string>
+    <string name="lesson_start_guided_practice">Iniciar mini práctica</string>
+    <string name="lesson_practice_progress">Ejercicio %1$d de %2$d</string>
+    <string name="lesson_form_character">Forma la letra %1$s</string>
+    <string name="lesson_character_position">Carácter %1$d de %2$d</string>
+    <string name="lesson_active_points">Puntos activos: %1$s</string>
+    <string name="lesson_coming_soon_specific">Esta lección estará disponible próximamente.</string>
+    <string name="vowels_group_label">Vocales</string>
+    <string name="letters_group_a_e">Grupo A-E</string>
+    <string name="letters_group_f_j">Grupo F-J</string>
+    <string name="vowel_a_explanation">La A es el primer patrón: utiliza solamente el punto superior izquierdo.</string>
+    <string name="vowel_e_explanation">La E conserva el punto 1 de la A y añade el punto 5.</string>
+    <string name="vowel_i_explanation">La I usa dos columnas: el punto 2 a la izquierda y el 4 a la derecha.</string>
+    <string name="vowel_o_explanation">La O combina los puntos 1 y 3 de la izquierda con el punto 5 de la derecha.</string>
+    <string name="vowel_u_explanation">La U combina los puntos 1 y 3 con el punto inferior derecho, el 6.</string>
+    <string name="letter_a_comparison">La A es la base del grupo y utiliza solo el punto 1.</string>
+    <string name="letter_b_comparison">La B parte de la A y añade el punto 2 debajo.</string>
+    <string name="letter_c_comparison">La C mantiene el punto 1 de la A y añade el punto 4 en la columna derecha.</string>
+    <string name="letter_d_comparison">La D parte de la C y añade el punto 5.</string>
+    <string name="letter_e_comparison">La E se parece a la D, pero no utiliza el punto 4.</string>
+    <string name="letter_f_comparison">La F combina la columna izquierda de la B con el punto 4.</string>
+    <string name="letter_g_comparison">La G parte de la F y añade el punto 5.</string>
+    <string name="letter_h_comparison">La H se parece a la G, pero no utiliza el punto 4.</string>
+    <string name="letter_i_comparison">La I usa los puntos 2 y 4, uno en cada columna.</string>
+    <string name="letter_j_comparison">La J parte de la I y añade el punto 5.</string>
 
     <string name="exercise_title">Forma la letra A</string>
     <string name="exercise_instruction">Activa los puntos correctos</string>
@@ -318,6 +365,8 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="exercise_correct">¡Muy bien! La letra A se forma con el punto 1.</string>
     <string name="exercise_incorrect">Revisa los puntos e inténtalo otra vez.</string>
     <string name="exercise_try_again">Intentar de nuevo</string>
+    <string name="guided_exercise_cell_description">Celda Braille interactiva para formar la letra %1$s</string>
+    <string name="guided_exercise_correct">Muy bien. Formaste correctamente la letra %1$s.</string>
     <string name="feedback_correct_symbol">✓</string>
     <string name="feedback_warning_symbol">!</string>
     <string name="feedback_incorrect_symbol">!</string>
