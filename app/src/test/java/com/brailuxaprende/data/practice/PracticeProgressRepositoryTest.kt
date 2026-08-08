@@ -76,6 +76,19 @@ class PracticeProgressRepositoryTest {
     }
 
     @Test
+    fun oneCompletedSessionProvidesRealProgress() = runBlocking {
+        repository.recordLevel1Session(10, 9, "2026-08-07")
+
+        val progress = repository.progress.first()
+
+        assertEquals(1, progress.level1CompletedSessions)
+        assertEquals(10, progress.level1TotalExercises)
+        assertEquals(9, progress.level1FirstAttemptCorrect)
+        assertEquals(90, progress.level1AccuracyPercentage)
+        assertEquals("2026-08-07", progress.level1LastPracticeDate)
+    }
+
+    @Test
     fun completedSessionsAccumulateAndPersist() = runBlocking {
         repository.recordLevel1Session(10, 8, "2026-08-06")
         repository.recordLevel1Session(10, 7, "2026-08-07")

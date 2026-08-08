@@ -3,6 +3,7 @@ package com.brailuxaprende.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -27,12 +29,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.practice.PracticeProgress
+import com.brailuxaprende.data.practice.parseStoredPracticeDate
+import com.brailuxaprende.ui.components.BrailuxPrimaryButton
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 
 @Composable
 fun ProgressScreen(
     progress: PracticeProgress,
+    onStartPractice: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -55,6 +60,7 @@ fun ProgressScreen(
             Spacer(modifier = Modifier.height(20.dp))
             Level1ProgressCard(
                 progress = progress,
+                onStartPractice = onStartPractice,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
@@ -67,6 +73,7 @@ fun ProgressScreen(
 @Composable
 private fun Level1ProgressCard(
     progress: PracticeProgress,
+    onStartPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val accuracy = progress.level1AccuracyPercentage
@@ -87,61 +94,90 @@ private fun Level1ProgressCard(
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-            }
-
-            ProgressValue(
-                text = stringResource(
-                    R.string.progress_sessions_completed,
-                    progress.level1CompletedSessions,
-                ),
-            )
-            ProgressValue(
-                text = stringResource(
-                    R.string.progress_exercises_completed,
-                    progress.level1TotalExercises,
-                ),
-            )
-            ProgressValue(
-                text = stringResource(
-                    R.string.progress_first_attempt_correct,
-                    progress.level1FirstAttemptCorrect,
-                ),
-            )
-            ProgressValue(text = stringResource(R.string.progress_accuracy, accuracy))
-            ProgressValue(
-                text = stringResource(
-                    R.string.progress_last_practice,
-                    progress.level1LastPracticeDate
-                        ?: stringResource(R.string.progress_no_last_practice),
-                ),
-            )
-
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                color = MaterialTheme.colorScheme.surface,
-            ) {
-                LinearProgressIndicator(
-                    progress = { accuracy / 100f },
+                BrailuxPrimaryButton(
+                    text = stringResource(R.string.progress_start_practice),
+                    onClick = onStartPractice,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(16.dp)
-                        .padding(2.dp)
-                        .clearAndSetSemantics {
-                            contentDescription = accuracyDescription
-                        },
+                        .padding(top = 4.dp),
                 )
+            } else {
+                ProgressValue(
+                    label = stringResource(R.string.progress_sessions_label),
+                    value = progress.level1CompletedSessions.toString(),
+                )
+                ProgressValue(
+                    label = stringResource(R.string.progress_exercises_label),
+                    value = progress.level1TotalExercises.toString(),
+                )
+                ProgressValue(
+                    label = stringResource(R.string.progress_first_attempt_label),
+                    value = progress.level1FirstAttemptCorrect.toString(),
+                )
+                ProgressValue(
+                    label = stringResource(R.string.progress_accuracy_label),
+                    value = stringResource(R.string.progress_percentage_value, accuracy),
+                )
+                ProgressValue(
+                    label = stringResource(R.string.progress_last_practice_label),
+                    value = formattedPracticeDate(progress.level1LastPracticeDate),
+                )
+
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    color = MaterialTheme.colorScheme.surface,
+                ) {
+                    LinearProgressIndicator(
+                        progress = { accuracy / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(16.dp)
+                            .padding(2.dp)
+                            .clearAndSetSemantics {
+                                contentDescription = accuracyDescription
+                            },
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun ProgressValue(text: String) {
-    Text(
-        text = text,
-        modifier = Modifier.fillMaxWidth(),
-        style = MaterialTheme.typography.bodyLarge,
+private fun ProgressValue(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics {
+                contentDescription = "$label, $value"
+            },
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Text(
+            text = label,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun formattedPracticeDate(storedDate: String?): String {
+    val date = parseStoredPracticeDate(storedDate)
+        ?: return stringResource(R.string.progress_no_last_practice)
+    val months = stringArrayResource(R.array.progress_month_abbreviations)
+    return stringResource(
+        R.string.progress_date_format,
+        date.day,
+        months[date.month - 1],
+        date.year,
     )
 }

@@ -90,6 +90,28 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_description">Consulta tu avance real en las prácticas completadas.</string>
     <string name="progress_level_1_title">Explorador Braille</string>
     <string name="progress_no_level_1_practice">Aún no has completado una sesión de Explorador Braille.</string>
+    <string name="progress_start_practice">Comenzar a practicar</string>
+    <string name="progress_sessions_label">Sesiones completadas</string>
+    <string name="progress_exercises_label">Ejercicios realizados</string>
+    <string name="progress_first_attempt_label">Aciertos al primer intento</string>
+    <string name="progress_accuracy_label">Precisión acumulada</string>
+    <string name="progress_last_practice_label">Última práctica</string>
+    <string name="progress_percentage_value">%1$d%%</string>
+    <string name="progress_date_format">%1$d %2$s. %3$d</string>
+    <string-array name="progress_month_abbreviations">
+        <item>ene</item>
+        <item>feb</item>
+        <item>mar</item>
+        <item>abr</item>
+        <item>may</item>
+        <item>jun</item>
+        <item>jul</item>
+        <item>ago</item>
+        <item>sept</item>
+        <item>oct</item>
+        <item>nov</item>
+        <item>dic</item>
+    </string-array>
     <string name="progress_sessions_completed">%1$d sesiones completadas</string>
     <string name="progress_exercises_completed">%1$d ejercicios realizados</string>
     <string name="progress_first_attempt_correct">%1$d aciertos al primer intento</string>
