@@ -46,6 +46,13 @@
     <string name="practice_selected">Seleccionado</string>
     <string name="practice_available">Disponible</string>
     <string name="practice_coming_soon">Próximamente</string>
+    <string name="practice_exercise_type_title">Tipo de ejercicio</string>
+    <string name="practice_mode_sign_to_character">Signo Braille → letra</string>
+    <string name="practice_mode_sign_to_character_description">Observa el signo y reconoce qué letra representa.</string>
+    <string name="practice_mode_character_to_sign">Letra → signo Braille</string>
+    <string name="practice_mode_character_to_sign_description">Observa la letra y selecciona su representación Braille.</string>
+    <string name="practice_mode_mixed">Mixto</string>
+    <string name="practice_mode_mixed_description">Alterna ambos tipos de ejercicio.</string>
     <string name="practice_level_1_title">Nivel 1 - Explorador Braille</string>
     <string name="practice_level_1_description">Reconoce las letras A a J mediante signos y caracteres.</string>
     <string name="practice_level_2_title">Nivel 2 - Reconocedor Braille</string>
@@ -88,6 +95,11 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_hint_row_two_points">Utiliza los dos puntos de la fila %1$s.</string>
     <string name="practice_hint_point_active">Incluye el punto %1$d.</string>
     <string name="practice_hint_point_inactive">No utiliza el punto %1$d.</string>
+    <string name="practice_hint_character_vowel">Es una vocal.</string>
+    <string name="practice_hint_character_consonant">Es una consonante.</string>
+    <string name="practice_hint_alphabet_range">Está entre las letras %1$s y %2$s.</string>
+    <string name="practice_hint_after_character">Aparece después de la letra %1$s en el alfabeto.</string>
+    <string name="practice_hint_before_character">Aparece antes de la letra %1$s en el alfabeto.</string>
     <string name="practice_check_answer">Comprobar</string>
     <string name="practice_next_exercise">Siguiente ejercicio</string>
     <string name="practice_level_completed">Nivel completado</string>

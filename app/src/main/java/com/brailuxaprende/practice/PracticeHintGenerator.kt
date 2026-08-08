@@ -1,8 +1,8 @@
 package com.brailuxaprende.practice
 
-import com.brailuxaprende.braille.BrailleCell
-
 object PracticeHintGenerator {
+    private const val spanishAlphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
+    private val vowels = setOf('A', 'E', 'I', 'O', 'U')
     private val leftColumn = setOf(1, 2, 3)
     private val rightColumn = setOf(4, 5, 6)
     private val rowPoints = linkedMapOf(
@@ -11,12 +11,100 @@ object PracticeHintGenerator {
         BrailleRow.Bottom to setOf(3, 6),
     )
 
-    fun generate(level: PracticeLevel, cell: BrailleCell): List<PracticeHint> {
-        val activePoints = cell.activePoints().toSet()
+    fun generate(level: PracticeLevel, exercise: PracticeExercise): List<PracticeHint> {
+        if (level == PracticeLevel.BrailleChallenge) return emptyList()
+
+        return when (exercise.type) {
+            PracticeExerciseType.CharacterToSign -> structuralHints(
+                level = level,
+                activePoints = exercise.target.cell.activePoints().toSet(),
+            )
+            PracticeExerciseType.SignToCharacter -> characterHints(level, exercise)
+        }
+    }
+
+    private fun structuralHints(
+        level: PracticeLevel,
+        activePoints: Set<Int>,
+    ): List<PracticeHint> {
         return when (level) {
             PracticeLevel.BrailleExplorer -> level1Hints(activePoints)
             PracticeLevel.BrailleRecognizer -> level2Hints(activePoints)
             PracticeLevel.BrailleChallenge -> emptyList()
+        }
+    }
+
+    private fun characterHints(
+        level: PracticeLevel,
+        exercise: PracticeExercise,
+    ): List<PracticeHint> {
+        val target = exercise.target.printedCharacter
+        val category = PracticeHint.CharacterCategory(isVowel = target in vowels)
+        val range = alphabetRange(level, target)
+        val comparison = alphabetComparison(target, exercise.options.map { it.printedCharacter })
+        val prioritizedHints = when (level) {
+            PracticeLevel.BrailleExplorer -> listOf(category, range, comparison)
+            PracticeLevel.BrailleRecognizer -> listOf(range, category, comparison)
+            PracticeLevel.BrailleChallenge -> emptyList()
+        }
+        return prioritizedHints
+            .distinct()
+            .sortedByDescending { hint -> reducesVisibleOptions(hint, exercise) }
+    }
+
+    private fun reducesVisibleOptions(
+        hint: PracticeHint,
+        exercise: PracticeExercise,
+    ): Boolean {
+        val matchingOptions = exercise.options.count { option ->
+            val character = option.printedCharacter
+            when (hint) {
+                is PracticeHint.CharacterCategory -> (character in vowels) == hint.isVowel
+                is PracticeHint.AlphabetRange -> {
+                    spanishAlphabet.indexOf(character) in
+                        spanishAlphabet.indexOf(hint.first)..spanishAlphabet.indexOf(hint.last)
+                }
+                is PracticeHint.AlphabetComparison -> if (hint.targetComesAfter) {
+                    spanishAlphabet.indexOf(character) > spanishAlphabet.indexOf(hint.reference)
+                } else {
+                    spanishAlphabet.indexOf(character) < spanishAlphabet.indexOf(hint.reference)
+                }
+                else -> true
+            }
+        }
+        return matchingOptions in 1 until exercise.options.size
+    }
+
+    private fun alphabetRange(level: PracticeLevel, target: Char): PracticeHint.AlphabetRange {
+        val targetIndex = spanishAlphabet.indexOf(target)
+        val ranges = when (level) {
+            PracticeLevel.BrailleExplorer -> listOf(0..4, 5..9)
+            PracticeLevel.BrailleRecognizer,
+            PracticeLevel.BrailleChallenge -> listOf(0..9, 10..18, 19..26)
+        }
+        val range = ranges.first { targetIndex in it }
+        return PracticeHint.AlphabetRange(
+            first = spanishAlphabet[range.first],
+            last = spanishAlphabet[range.last],
+        )
+    }
+
+    private fun alphabetComparison(
+        target: Char,
+        visibleOptions: List<Char>,
+    ): PracticeHint.AlphabetComparison {
+        val orderedOptions = visibleOptions.sortedBy(spanishAlphabet::indexOf)
+        val targetIndex = orderedOptions.indexOf(target)
+        return if (targetIndex >= 2) {
+            PracticeHint.AlphabetComparison(
+                reference = orderedOptions[targetIndex - 2],
+                targetComesAfter = true,
+            )
+        } else {
+            PracticeHint.AlphabetComparison(
+                reference = orderedOptions[targetIndex + 2],
+                targetComesAfter = false,
+            )
         }
     }
 

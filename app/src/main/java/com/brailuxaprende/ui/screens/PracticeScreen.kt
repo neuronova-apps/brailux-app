@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,8 +22,13 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.heading
@@ -29,17 +36,23 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
+import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 
 @Composable
 fun PracticeScreen(
-    onStartLevel1: () -> Unit,
-    onStartLevel2: () -> Unit,
-    onStartLevel3: () -> Unit,
+    onStartLevel1: (PracticeMode) -> Unit,
+    onStartLevel2: (PracticeMode) -> Unit,
+    onStartLevel3: (PracticeMode) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var selectedModeName by rememberSaveable {
+        mutableStateOf(PracticeMode.SignToCharacter.name)
+    }
+    val selectedMode = PracticeMode.valueOf(selectedModeName)
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -82,22 +95,48 @@ fun PracticeScreen(
                 )
             }
             Spacer(modifier = Modifier.height(18.dp))
+            BrailuxSectionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.practice_exercise_type_title),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .selectableGroup(),
+                ) {
+                    PracticeMode.entries.forEach { mode ->
+                        ExerciseModeOption(
+                            mode = mode,
+                            selected = selectedMode == mode,
+                            onSelect = { selectedModeName = mode.name },
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(18.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                AvailableLevelCard(onClick = onStartLevel1)
+                AvailableLevelCard(onClick = { onStartLevel1(selectedMode) })
                 AvailableLevelCard(
                     title = stringResource(R.string.practice_level_2_title),
                     description = stringResource(R.string.practice_level_2_description),
-                    onClick = onStartLevel2,
+                    onClick = { onStartLevel2(selectedMode) },
                 )
                 AvailableLevelCard(
                     title = stringResource(R.string.practice_level_3_title),
                     description = stringResource(R.string.practice_level_3_description),
-                    onClick = onStartLevel3,
+                    onClick = { onStartLevel3(selectedMode) },
                 )
                 UnavailableLevelCard(
                     title = stringResource(R.string.practice_level_4_title),
@@ -105,6 +144,44 @@ fun PracticeScreen(
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun ExerciseModeOption(
+    mode: PracticeMode,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    val selectionState = stringResource(
+        if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 72.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onSelect,
+            )
+            .semantics(mergeDescendants = true) { stateDescription = selectionState }
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButton(selected = selected, onClick = null)
+        Column(modifier = Modifier.padding(start = 12.dp)) {
+            Text(
+                text = stringResource(mode.titleResource()),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = stringResource(mode.descriptionResource()),
+                modifier = Modifier.padding(top = 2.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -215,4 +292,18 @@ private fun LevelCardContent(
             style = MaterialTheme.typography.labelLarge,
         )
     }
+}
+
+@androidx.annotation.StringRes
+private fun PracticeMode.titleResource(): Int = when (this) {
+    PracticeMode.SignToCharacter -> R.string.practice_mode_sign_to_character
+    PracticeMode.CharacterToSign -> R.string.practice_mode_character_to_sign
+    PracticeMode.Mixed -> R.string.practice_mode_mixed
+}
+
+@androidx.annotation.StringRes
+private fun PracticeMode.descriptionResource(): Int = when (this) {
+    PracticeMode.SignToCharacter -> R.string.practice_mode_sign_to_character_description
+    PracticeMode.CharacterToSign -> R.string.practice_mode_character_to_sign_description
+    PracticeMode.Mixed -> R.string.practice_mode_mixed_description
 }

@@ -43,7 +43,7 @@ data class PracticeSessionState(
         get() = session.level.hintLimit?.let { limit -> (limit - hintsUsed).coerceAtLeast(0) }
 
     val availableHints: List<PracticeHint>
-        get() = PracticeHintGenerator.generate(session.level, currentExercise.target.cell)
+        get() = PracticeHintGenerator.generate(session.level, currentExercise)
 
     val visibleHints: List<PracticeHint>
         get() = availableHints.take(revealedHintCount)

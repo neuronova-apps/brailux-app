@@ -1,6 +1,6 @@
 package com.brailuxaprende.practice
 
-import com.brailuxaprende.braille.BrailleCell
+import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.braille.BrailleRepository
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -9,178 +9,128 @@ import org.junit.Test
 
 class PracticeHintGeneratorTest {
     @Test
-    fun level1UsesCountThenColumnsThenPoint() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleExplorer,
-            BrailleCell.fromPoints(setOf(1, 2, 5)),
+    fun characterToSignLevel1StartsWithPointCountAndDescribesThePattern() {
+        val exercise = exercise(
+            target = 'H',
+            type = PracticeExerciseType.CharacterToSign,
+            optionCharacters = listOf('A', 'B', 'C', 'H'),
         )
 
-        assertTrue(hints[0] is PracticeHint.ActivePointCount)
-        assertTrue(hints[1] is PracticeHint.ColumnDistribution)
-        assertTrue(hints[2] is PracticeHint.PointState)
+        val hints = PracticeHintGenerator.generate(PracticeLevel.BrailleExplorer, exercise)
+
         assertEquals(PracticeHint.ActivePointCount(3), hints[0])
         assertEquals(PracticeHint.ColumnDistribution(leftCount = 2, rightCount = 1), hints[1])
         assertEquals(PracticeHint.PointState(point = 1, isActive = true), hints[2])
     }
 
     @Test
-    fun level1UsesARowHintWhenPointCountAlreadyImpliesBothColumns() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleExplorer,
-            BrailleCell.fromPoints(setOf(1, 2, 4, 5)),
+    fun characterToSignLevel2KeepsSubtleStructuralHints() {
+        val exercise = exercise(
+            target = 'L',
+            type = PracticeExerciseType.CharacterToSign,
+            optionCharacters = listOf('A', 'B', 'C', 'D', 'E', 'L'),
         )
 
-        assertEquals(PracticeHint.ActivePointCount(4), hints[0])
-        assertEquals(PracticeHint.RowState(BrailleRow.Top, activeCount = 2), hints[1])
-        assertEquals(PracticeHint.PointState(point = 2, isActive = true), hints[2])
-    }
+        val hints = PracticeHintGenerator.generate(PracticeLevel.BrailleRecognizer, exercise)
 
-    @Test
-    fun level2UsesColumnsThenRowThenDetailOutsideThatRow() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleRecognizer,
-            BrailleCell.fromPoints(setOf(1, 2, 3)),
-        )
-
+        assertEquals(3, hints.size)
         assertTrue(hints[0] is PracticeHint.ColumnDistribution)
-        assertEquals(PracticeHint.RowState(BrailleRow.Top, activeCount = 1), hints[1])
-        assertEquals(PracticeHint.PointState(point = 2, isActive = true), hints[2])
-        assertFalse((hints[2] as PracticeHint.PointState).point in setOf(1, 4))
+        assertTrue(hints[1] is PracticeHint.RowState)
+        assertTrue(hints[2] is PracticeHint.PointState)
+        assertFalse(hints.first() is PracticeHint.ActivePointCount)
     }
 
     @Test
-    fun level2SpecificHintCanDescribeAnAbsentPointTruthfully() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleRecognizer,
-            BrailleCell.fromPoints(setOf(1, 2, 4)),
+    fun signToCharacterLevel1UsesCharacterInformationInsteadOfVisiblePointCount() {
+        val exercise = exercise(
+            target = 'A',
+            type = PracticeExerciseType.SignToCharacter,
+            optionCharacters = listOf('A', 'B', 'C', 'D'),
         )
 
-        assertEquals(PracticeHint.PointState(point = 5, isActive = false), hints[2])
+        val hints = PracticeHintGenerator.generate(PracticeLevel.BrailleExplorer, exercise)
+
+        assertEquals(PracticeHint.CharacterCategory(isVowel = true), hints[0])
+        assertTrue(PracticeHint.AlphabetRange(first = 'A', last = 'E') in hints)
+        assertTrue(
+            PracticeHint.AlphabetComparison(reference = 'C', targetComesAfter = false) in hints,
+        )
+        assertFalse(hints.any { it is PracticeHint.ActivePointCount })
     }
 
     @Test
-    fun level2DetailDoesNotRepeatAnUnusedColumn() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleRecognizer,
-            BrailleCell.fromPoints(setOf(1, 2, 3)),
+    fun signToCharacterHintsUseTheTargetAndVisibleOptions() {
+        val earlyOptions = exercise(
+            target = 'H',
+            type = PracticeExerciseType.SignToCharacter,
+            optionCharacters = listOf('A', 'B', 'F', 'H'),
+        )
+        val lateOptions = exercise(
+            target = 'H',
+            type = PracticeExerciseType.SignToCharacter,
+            optionCharacters = listOf('G', 'H', 'I', 'J'),
         )
 
-        val detail = hints[2] as PracticeHint.PointState
-        assertTrue(detail.point in 1..3)
+        val earlyComparison = PracticeHintGenerator.generate(
+            PracticeLevel.BrailleExplorer,
+            earlyOptions,
+        ).filterIsInstance<PracticeHint.AlphabetComparison>().single()
+        val lateComparison = PracticeHintGenerator.generate(
+            PracticeLevel.BrailleExplorer,
+            lateOptions,
+        ).filterIsInstance<PracticeHint.AlphabetComparison>().single()
+
+        assertEquals(
+            PracticeHint.AlphabetComparison(reference = 'B', targetComesAfter = true),
+            earlyComparison,
+        )
+        assertEquals(
+            PracticeHint.AlphabetComparison(reference = 'J', targetComesAfter = false),
+            lateComparison,
+        )
     }
 
     @Test
-    fun level2PrefersATrueAbsentRowWhenAvailable() {
-        val hints = PracticeHintGenerator.generate(
-            PracticeLevel.BrailleRecognizer,
-            BrailleCell.fromPoints(setOf(1, 2, 4)),
+    fun signToCharacterLevel2PrioritizesTheHintThatReducesVisibleOptions() {
+        val exercise = exercise(
+            target = 'Ñ',
+            type = PracticeExerciseType.SignToCharacter,
+            optionCharacters = listOf('K', 'M', 'N', 'Ñ', 'P', 'R'),
         )
 
-        assertEquals(PracticeHint.RowState(BrailleRow.Bottom, activeCount = 0), hints[1])
+        val hints = PracticeHintGenerator.generate(PracticeLevel.BrailleRecognizer, exercise)
+
+        assertTrue(hints[0] is PracticeHint.AlphabetComparison)
+        assertTrue(PracticeHint.AlphabetRange(first = 'K', last = 'R') in hints)
+        assertTrue(PracticeHint.CharacterCategory(isVowel = false) in hints)
+        assertFalse(hints.first() is PracticeHint.ActivePointCount)
     }
 
     @Test
-    fun generatedHintsAreDeterministicTrueAndNotRepeatedForEveryCell() {
-        for (mask in 0 until (1 shl 6)) {
-            val points = (1..6).filterTo(mutableSetOf()) { point ->
-                mask and (1 shl (point - 1)) != 0
-            }
-            val cell = BrailleCell.fromPoints(points)
-
-            listOf(PracticeLevel.BrailleExplorer, PracticeLevel.BrailleRecognizer).forEach { level ->
-                val firstGeneration = PracticeHintGenerator.generate(level, cell)
-                val secondGeneration = PracticeHintGenerator.generate(level, cell)
-
-                assertEquals(firstGeneration, secondGeneration)
-                assertEquals(3, firstGeneration.size)
-                assertEquals(firstGeneration.size, firstGeneration.distinct().size)
-                firstGeneration.forEach { hint -> assertHintIsTrue(hint, points) }
-            }
-        }
-    }
-
-    @Test
-    fun everyHintReducesUncertaintyForEveryPracticeTarget() {
-        val allPointPatterns = (0 until (1 shl 6)).map { mask ->
-            (1..6).filterTo(mutableSetOf()) { point ->
-                mask and (1 shl (point - 1)) != 0
-            }
-        }
-        val targetsByLevel = mapOf(
-            PracticeLevel.BrailleExplorer to BrailleRepository.getLevel1Characters(),
-            PracticeLevel.BrailleRecognizer to BrailleRepository.getLevel2Characters(),
-        )
-
-        targetsByLevel.forEach { (level, targets) ->
-            targets.forEach { target ->
-                var candidates = allPointPatterns
-                PracticeHintGenerator.generate(level, target.cell).forEach { hint ->
-                    val reducedCandidates = candidates.filter { points ->
-                        matchesDisplayedHint(hint, points)
-                    }
-                    assertTrue(
-                        "Hint $hint must reduce uncertainty for ${target.printedCharacter}",
-                        reducedCandidates.size < candidates.size,
-                    )
-                    candidates = reducedCandidates
-                }
-            }
-        }
-    }
-
-    @Test
-    fun level3AlwaysReturnsAnEmptyList() {
-        for (mask in 0 until (1 shl 6)) {
-            val points = (1..6).filterTo(mutableSetOf()) { point ->
-                mask and (1 shl (point - 1)) != 0
-            }
+    fun level3AlwaysReturnsNoHintsForEitherExerciseType() {
+        PracticeExerciseType.entries.forEach { type ->
+            val exercise = exercise(
+                target = 'A',
+                type = type,
+                optionCharacters = listOf('A', 'B', 'C', 'D', 'E', 'F'),
+            )
 
             assertTrue(
-                PracticeHintGenerator.generate(
-                    PracticeLevel.BrailleChallenge,
-                    BrailleCell.fromPoints(points),
-                ).isEmpty(),
+                PracticeHintGenerator.generate(PracticeLevel.BrailleChallenge, exercise).isEmpty(),
             )
         }
     }
 
-    private fun assertHintIsTrue(hint: PracticeHint, activePoints: Set<Int>) {
-        when (hint) {
-            is PracticeHint.ActivePointCount -> assertEquals(activePoints.size, hint.count)
-            is PracticeHint.ColumnDistribution -> {
-                assertEquals(activePoints.count { it in 1..3 }, hint.leftCount)
-                assertEquals(activePoints.count { it in 4..6 }, hint.rightCount)
-            }
-            is PracticeHint.RowState -> assertEquals(
-                activePoints.count { it in pointsFor(hint.row) },
-                hint.activeCount,
-            )
-            is PracticeHint.PointState -> assertEquals(hint.point in activePoints, hint.isActive)
-        }
-    }
+    private fun exercise(
+        target: Char,
+        type: PracticeExerciseType,
+        optionCharacters: List<Char>,
+    ): PracticeExercise = PracticeExercise(
+        target = character(target),
+        type = type,
+        options = optionCharacters.map(::character),
+    )
 
-    private fun matchesDisplayedHint(hint: PracticeHint, activePoints: Set<Int>): Boolean =
-        when (hint) {
-            is PracticeHint.ActivePointCount -> activePoints.size == hint.count
-            is PracticeHint.ColumnDistribution -> {
-                val usesLeftColumn = activePoints.any { it in 1..3 }
-                val usesRightColumn = activePoints.any { it in 4..6 }
-                when {
-                    hint.leftCount > 0 && hint.rightCount > 0 ->
-                        usesLeftColumn && usesRightColumn
-                    hint.leftCount > 0 -> usesLeftColumn && !usesRightColumn
-                    hint.rightCount > 0 -> !usesLeftColumn && usesRightColumn
-                    else -> activePoints.isEmpty()
-                }
-            }
-            is PracticeHint.RowState ->
-                activePoints.count { it in pointsFor(hint.row) } == hint.activeCount
-            is PracticeHint.PointState -> (hint.point in activePoints) == hint.isActive
-        }
-
-    private fun pointsFor(row: BrailleRow): Set<Int> = when (row) {
-        BrailleRow.Top -> setOf(1, 4)
-        BrailleRow.Middle -> setOf(2, 5)
-        BrailleRow.Bottom -> setOf(3, 6)
-    }
+    private fun character(value: Char): BrailleCharacter =
+        requireNotNull(BrailleRepository.findCharacter(value))
 }

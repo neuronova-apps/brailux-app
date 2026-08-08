@@ -37,6 +37,12 @@ enum class PracticeExerciseType {
     CharacterToSign,
 }
 
+enum class PracticeMode {
+    SignToCharacter,
+    CharacterToSign,
+    Mixed,
+}
+
 enum class BrailleRow {
     Top,
     Middle,
@@ -79,6 +85,20 @@ sealed interface PracticeHint {
             require(point in 1..6) { "Braille point must be between 1 and 6." }
         }
     }
+
+    data class CharacterCategory(
+        val isVowel: Boolean,
+    ) : PracticeHint
+
+    data class AlphabetRange(
+        val first: Char,
+        val last: Char,
+    ) : PracticeHint
+
+    data class AlphabetComparison(
+        val reference: Char,
+        val targetComesAfter: Boolean,
+    ) : PracticeHint
 }
 
 data class PracticeExercise(
@@ -96,11 +116,23 @@ data class PracticeExercise(
 
 data class PracticeSession(
     val level: PracticeLevel,
+    val mode: PracticeMode,
     val exercises: List<PracticeExercise>,
 ) {
     init {
         require(exercises.size == level.exerciseCount) {
             "Session exercise count must match the configured level."
+        }
+        when (mode) {
+            PracticeMode.SignToCharacter -> require(
+                exercises.all { it.type == PracticeExerciseType.SignToCharacter },
+            ) { "Sign-to-character sessions must keep the selected exercise type." }
+            PracticeMode.CharacterToSign -> require(
+                exercises.all { it.type == PracticeExerciseType.CharacterToSign },
+            ) { "Character-to-sign sessions must keep the selected exercise type." }
+            PracticeMode.Mixed -> require(
+                exercises.map { it.type }.toSet() == PracticeExerciseType.entries.toSet(),
+            ) { "Mixed sessions must contain both exercise types." }
         }
     }
 }

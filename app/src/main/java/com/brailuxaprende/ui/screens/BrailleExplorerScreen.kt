@@ -47,6 +47,7 @@ import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
 import com.brailuxaprende.practice.PracticeHint
 import com.brailuxaprende.practice.PracticeLevel
+import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.PracticeSession
 import com.brailuxaprende.practice.PracticeSessionGenerator
 import com.brailuxaprende.practice.PracticeSessionState
@@ -68,13 +69,14 @@ private enum class AnswerResult {
 
 @Composable
 fun BrailleExplorerScreen(
+    mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleExplorer,
-        sessionFactory = { PracticeSessionGenerator.generate() },
+        sessionFactory = { PracticeSessionGenerator.generate(mode) },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         modifier = modifier,
@@ -83,13 +85,14 @@ fun BrailleExplorerScreen(
 
 @Composable
 fun BrailleRecognizerScreen(
+    mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleRecognizer,
-        sessionFactory = { PracticeSessionGenerator.generateLevel2() },
+        sessionFactory = { PracticeSessionGenerator.generateLevel2(mode) },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         modifier = modifier,
@@ -98,13 +101,14 @@ fun BrailleRecognizerScreen(
 
 @Composable
 fun BrailleChallengeScreen(
+    mode: PracticeMode,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleChallenge,
-        sessionFactory = { PracticeSessionGenerator.generateLevel3() },
+        sessionFactory = { PracticeSessionGenerator.generateLevel3(mode) },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         modifier = modifier,
@@ -196,7 +200,7 @@ private fun BraillePracticeExercise(
         ) {
             BrailuxScreenHeader(
                 title = stringResource(level.titleResource()),
-                subtitle = stringResource(R.string.practice_reading_mode),
+                subtitle = stringResource(state.session.mode.titleResource()),
                 onBack = onBack,
             )
             if (level == PracticeLevel.BrailleChallenge && state.currentExerciseIndex == 0) {
@@ -705,6 +709,26 @@ private fun hintText(hint: PracticeHint): String = when (hint) {
         },
         hint.point,
     )
+    is PracticeHint.CharacterCategory -> stringResource(
+        if (hint.isVowel) {
+            R.string.practice_hint_character_vowel
+        } else {
+            R.string.practice_hint_character_consonant
+        },
+    )
+    is PracticeHint.AlphabetRange -> stringResource(
+        R.string.practice_hint_alphabet_range,
+        hint.first.toString(),
+        hint.last.toString(),
+    )
+    is PracticeHint.AlphabetComparison -> stringResource(
+        if (hint.targetComesAfter) {
+            R.string.practice_hint_after_character
+        } else {
+            R.string.practice_hint_before_character
+        },
+        hint.reference.toString(),
+    )
 }
 
 private fun activePointsText(character: BrailleCharacter): String =
@@ -722,4 +746,11 @@ private fun PracticeLevel.completionTitleResource(): Int = when (this) {
     PracticeLevel.BrailleChallenge -> R.string.practice_challenge_completed
     PracticeLevel.BrailleExplorer,
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_completed
+}
+
+@androidx.annotation.StringRes
+private fun PracticeMode.titleResource(): Int = when (this) {
+    PracticeMode.SignToCharacter -> R.string.practice_mode_sign_to_character
+    PracticeMode.CharacterToSign -> R.string.practice_mode_character_to_sign
+    PracticeMode.Mixed -> R.string.practice_mode_mixed
 }

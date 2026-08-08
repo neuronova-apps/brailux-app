@@ -237,15 +237,15 @@ class PracticeSessionStateTest {
     }
 
     private fun newState(): PracticeSessionState = PracticeSessionState(
-        PracticeSessionGenerator.generate(Random(12)),
+        PracticeSessionGenerator.generate(random = Random(12)),
     )
 
     private fun newLevel2State(): PracticeSessionState = PracticeSessionState(
-        PracticeSessionGenerator.generateLevel2(Random(14)),
+        PracticeSessionGenerator.generateLevel2(random = Random(14)),
     )
 
     private fun newLevel3State(): PracticeSessionState = PracticeSessionState(
-        PracticeSessionGenerator.generateLevel3(Random(15)),
+        PracticeSessionGenerator.generateLevel3(random = Random(15)),
     )
 
     private fun incorrectAnswer(state: PracticeSessionState): Char = state.currentExercise.options

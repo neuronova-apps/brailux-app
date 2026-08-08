@@ -17,6 +17,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -37,6 +40,7 @@ import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.practice.PracticeSessionSummary
+import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.BrailleChallengeScreen
@@ -232,6 +236,11 @@ private fun BrailuxNavHost(
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var selectedPracticeModeName by rememberSaveable {
+        mutableStateOf(PracticeMode.SignToCharacter.name)
+    }
+    val selectedPracticeMode = PracticeMode.valueOf(selectedPracticeModeName)
+
     fun goBack() {
         if (!navController.popBackStack()) {
             navController.navigate(BrailuxRoutes.HOME) { launchSingleTop = true }
@@ -275,9 +284,18 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.PRACTICE) {
             PracticeScreen(
-                onStartLevel1 = { navController.navigate(BrailuxRoutes.BRAILLE_EXPLORER) },
-                onStartLevel2 = { navController.navigate(BrailuxRoutes.BRAILLE_RECOGNIZER) },
-                onStartLevel3 = { navController.navigate(BrailuxRoutes.BRAILLE_CHALLENGE) },
+                onStartLevel1 = { mode ->
+                    selectedPracticeModeName = mode.name
+                    navController.navigate(BrailuxRoutes.BRAILLE_EXPLORER)
+                },
+                onStartLevel2 = { mode ->
+                    selectedPracticeModeName = mode.name
+                    navController.navigate(BrailuxRoutes.BRAILLE_RECOGNIZER)
+                },
+                onStartLevel3 = { mode ->
+                    selectedPracticeModeName = mode.name
+                    navController.navigate(BrailuxRoutes.BRAILLE_CHALLENGE)
+                },
                 onBack = ::goBack,
             )
         }
@@ -323,18 +341,21 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.BRAILLE_EXPLORER) {
             BrailleExplorerScreen(
+                mode = selectedPracticeMode,
                 onSessionCompleted = onLevel1SessionCompleted,
                 onBackToPractice = ::backToPractice,
             )
         }
         composable(BrailuxRoutes.BRAILLE_RECOGNIZER) {
             BrailleRecognizerScreen(
+                mode = selectedPracticeMode,
                 onSessionCompleted = onLevel2SessionCompleted,
                 onBackToPractice = ::backToPractice,
             )
         }
         composable(BrailuxRoutes.BRAILLE_CHALLENGE) {
             BrailleChallengeScreen(
+                mode = selectedPracticeMode,
                 onSessionCompleted = onLevel3SessionCompleted,
                 onBackToPractice = ::backToPractice,
             )
