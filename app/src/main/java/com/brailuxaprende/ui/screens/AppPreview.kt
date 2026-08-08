@@ -18,6 +18,7 @@ fun BrailuxAppPreview() {
             onTextSizeChange = {},
             onAppearanceChange = {},
             onSeasonalThemesEnabledChange = {},
+            onLevel1SessionCompleted = {},
         )
     }
 }

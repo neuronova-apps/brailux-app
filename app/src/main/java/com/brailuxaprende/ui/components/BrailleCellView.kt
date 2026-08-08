@@ -34,6 +34,7 @@ private val PointVisualSize = 42.dp
 fun BrailleCellView(
     cell: BrailleCell,
     interactive: Boolean = false,
+    showPointNumbers: Boolean = true,
     onPointClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
@@ -62,12 +63,14 @@ fun BrailleCellView(
                         point = leftPoint,
                         active = cell.isPointActive(leftPoint),
                         interactive = interactive,
+                        showPointNumber = showPointNumbers,
                         onClick = { onPointClick(leftPoint) },
                     )
                     BraillePoint(
                         point = rightPoint,
                         active = cell.isPointActive(rightPoint),
                         interactive = interactive,
+                        showPointNumber = showPointNumbers,
                         onClick = { onPointClick(rightPoint) },
                     )
                 }
@@ -81,6 +84,7 @@ private fun BraillePoint(
     point: Int,
     active: Boolean,
     interactive: Boolean,
+    showPointNumber: Boolean,
     onClick: () -> Unit,
 ) {
     val state = stringResource(
@@ -132,7 +136,11 @@ private fun BraillePoint(
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
-                    text = point.toString(),
+                    text = when {
+                        showPointNumber -> point.toString()
+                        active -> "●"
+                        else -> ""
+                    },
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                 )

@@ -7,6 +7,35 @@ import org.junit.Test
 
 class BrailleRepositoryTest {
     @Test
+    fun mapsLettersAThroughJToCorrectBrailleCells() {
+        val expectedPoints = mapOf(
+            'A' to listOf(1),
+            'B' to listOf(1, 2),
+            'C' to listOf(1, 4),
+            'D' to listOf(1, 4, 5),
+            'E' to listOf(1, 5),
+            'F' to listOf(1, 2, 4),
+            'G' to listOf(1, 2, 4, 5),
+            'H' to listOf(1, 2, 5),
+            'I' to listOf(2, 4),
+            'J' to listOf(2, 4, 5),
+        )
+
+        assertEquals(
+            expectedPoints,
+            BrailleRepository.getLevel1Characters().associate {
+                it.printedCharacter to it.cell.activePoints()
+            },
+        )
+    }
+
+    @Test
+    fun findsLevel1CharactersIgnoringCase() {
+        assertSame(BrailleRepository.findCharacter('B'), BrailleRepository.findCharacter('b'))
+        assertSame(BrailleRepository.findCharacter('J'), BrailleRepository.findCharacter('j'))
+    }
+
+    @Test
     fun returnsTheFiveInitialVowels() {
         val vowels = BrailleRepository.getVowels()
 

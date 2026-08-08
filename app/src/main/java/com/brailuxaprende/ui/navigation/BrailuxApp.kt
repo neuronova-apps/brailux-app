@@ -35,12 +35,15 @@ import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.TextSizePreference
+import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
+import com.brailuxaprende.ui.screens.BrailleExplorerScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LetterAExerciseScreen
 import com.brailuxaprende.ui.screens.PlaceholderScreen
+import com.brailuxaprende.ui.screens.PracticeScreen
 import com.brailuxaprende.ui.screens.SettingsScreen
 import com.brailuxaprende.ui.screens.WelcomeScreen
 
@@ -55,6 +58,7 @@ object BrailuxRoutes {
     const val ABOUT = "acerca_de"
     const val SIX_DOTS_LESSON = "leccion_seis_puntos"
     const val LETTER_A_EXERCISE = "ejercicio_letra_a"
+    const val BRAILLE_EXPLORER = "practica_explorador_braille"
 }
 
 private data class BottomDestination(
@@ -74,6 +78,7 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.WELCOME,
     BrailuxRoutes.SIX_DOTS_LESSON,
     BrailuxRoutes.LETTER_A_EXERCISE,
+    BrailuxRoutes.BRAILLE_EXPLORER,
 )
 
 @Composable
@@ -86,6 +91,7 @@ fun BrailuxApp(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    onLevel1SessionCompleted: (PracticeSessionSummary) -> Unit,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -114,6 +120,7 @@ fun BrailuxApp(
             onTextSizeChange = onTextSizeChange,
             onAppearanceChange = onAppearanceChange,
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
+            onLevel1SessionCompleted = onLevel1SessionCompleted,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -203,11 +210,18 @@ private fun BrailuxNavHost(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    onLevel1SessionCompleted: (PracticeSessionSummary) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun goBack() {
         if (!navController.popBackStack()) {
             navController.navigate(BrailuxRoutes.HOME) { launchSingleTop = true }
+        }
+    }
+
+    fun backToPractice() {
+        if (!navController.popBackStack(BrailuxRoutes.PRACTICE, inclusive = false)) {
+            navController.navigate(BrailuxRoutes.PRACTICE) { launchSingleTop = true }
         }
     }
 
@@ -244,9 +258,8 @@ private fun BrailuxNavHost(
             )
         }
         composable(BrailuxRoutes.PRACTICE) {
-            PlaceholderScreen(
-                title = stringResource(R.string.practice_title),
-                description = stringResource(R.string.practice_description),
+            PracticeScreen(
+                onStartLevel1 = { navController.navigate(BrailuxRoutes.BRAILLE_EXPLORER) },
                 onBack = ::goBack,
             )
         }
@@ -287,6 +300,12 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.LETTER_A_EXERCISE) {
             LetterAExerciseScreen(onBack = ::goBack)
+        }
+        composable(BrailuxRoutes.BRAILLE_EXPLORER) {
+            BrailleExplorerScreen(
+                onSessionCompleted = onLevel1SessionCompleted,
+                onBackToPractice = ::backToPractice,
+            )
         }
     }
 }

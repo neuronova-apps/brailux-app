@@ -11,6 +11,8 @@ import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
 import com.brailuxaprende.data.seasonal.AnnualDate
 import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
+import com.brailuxaprende.data.practice.PracticeProgressRepository
+import com.brailuxaprende.data.practice.PracticeProgressState
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
@@ -22,6 +24,14 @@ class MainActivity : ComponentActivity() {
     private val settingsState by lazy {
         AccessibilitySettingsState(
             repository = AccessibilityPreferencesRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+            scope = lifecycleScope,
+        )
+    }
+    private val practiceProgressState by lazy {
+        PracticeProgressState(
+            repository = PracticeProgressRepository(
                 applicationContext.accessibilityPreferencesDataStore,
             ),
             scope = lifecycleScope,
@@ -54,6 +64,7 @@ class MainActivity : ComponentActivity() {
                     onTextSizeChange = settingsState::setTextSize,
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
+                    onLevel1SessionCompleted = practiceProgressState::recordLevel1Session,
                 )
             }
         }
