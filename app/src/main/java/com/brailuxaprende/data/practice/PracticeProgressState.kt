@@ -11,6 +11,8 @@ class PracticeProgressState(
     private val repository: PracticeProgressRepository,
     private val scope: CoroutineScope,
 ) {
+    val progress = repository.progress
+
     fun recordLevel1Session(
         summary: PracticeSessionSummary,
         practicedAt: Date = Date(),

@@ -9,10 +9,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
-import com.brailuxaprende.data.seasonal.AnnualDate
-import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
+import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
+import com.brailuxaprende.data.seasonal.AnnualDate
+import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
@@ -43,6 +44,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val preferences by settingsState.preferences.collectAsState()
+            val practiceProgress by practiceProgressState.progress.collectAsState(
+                initial = PracticeProgress(),
+            )
             val currentDate = rememberCurrentAnnualDate()
             val seasonalEvent = SeasonalThemeResolver.activeEvent(
                 date = currentDate,
@@ -57,6 +61,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 BrailuxApp(
                     preferences = preferences,
+                    practiceProgress = practiceProgress,
                     seasonalEvent = seasonalEvent,
                     onSoundEnabledChange = settingsState::setSoundEnabled,
                     onVibrationEnabledChange = settingsState::setVibrationEnabled,

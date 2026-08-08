@@ -47,7 +47,32 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.level1CompletedSessions)
         assertEquals(0, progress.level1TotalExercises)
         assertEquals(0, progress.level1FirstAttemptCorrect)
+        assertEquals(0, progress.level1AccuracyPercentage)
         assertNull(progress.level1LastPracticeDate)
+    }
+
+    @Test
+    fun accuracyPercentageUsesExistingData() {
+        val progress = PracticeProgress(
+            level1CompletedSessions = 3,
+            level1TotalExercises = 30,
+            level1FirstAttemptCorrect = 24,
+            level1LastPracticeDate = "2026-08-07",
+        )
+
+        assertEquals(80, progress.level1AccuracyPercentage)
+    }
+
+    @Test
+    fun accuracyPercentageIsSafeWithZeroExercises() {
+        val progress = PracticeProgress(
+            level1CompletedSessions = 1,
+            level1TotalExercises = 0,
+            level1FirstAttemptCorrect = 0,
+            level1LastPracticeDate = "2026-08-07",
+        )
+
+        assertEquals(0, progress.level1AccuracyPercentage)
     }
 
     @Test
@@ -62,6 +87,24 @@ class PracticeProgressRepositoryTest {
         assertEquals(20, progress.level1TotalExercises)
         assertEquals(15, progress.level1FirstAttemptCorrect)
         assertEquals("2026-08-07", progress.level1LastPracticeDate)
+    }
+
+    @Test
+    fun progressUpdatesAfterEachCompletedSession() = runBlocking {
+        repository.recordLevel1Session(10, 8, "2026-08-05")
+
+        val firstSession = repository.progress.first()
+        assertEquals(1, firstSession.level1CompletedSessions)
+        assertEquals(10, firstSession.level1TotalExercises)
+        assertEquals(8, firstSession.level1FirstAttemptCorrect)
+
+        repository.recordLevel1Session(10, 6, "2026-08-07")
+
+        val secondSession = repository.progress.first()
+        assertEquals(2, secondSession.level1CompletedSessions)
+        assertEquals(20, secondSession.level1TotalExercises)
+        assertEquals(14, secondSession.level1FirstAttemptCorrect)
+        assertEquals("2026-08-07", secondSession.level1LastPracticeDate)
     }
 
     private fun createRepository() {

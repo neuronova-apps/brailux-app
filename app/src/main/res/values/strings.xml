@@ -87,7 +87,16 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="play_title">Juega</string>
     <string name="play_description">Aquí encontrarás juegos educativos para practicar Braille.</string>
     <string name="progress_title">Mi progreso</string>
-    <string name="progress_description">Aquí podrás consultar tu avance en las lecciones y prácticas.</string>
+    <string name="progress_description">Consulta tu avance real en las prácticas completadas.</string>
+    <string name="progress_level_1_title">Explorador Braille</string>
+    <string name="progress_no_level_1_practice">Aún no has completado una sesión de Explorador Braille.</string>
+    <string name="progress_sessions_completed">%1$d sesiones completadas</string>
+    <string name="progress_exercises_completed">%1$d ejercicios realizados</string>
+    <string name="progress_first_attempt_correct">%1$d aciertos al primer intento</string>
+    <string name="progress_accuracy">Precisión: %1$d%%</string>
+    <string name="progress_accumulated_accuracy">Precisión acumulada: %1$d%%</string>
+    <string name="progress_last_practice">Última práctica: %1$s</string>
+    <string name="progress_no_last_practice">Sin prácticas completadas</string>
 
     <string name="settings_title">Configuración</string>
     <string name="settings_description">Personaliza la apariencia, la accesibilidad y la retroalimentación de toda la aplicación.</string>

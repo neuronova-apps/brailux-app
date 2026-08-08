@@ -21,7 +21,15 @@ data class PracticeProgress(
     val level1TotalExercises: Int = 0,
     val level1FirstAttemptCorrect: Int = 0,
     val level1LastPracticeDate: String? = null,
-)
+) {
+    val level1AccuracyPercentage: Int
+        get() {
+            if (level1TotalExercises <= 0) return 0
+
+            val safeCorrectAnswers = level1FirstAttemptCorrect.coerceIn(0, level1TotalExercises)
+            return (safeCorrectAnswers.toLong() * 100 / level1TotalExercises).toInt()
+        }
+}
 
 class PracticeProgressRepository(
     private val dataStore: DataStore<Preferences>,

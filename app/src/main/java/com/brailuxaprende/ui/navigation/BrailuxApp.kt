@@ -31,6 +31,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.brailuxaprende.R
+import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
@@ -44,6 +45,7 @@ import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LetterAExerciseScreen
 import com.brailuxaprende.ui.screens.PlaceholderScreen
 import com.brailuxaprende.ui.screens.PracticeScreen
+import com.brailuxaprende.ui.screens.ProgressScreen
 import com.brailuxaprende.ui.screens.SettingsScreen
 import com.brailuxaprende.ui.screens.WelcomeScreen
 
@@ -84,6 +86,7 @@ private val routesWithoutBottomBar = setOf(
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
+    practiceProgress: PracticeProgress = PracticeProgress(),
     seasonalEvent: SeasonalEvent? = null,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
@@ -113,6 +116,7 @@ fun BrailuxApp(
         BrailuxNavHost(
             navController = navController,
             preferences = preferences,
+            practiceProgress = practiceProgress,
             seasonalEvent = seasonalEvent,
             onSoundEnabledChange = onSoundEnabledChange,
             onVibrationEnabledChange = onVibrationEnabledChange,
@@ -203,6 +207,7 @@ private fun BrailuxBottomBar(
 private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
+    practiceProgress: PracticeProgress,
     seasonalEvent: SeasonalEvent?,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
@@ -271,9 +276,8 @@ private fun BrailuxNavHost(
             )
         }
         composable(BrailuxRoutes.PROGRESS) {
-            PlaceholderScreen(
-                title = stringResource(R.string.progress_title),
-                description = stringResource(R.string.progress_description),
+            ProgressScreen(
+                progress = practiceProgress,
                 onBack = ::goBack,
             )
         }
