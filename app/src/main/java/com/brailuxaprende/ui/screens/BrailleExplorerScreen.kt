@@ -43,6 +43,8 @@ import androidx.compose.ui.res.stringResource
 import com.brailuxaprende.R
 import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.practice.BrailleRow
+import com.brailuxaprende.practice.CustomPracticeConfiguration
+import com.brailuxaprende.practice.PracticeContentGroup
 import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
 import com.brailuxaprende.practice.PracticeHint
@@ -116,11 +118,31 @@ fun BrailleChallengeScreen(
 }
 
 @Composable
+fun CustomBraillePracticeScreen(
+    configuration: CustomPracticeConfiguration,
+    onChangeConfiguration: () -> Unit,
+    onBackToPractice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.Custom,
+        sessionFactory = { PracticeSessionGenerator.generateCustom(configuration) },
+        onSessionCompleted = { _, onRecorded -> onRecorded(true) },
+        onBackToPractice = onBackToPractice,
+        customConfiguration = configuration,
+        onChangeConfiguration = onChangeConfiguration,
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun BraillePracticeLevelScreen(
     level: PracticeLevel,
     sessionFactory: () -> PracticeSession,
     onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
+    customConfiguration: CustomPracticeConfiguration? = null,
+    onChangeConfiguration: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var sessionKey by rememberSaveable { mutableStateOf(0) }
@@ -134,6 +156,8 @@ private fun BraillePracticeLevelScreen(
             level = level,
             summary = state.summary(),
             onPracticeAgain = { sessionKey += 1 },
+            customConfiguration = customConfiguration,
+            onChangeConfiguration = onChangeConfiguration,
             onBackToPractice = onBackToPractice,
             modifier = modifier,
         )
@@ -247,7 +271,7 @@ private fun BraillePracticeExercise(
                     modifier = Modifier.padding(top = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                if (level.hintLimit != 0) {
+                if (state.session.hintsEnabled) {
                     state.hintsRemaining?.let { hintsRemaining ->
                         Text(
                             text = stringResource(R.string.practice_hints_available, hintsRemaining),
@@ -257,7 +281,7 @@ private fun BraillePracticeExercise(
                     }
                 }
             }
-            if (level.allowsPointNumberToggle) {
+            if (state.session.allowsPointNumberToggle) {
                 Spacer(modifier = Modifier.height(14.dp))
                 BrailuxSectionCard(
                     modifier = Modifier
@@ -366,7 +390,7 @@ private fun BraillePracticeExercise(
                 )
             }
 
-            if (level.hintLimit != 0) {
+            if (state.session.hintsEnabled) {
                 Spacer(modifier = Modifier.height(14.dp))
                 BrailuxSecondaryButton(
                     text = stringResource(R.string.practice_show_hint),
@@ -576,9 +600,15 @@ private fun BraillePracticeSummary(
     level: PracticeLevel,
     summary: PracticeSessionSummary,
     onPracticeAgain: () -> Unit,
+    customConfiguration: CustomPracticeConfiguration? = null,
+    onChangeConfiguration: (() -> Unit)? = null,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val practicedContentNames = mutableListOf<String>()
+    for (group in summary.practicedContentGroups) {
+        practicedContentNames += stringResource(group.nameResource())
+    }
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -623,17 +653,32 @@ private fun BraillePracticeSummary(
                         summary.accuracyPercentage,
                     ),
                 )
-                if (level == PracticeLevel.BrailleRecognizer) {
+                if (level == PracticeLevel.BrailleRecognizer || level == PracticeLevel.Custom) {
                     SummaryLine(
                         stringResource(R.string.practice_summary_hints_used, summary.hintsUsed),
                     )
                 }
-                SummaryLine(
-                    stringResource(
-                        R.string.practice_summary_letters,
-                        summary.practicedLetters.joinToString(", "),
-                    ),
-                )
+                if (level == PracticeLevel.Custom && customConfiguration != null) {
+                    SummaryLine(
+                        stringResource(
+                            R.string.custom_practice_summary_content,
+                            practicedContentNames.joinToString(", "),
+                        ),
+                    )
+                    SummaryLine(
+                        stringResource(
+                            R.string.custom_practice_summary_mode,
+                            stringResource(customConfiguration.mode.titleResource()),
+                        ),
+                    )
+                } else {
+                    SummaryLine(
+                        stringResource(
+                            R.string.practice_summary_letters,
+                            summary.practicedLetters.joinToString(", "),
+                        ),
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(18.dp))
             BrailuxPrimaryButton(
@@ -643,6 +688,16 @@ private fun BraillePracticeSummary(
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
             )
+            if (onChangeConfiguration != null) {
+                Spacer(modifier = Modifier.height(10.dp))
+                BrailuxSecondaryButton(
+                    text = stringResource(R.string.custom_practice_change_configuration),
+                    onClick = onChangeConfiguration,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(10.dp))
             BrailuxSecondaryButton(
                 text = stringResource(R.string.practice_back_to_practice),
@@ -739,13 +794,24 @@ private fun PracticeLevel.titleResource(): Int = when (this) {
     PracticeLevel.BrailleExplorer -> R.string.practice_level_1_title
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_2_title
     PracticeLevel.BrailleChallenge -> R.string.practice_level_3_title
+    PracticeLevel.Custom -> R.string.practice_level_4_title
 }
 
 @androidx.annotation.StringRes
 private fun PracticeLevel.completionTitleResource(): Int = when (this) {
     PracticeLevel.BrailleChallenge -> R.string.practice_challenge_completed
+    PracticeLevel.Custom -> R.string.custom_practice_completed
     PracticeLevel.BrailleExplorer,
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_completed
+}
+
+@androidx.annotation.StringRes
+private fun PracticeContentGroup.nameResource(): Int = when (this) {
+    PracticeContentGroup.SpanishAlphabet -> R.string.custom_practice_alphabet
+    PracticeContentGroup.AccentuationAndDiaeresis -> R.string.custom_practice_accents
+    PracticeContentGroup.Punctuation -> R.string.custom_practice_punctuation
+    PracticeContentGroup.Numbers -> R.string.custom_practice_numbers
+    PracticeContentGroup.Capitals -> R.string.custom_practice_capitals
 }
 
 @androidx.annotation.StringRes

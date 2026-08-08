@@ -30,6 +30,13 @@ enum class PracticeLevel(
         allowsPointNumberToggle = false,
         hintLimit = 0,
     ),
+    Custom(
+        exerciseCount = 10,
+        optionCount = 6,
+        showPointNumbersByDefault = true,
+        allowsPointNumberToggle = true,
+        hintLimit = null,
+    ),
 }
 
 enum class PracticeExerciseType {
@@ -41,6 +48,71 @@ enum class PracticeMode {
     SignToCharacter,
     CharacterToSign,
     Mixed,
+}
+
+enum class PracticeContentGroup(
+    val isAvailable: Boolean,
+) {
+    SpanishAlphabet(isAvailable = true),
+    AccentuationAndDiaeresis(isAvailable = false),
+    Punctuation(isAvailable = false),
+    Numbers(isAvailable = false),
+    Capitals(isAvailable = false),
+}
+
+enum class CustomExerciseCount(
+    val value: Int,
+) {
+    Ten(10),
+    Fifteen(15),
+    Twenty(20),
+    ;
+
+    companion object {
+        fun fromValue(value: Int): CustomExerciseCount = entries.firstOrNull { it.value == value } ?: Ten
+    }
+}
+
+data class CustomPracticeConfiguration(
+    val additionalContentGroups: Set<PracticeContentGroup> = emptySet(),
+    val exerciseCount: CustomExerciseCount = CustomExerciseCount.Ten,
+    val mode: PracticeMode = PracticeMode.SignToCharacter,
+    val hintsEnabled: Boolean = true,
+    val showPointNumbers: Boolean = true,
+) {
+    init {
+        require(PracticeContentGroup.SpanishAlphabet !in additionalContentGroups) {
+            "The Spanish alphabet is mandatory and must not be stored as an additional group."
+        }
+        require(additionalContentGroups.all { it.isAvailable }) {
+            "Only verified and available Braille content groups can be selected."
+        }
+    }
+
+    val selectedContentGroups: Set<PracticeContentGroup>
+        get() = setOf(PracticeContentGroup.SpanishAlphabet) + additionalContentGroups
+
+    fun withContentGroup(
+        group: PracticeContentGroup,
+        selected: Boolean,
+    ): CustomPracticeConfiguration {
+        if (group == PracticeContentGroup.SpanishAlphabet || !group.isAvailable) return this
+        return copy(
+            additionalContentGroups = if (selected) {
+                additionalContentGroups + group
+            } else {
+                additionalContentGroups - group
+            },
+        )
+    }
+
+    fun selectAllAvailableAdditional(): CustomPracticeConfiguration = copy(
+        additionalContentGroups = PracticeContentGroup.entries
+            .filter { it != PracticeContentGroup.SpanishAlphabet && it.isAvailable }
+            .toSet(),
+    )
+
+    fun removeAdditional(): CustomPracticeConfiguration = copy(additionalContentGroups = emptySet())
 }
 
 enum class BrailleRow {
@@ -118,10 +190,15 @@ data class PracticeSession(
     val level: PracticeLevel,
     val mode: PracticeMode,
     val exercises: List<PracticeExercise>,
+    val customConfiguration: CustomPracticeConfiguration? = null,
 ) {
     init {
-        require(exercises.size == level.exerciseCount) {
+        val expectedExerciseCount = customConfiguration?.exerciseCount?.value ?: level.exerciseCount
+        require(exercises.size == expectedExerciseCount) {
             "Session exercise count must match the configured level."
+        }
+        require((level == PracticeLevel.Custom) == (customConfiguration != null)) {
+            "Only custom sessions can contain a custom configuration."
         }
         when (mode) {
             PracticeMode.SignToCharacter -> require(
@@ -135,6 +212,15 @@ data class PracticeSession(
             ) { "Mixed sessions must contain both exercise types." }
         }
     }
+
+    val hintsEnabled: Boolean
+        get() = customConfiguration?.hintsEnabled ?: (level.hintLimit != 0)
+
+    val allowsPointNumberToggle: Boolean
+        get() = customConfiguration == null && level.allowsPointNumberToggle
+
+    val initialPointNumberVisibility: Boolean
+        get() = customConfiguration?.showPointNumbers ?: level.showPointNumbersByDefault
 }
 
 data class PracticeSessionSummary(
@@ -144,4 +230,8 @@ data class PracticeSessionSummary(
     val accuracyPercentage: Int,
     val practicedLetters: List<Char>,
     val hintsUsed: Int = 0,
+    val practicedContentGroups: Set<PracticeContentGroup> = setOf(
+        PracticeContentGroup.SpanishAlphabet,
+    ),
+    val mode: PracticeMode? = null,
 )

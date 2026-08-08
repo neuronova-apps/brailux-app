@@ -41,11 +41,14 @@ import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeMode
+import com.brailuxaprende.practice.CustomPracticeConfiguration
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.BrailleChallengeScreen
 import com.brailuxaprende.ui.screens.BrailleExplorerScreen
 import com.brailuxaprende.ui.screens.BrailleRecognizerScreen
+import com.brailuxaprende.ui.screens.CustomBraillePracticeScreen
+import com.brailuxaprende.ui.screens.CustomPracticeConfigurationScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LetterAExerciseScreen
@@ -69,6 +72,8 @@ object BrailuxRoutes {
     const val BRAILLE_EXPLORER = "practica_explorador_braille"
     const val BRAILLE_RECOGNIZER = "practica_reconocedor_braille"
     const val BRAILLE_CHALLENGE = "practica_desafio_braille"
+    const val CUSTOM_PRACTICE_CONFIGURATION = "configuracion_practica_personalizada"
+    const val CUSTOM_PRACTICE = "practica_personalizada"
 }
 
 private data class BottomDestination(
@@ -91,6 +96,8 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.BRAILLE_EXPLORER,
     BrailuxRoutes.BRAILLE_RECOGNIZER,
     BrailuxRoutes.BRAILLE_CHALLENGE,
+    BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
+    BrailuxRoutes.CUSTOM_PRACTICE,
 )
 
 @Composable
@@ -109,6 +116,8 @@ fun BrailuxApp(
         { _, onRecorded -> onRecorded(true) },
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
         { _, onRecorded -> onRecorded(true) },
+    customPracticeConfiguration: CustomPracticeConfiguration = CustomPracticeConfiguration(),
+    onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit = {},
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -141,6 +150,8 @@ fun BrailuxApp(
             onLevel1SessionCompleted = onLevel1SessionCompleted,
             onLevel2SessionCompleted = onLevel2SessionCompleted,
             onLevel3SessionCompleted = onLevel3SessionCompleted,
+            customPracticeConfiguration = customPracticeConfiguration,
+            onCustomPracticeConfigurationUsed = onCustomPracticeConfigurationUsed,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -234,12 +245,37 @@ private fun BrailuxNavHost(
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    customPracticeConfiguration: CustomPracticeConfiguration,
+    onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var selectedPracticeModeName by rememberSaveable {
         mutableStateOf(PracticeMode.SignToCharacter.name)
     }
     val selectedPracticeMode = PracticeMode.valueOf(selectedPracticeModeName)
+    var activeCustomConfiguration by rememberSaveable(
+        stateSaver = androidx.compose.runtime.saveable.Saver<
+            CustomPracticeConfiguration,
+            List<String>,
+        >(
+            save = { configuration ->
+                listOf(
+                    configuration.exerciseCount.name,
+                    configuration.mode.name,
+                    configuration.hintsEnabled.toString(),
+                    configuration.showPointNumbers.toString(),
+                )
+            },
+            restore = { values ->
+                CustomPracticeConfiguration(
+                    exerciseCount = com.brailuxaprende.practice.CustomExerciseCount.valueOf(values[0]),
+                    mode = PracticeMode.valueOf(values[1]),
+                    hintsEnabled = values[2].toBoolean(),
+                    showPointNumbers = values[3].toBoolean(),
+                )
+            },
+        ),
+    ) { mutableStateOf(customPracticeConfiguration) }
 
     fun goBack() {
         if (!navController.popBackStack()) {
@@ -295,6 +331,9 @@ private fun BrailuxNavHost(
                 onStartLevel3 = { mode ->
                     selectedPracticeModeName = mode.name
                     navController.navigate(BrailuxRoutes.BRAILLE_CHALLENGE)
+                },
+                onStartLevel4 = {
+                    navController.navigate(BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION)
                 },
                 onBack = ::goBack,
             )
@@ -357,6 +396,29 @@ private fun BrailuxNavHost(
             BrailleChallengeScreen(
                 mode = selectedPracticeMode,
                 onSessionCompleted = onLevel3SessionCompleted,
+                onBackToPractice = ::backToPractice,
+            )
+        }
+        composable(BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION) {
+            CustomPracticeConfigurationScreen(
+                initialConfiguration = customPracticeConfiguration,
+                onStartPractice = { configuration ->
+                    activeCustomConfiguration = configuration
+                    onCustomPracticeConfigurationUsed(configuration)
+                    navController.navigate(BrailuxRoutes.CUSTOM_PRACTICE)
+                },
+                onBack = ::goBack,
+            )
+        }
+        composable(BrailuxRoutes.CUSTOM_PRACTICE) {
+            CustomBraillePracticeScreen(
+                configuration = activeCustomConfiguration,
+                onChangeConfiguration = {
+                    navController.popBackStack(
+                        BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
+                        inclusive = false,
+                    )
+                },
                 onBackToPractice = ::backToPractice,
             )
         }

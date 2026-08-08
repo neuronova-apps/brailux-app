@@ -45,6 +45,7 @@ fun PracticeScreen(
     onStartLevel1: (PracticeMode) -> Unit,
     onStartLevel2: (PracticeMode) -> Unit,
     onStartLevel3: (PracticeMode) -> Unit,
+    onStartLevel4: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -138,9 +139,10 @@ fun PracticeScreen(
                     description = stringResource(R.string.practice_level_3_description),
                     onClick = { onStartLevel3(selectedMode) },
                 )
-                UnavailableLevelCard(
+                AvailableLevelCard(
                     title = stringResource(R.string.practice_level_4_title),
                     description = stringResource(R.string.practice_level_4_description),
+                    onClick = onStartLevel4,
                 )
             }
             Spacer(modifier = Modifier.height(20.dp))

@@ -14,7 +14,7 @@ data class PracticeSessionState(
     val firstAttemptCorrect: Int = 0,
     val errors: Int = 0,
     val validation: PracticeValidationState = PracticeValidationState.AwaitingAnswer,
-    val showPointNumbers: Boolean = session.level.showPointNumbersByDefault,
+    val showPointNumbers: Boolean = session.initialPointNumberVisibility,
     val revealedHintCount: Int = 0,
     val hintsUsed: Int = 0,
     val isCompleted: Boolean = false,
@@ -43,7 +43,11 @@ data class PracticeSessionState(
         get() = session.level.hintLimit?.let { limit -> (limit - hintsUsed).coerceAtLeast(0) }
 
     val availableHints: List<PracticeHint>
-        get() = PracticeHintGenerator.generate(session.level, currentExercise)
+        get() = if (session.hintsEnabled) {
+            PracticeHintGenerator.generate(session.level, currentExercise)
+        } else {
+            emptyList()
+        }
 
     val visibleHints: List<PracticeHint>
         get() = availableHints.take(revealedHintCount)
@@ -104,7 +108,7 @@ data class PracticeSessionState(
     }
 
     fun togglePointNumbers(): PracticeSessionState {
-        if (!session.level.allowsPointNumberToggle) return this
+        if (!session.allowsPointNumberToggle) return this
         return copy(showPointNumbers = !showPointNumbers)
     }
 
@@ -112,7 +116,9 @@ data class PracticeSessionState(
         if (!canShowHint) return this
         return copy(
             revealedHintCount = revealedHintCount + 1,
-            hintsUsed = hintsUsed + if (session.level.hintLimit == null) 0 else 1,
+            hintsUsed = hintsUsed + if (
+                session.level == PracticeLevel.BrailleExplorer
+            ) 0 else 1,
         )
     }
 
@@ -128,6 +134,9 @@ data class PracticeSessionState(
                 .distinct()
                 .sorted(),
             hintsUsed = hintsUsed,
+            practicedContentGroups = session.customConfiguration?.selectedContentGroups
+                ?: setOf(PracticeContentGroup.SpanishAlphabet),
+            mode = session.mode,
         )
     }
 }

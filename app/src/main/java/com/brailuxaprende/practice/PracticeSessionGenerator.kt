@@ -26,6 +26,35 @@ object PracticeSessionGenerator {
         return generateLevel(PracticeLevel.BrailleChallenge, mode, random)
     }
 
+    fun generateCustom(
+        configuration: CustomPracticeConfiguration,
+        random: Random = Random.Default,
+    ): PracticeSession {
+        val characters = charactersFor(configuration.selectedContentGroups)
+        val targets = characters.shuffled(random).take(configuration.exerciseCount.value)
+        require(targets.size == configuration.exerciseCount.value) {
+            "Selected content must provide enough distinct exercises."
+        }
+        val exercises = targets.mapIndexed { index, target ->
+            PracticeExercise(
+                target = target,
+                type = exerciseType(configuration.mode, index),
+                options = createPedagogicalOptions(
+                    target = target,
+                    characters = characters,
+                    optionCount = PracticeLevel.Custom.optionCount,
+                    random = random,
+                ),
+            )
+        }
+        return PracticeSession(
+            level = PracticeLevel.Custom,
+            mode = configuration.mode,
+            exercises = exercises,
+            customConfiguration = configuration,
+        )
+    }
+
     private fun generateLevel(
         level: PracticeLevel,
         mode: PracticeMode,
@@ -35,6 +64,7 @@ object PracticeSessionGenerator {
             PracticeLevel.BrailleExplorer -> BrailleRepository.getLevel1Characters()
             PracticeLevel.BrailleRecognizer -> BrailleRepository.getLevel2Characters()
             PracticeLevel.BrailleChallenge -> BrailleRepository.getLevel2Characters()
+            PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
         }
 
         val targets = when (level) {
@@ -46,6 +76,7 @@ object PracticeSessionGenerator {
                     add(characters.filterNot { it == previous }.random(random))
                 }
             }
+            PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
         }
 
         val exercises = targets.mapIndexed { index, target ->
@@ -58,6 +89,15 @@ object PracticeSessionGenerator {
 
         return PracticeSession(level = level, mode = mode, exercises = exercises)
     }
+
+    private fun charactersFor(
+        groups: Set<PracticeContentGroup>,
+    ): List<BrailleCharacter> = buildList {
+        if (PracticeContentGroup.SpanishAlphabet in groups) {
+            addAll(BrailleRepository.getLevel2Characters())
+        }
+        // Additional groups remain unavailable until their complete repertoires are verified.
+    }.distinctBy { it.printedCharacter }
 
     private fun exerciseType(mode: PracticeMode, index: Int): PracticeExerciseType = when (mode) {
         PracticeMode.SignToCharacter -> PracticeExerciseType.SignToCharacter
@@ -79,4 +119,21 @@ object PracticeSessionGenerator {
         .shuffled(random)
         .take(optionCount - 1) + target)
         .shuffled(random)
+
+    private fun createPedagogicalOptions(
+        target: BrailleCharacter,
+        characters: List<BrailleCharacter>,
+        optionCount: Int,
+        random: Random,
+    ): List<BrailleCharacter> {
+        val targetIndex = characters.indexOf(target)
+        val distractors = characters
+            .filterNot { it.printedCharacter == target.printedCharacter }
+            .sortedBy { candidate ->
+                val distance = kotlin.math.abs(characters.indexOf(candidate) - targetIndex)
+                distance * 10 + random.nextInt(10)
+            }
+            .take(optionCount - 1)
+        return (distractors + target).shuffled(random)
+    }
 }

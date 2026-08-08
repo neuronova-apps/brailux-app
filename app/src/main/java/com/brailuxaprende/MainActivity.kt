@@ -11,6 +11,8 @@ import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
+import com.brailuxaprende.data.practice.CustomPracticePreferencesRepository
+import com.brailuxaprende.data.practice.CustomPracticePreferencesState
 import com.brailuxaprende.data.seasonal.AnnualDate
 import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
@@ -37,6 +39,14 @@ class MainActivity : ComponentActivity() {
             scope = lifecycleScope,
         )
     }
+    private val customPracticePreferencesState by lazy {
+        CustomPracticePreferencesState(
+            repository = CustomPracticePreferencesRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+            scope = lifecycleScope,
+        )
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,6 +54,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             val preferences by settingsState.preferences.collectAsState()
             val practiceProgress by practiceProgressState.progress.collectAsState()
+            val customPracticeConfiguration by
+                customPracticePreferencesState.configuration.collectAsState()
             val currentDate = rememberCurrentAnnualDate()
             val seasonalEvent = SeasonalThemeResolver.activeEvent(
                 date = currentDate,
@@ -59,6 +71,7 @@ class MainActivity : ComponentActivity() {
                 BrailuxApp(
                     preferences = preferences,
                     practiceProgress = practiceProgress,
+                    customPracticeConfiguration = customPracticeConfiguration,
                     seasonalEvent = seasonalEvent,
                     onSoundEnabledChange = settingsState::setSoundEnabled,
                     onVibrationEnabledChange = settingsState::setVibrationEnabled,
@@ -84,6 +97,7 @@ class MainActivity : ComponentActivity() {
                             onRecorded = onRecorded,
                         )
                     },
+                    onCustomPracticeConfigurationUsed = customPracticePreferencesState::save,
                 )
             }
         }
