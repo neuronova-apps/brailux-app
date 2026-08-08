@@ -49,8 +49,8 @@
     <string name="practice_coming_soon">Próximamente</string>
     <string name="practice_level_1_title">Nivel 1 - Explorador Braille</string>
     <string name="practice_level_1_description">Reconoce las letras A a J mediante signos y caracteres.</string>
-    <string name="practice_level_2_title">Nivel 2</string>
-    <string name="practice_level_2_description">Contenido reservado para una próxima etapa.</string>
+    <string name="practice_level_2_title">Nivel 2 - Reconocedor Braille</string>
+    <string name="practice_level_2_description">Reconoce el alfabeto español completo con ejercicios de mayor dificultad.</string>
     <string name="practice_level_3_title">Nivel 3</string>
     <string name="practice_level_3_description">Contenido reservado para una próxima etapa.</string>
     <string name="practice_level_4_title">Nivel 4</string>
@@ -61,6 +61,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_exercise_count">Ejercicio %1$d de %2$d</string>
     <string name="practice_first_attempt_count">Aciertos al primer intento: %1$d</string>
     <string name="practice_error_count">Errores: %1$d</string>
+    <string name="practice_hints_available">Pistas disponibles: %1$d</string>
     <string name="practice_show_point_numbers">Mostrar numeración de puntos</string>
     <string name="practice_prompt_sign_to_character">¿Qué letra representa esta celda Braille?</string>
     <string name="practice_prompt_character_to_sign">¿Qué celda Braille representa esta letra?</string>
@@ -81,7 +82,9 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_next_exercise">Siguiente ejercicio</string>
     <string name="practice_level_completed">Nivel completado</string>
     <string name="practice_summary_completed">Ejercicios completados: %1$d</string>
+    <string name="practice_summary_exercises_done">%1$d ejercicios realizados</string>
     <string name="practice_summary_accuracy">Precisión: %1$d%%</string>
+    <string name="practice_summary_hints_used">Pistas utilizadas: %1$d</string>
     <string name="practice_summary_letters">Letras practicadas: %1$s</string>
     <string name="practice_again">Practicar nuevamente</string>
     <string name="practice_back_to_practice">Volver a Práctica</string>

@@ -7,6 +7,55 @@ import org.junit.Test
 
 class BrailleRepositoryTest {
     @Test
+    fun mapsCompleteSpanishAlphabetToCorrectBrailleCells() {
+        val expectedPoints = linkedMapOf(
+            'A' to listOf(1),
+            'B' to listOf(1, 2),
+            'C' to listOf(1, 4),
+            'D' to listOf(1, 4, 5),
+            'E' to listOf(1, 5),
+            'F' to listOf(1, 2, 4),
+            'G' to listOf(1, 2, 4, 5),
+            'H' to listOf(1, 2, 5),
+            'I' to listOf(2, 4),
+            'J' to listOf(2, 4, 5),
+            'K' to listOf(1, 3),
+            'L' to listOf(1, 2, 3),
+            'M' to listOf(1, 3, 4),
+            'N' to listOf(1, 3, 4, 5),
+            'Ñ' to listOf(1, 2, 4, 5, 6),
+            'O' to listOf(1, 3, 5),
+            'P' to listOf(1, 2, 3, 4),
+            'Q' to listOf(1, 2, 3, 4, 5),
+            'R' to listOf(1, 2, 3, 5),
+            'S' to listOf(2, 3, 4),
+            'T' to listOf(2, 3, 4, 5),
+            'U' to listOf(1, 3, 6),
+            'V' to listOf(1, 2, 3, 6),
+            'W' to listOf(2, 4, 5, 6),
+            'X' to listOf(1, 3, 4, 6),
+            'Y' to listOf(1, 3, 4, 5, 6),
+            'Z' to listOf(1, 3, 5, 6),
+        )
+
+        assertEquals(
+            expectedPoints,
+            BrailleRepository.getLevel2Characters().associate {
+                it.printedCharacter to it.cell.activePoints()
+            },
+        )
+    }
+
+    @Test
+    fun mapsSpanishEnyeToPointsOneTwoFourFiveSix() {
+        assertEquals(
+            listOf(1, 2, 4, 5, 6),
+            BrailleRepository.findCharacter('Ñ')?.cell?.activePoints(),
+        )
+        assertSame(BrailleRepository.findCharacter('Ñ'), BrailleRepository.findCharacter('ñ'))
+    }
+
+    @Test
     fun mapsLettersAThroughJToCorrectBrailleCells() {
         val expectedPoints = mapOf(
             'A' to listOf(1),

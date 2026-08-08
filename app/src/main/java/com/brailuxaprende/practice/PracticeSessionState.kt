@@ -14,8 +14,9 @@ data class PracticeSessionState(
     val firstAttemptCorrect: Int = 0,
     val errors: Int = 0,
     val validation: PracticeValidationState = PracticeValidationState.AwaitingAnswer,
-    val showPointNumbers: Boolean = true,
+    val showPointNumbers: Boolean = session.level.showPointNumbersByDefault,
     val hintVisible: Boolean = false,
+    val hintsUsed: Int = 0,
     val isCompleted: Boolean = false,
 ) {
     val currentExercise: PracticeExercise
@@ -37,6 +38,9 @@ data class PracticeSessionState(
         } else {
             firstAttemptCorrect * 100 / session.exercises.size
         }
+
+    val hintsRemaining: Int?
+        get() = session.level.hintLimit?.let { limit -> (limit - hintsUsed).coerceAtLeast(0) }
 
     fun selectAnswer(character: Char): PracticeSessionState {
         if (validation == PracticeValidationState.Correct || isCompleted) return this
@@ -86,7 +90,13 @@ data class PracticeSessionState(
 
     fun togglePointNumbers(): PracticeSessionState = copy(showPointNumbers = !showPointNumbers)
 
-    fun showHint(): PracticeSessionState = copy(hintVisible = true)
+    fun showHint(): PracticeSessionState {
+        if (hintVisible || hintsRemaining == 0) return this
+        return copy(
+            hintVisible = true,
+            hintsUsed = hintsUsed + if (session.level.hintLimit == null) 0 else 1,
+        )
+    }
 
     fun summary(): PracticeSessionSummary {
         require(isCompleted) { "A summary is only available after completing the session." }
@@ -95,7 +105,11 @@ data class PracticeSessionState(
             firstAttemptCorrect = firstAttemptCorrect,
             errors = errors,
             accuracyPercentage = accuracyPercentage,
-            practicedLetters = session.exercises.map { it.target.printedCharacter }.sorted(),
+            practicedLetters = session.exercises
+                .map { it.target.printedCharacter }
+                .distinct()
+                .sorted(),
+            hintsUsed = hintsUsed,
         )
     }
 }

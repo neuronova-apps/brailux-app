@@ -2,8 +2,24 @@ package com.brailuxaprende.practice
 
 import com.brailuxaprende.braille.BrailleCharacter
 
-enum class PracticeLevel(val exerciseCount: Int) {
-    BrailleExplorer(exerciseCount = 10),
+enum class PracticeLevel(
+    val exerciseCount: Int,
+    val optionCount: Int,
+    val showPointNumbersByDefault: Boolean,
+    val hintLimit: Int?,
+) {
+    BrailleExplorer(
+        exerciseCount = 10,
+        optionCount = 4,
+        showPointNumbersByDefault = true,
+        hintLimit = null,
+    ),
+    BrailleRecognizer(
+        exerciseCount = 15,
+        optionCount = 6,
+        showPointNumbersByDefault = false,
+        hintLimit = 3,
+    ),
 }
 
 enum class PracticeExerciseType {
@@ -56,4 +72,5 @@ data class PracticeSessionSummary(
     val errors: Int,
     val accuracyPercentage: Int,
     val practicedLetters: List<Char>,
+    val hintsUsed: Int = 0,
 )

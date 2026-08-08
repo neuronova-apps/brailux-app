@@ -71,3 +71,7 @@
 - Objetivo: preparar la aplicacion para distribucion inicial.
 - Resultado verificable: build de lanzamiento revisada, textos principales completos, iconografia y metadatos listos para revision.
 - Condicion para avanzar: no hay funciones remotas obligatorias, anuncios, compras ni cuentas pendientes para la primera version.
+
+## Incidencias pendientes
+
+- Mi progreso continua mostrando `PlaceholderScreen` aunque existen datos persistidos e implementaciones de progreso. Revisar en una auditoria posterior de navegacion y estado.

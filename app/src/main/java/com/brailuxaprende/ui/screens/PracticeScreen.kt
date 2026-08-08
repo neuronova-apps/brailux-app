@@ -35,6 +35,7 @@ import com.brailuxaprende.ui.components.BrailuxSectionCard
 @Composable
 fun PracticeScreen(
     onStartLevel1: () -> Unit,
+    onStartLevel2: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -87,9 +88,10 @@ fun PracticeScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 AvailableLevelCard(onClick = onStartLevel1)
-                UnavailableLevelCard(
+                AvailableLevelCard(
                     title = stringResource(R.string.practice_level_2_title),
                     description = stringResource(R.string.practice_level_2_description),
+                    onClick = onStartLevel2,
                 )
                 UnavailableLevelCard(
                     title = stringResource(R.string.practice_level_3_title),
@@ -141,7 +143,11 @@ private fun OrientationOption(
 }
 
 @Composable
-private fun AvailableLevelCard(onClick: () -> Unit) {
+private fun AvailableLevelCard(
+    title: String = stringResource(R.string.practice_level_1_title),
+    description: String = stringResource(R.string.practice_level_1_description),
+    onClick: () -> Unit,
+) {
     val available = stringResource(R.string.practice_available)
     Card(
         onClick = onClick,
@@ -154,8 +160,8 @@ private fun AvailableLevelCard(onClick: () -> Unit) {
         border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
     ) {
         LevelCardContent(
-            title = stringResource(R.string.practice_level_1_title),
-            description = stringResource(R.string.practice_level_1_description),
+            title = title,
+            description = description,
             status = available,
         )
     }

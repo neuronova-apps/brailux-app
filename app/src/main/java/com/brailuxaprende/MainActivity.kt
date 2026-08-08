@@ -72,6 +72,12 @@ class MainActivity : ComponentActivity() {
                             onRecorded = onRecorded,
                         )
                     },
+                    onLevel2SessionCompleted = { summary, onRecorded ->
+                        practiceProgressState.recordLevel2Session(
+                            summary = summary,
+                            onRecorded = onRecorded,
+                        )
+                    },
                 )
             }
         }

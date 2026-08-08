@@ -60,6 +60,52 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.level1FirstAttemptCorrect)
         assertEquals(0, progress.level1AccuracyPercentage)
         assertNull(progress.level1LastPracticeDate)
+        assertEquals(0, progress.level2CompletedSessions)
+        assertEquals(0, progress.level2TotalExercises)
+        assertEquals(0, progress.level2FirstAttemptCorrect)
+        assertEquals(0, progress.level2Errors)
+        assertEquals(0, progress.level2HintsUsed)
+        assertNull(progress.level2LastPracticeDate)
+    }
+
+    @Test
+    fun level2ProgressPersistsIndependentlyFromLevel1() = runBlocking {
+        repository.recordLevel1Session(10, 8, "2026-08-06")
+        repository.recordLevel2Session(
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 11,
+            errors = 5,
+            hintsUsed = 2,
+            practiceDate = "2026-08-07",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.level1CompletedSessions)
+        assertEquals(10, progress.level1TotalExercises)
+        assertEquals(8, progress.level1FirstAttemptCorrect)
+        assertEquals("2026-08-06", progress.level1LastPracticeDate)
+        assertEquals(1, progress.level2CompletedSessions)
+        assertEquals(15, progress.level2TotalExercises)
+        assertEquals(11, progress.level2FirstAttemptCorrect)
+        assertEquals(5, progress.level2Errors)
+        assertEquals(2, progress.level2HintsUsed)
+        assertEquals("2026-08-07", progress.level2LastPracticeDate)
+    }
+
+    @Test
+    fun level1RecordingDoesNotResetExistingLevel2Progress() = runBlocking {
+        repository.recordLevel2Session(15, 12, 3, 1, "2026-08-06")
+        repository.recordLevel1Session(10, 9, "2026-08-07")
+
+        val progress = repository.progress.first()
+
+        assertEquals(1, progress.level2CompletedSessions)
+        assertEquals(15, progress.level2TotalExercises)
+        assertEquals(12, progress.level2FirstAttemptCorrect)
+        assertEquals(3, progress.level2Errors)
+        assertEquals(1, progress.level2HintsUsed)
+        assertEquals("2026-08-06", progress.level2LastPracticeDate)
     }
 
     @Test

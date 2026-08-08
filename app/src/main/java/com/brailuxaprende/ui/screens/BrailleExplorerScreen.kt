@@ -45,6 +45,8 @@ import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
 import com.brailuxaprende.practice.PracticeHint
+import com.brailuxaprende.practice.PracticeLevel
+import com.brailuxaprende.practice.PracticeSession
 import com.brailuxaprende.practice.PracticeSessionGenerator
 import com.brailuxaprende.practice.PracticeSessionState
 import com.brailuxaprende.practice.PracticeSessionSummary
@@ -69,21 +71,55 @@ fun BrailleExplorerScreen(
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.BrailleExplorer,
+        sessionFactory = { PracticeSessionGenerator.generate() },
+        onSessionCompleted = onSessionCompleted,
+        onBackToPractice = onBackToPractice,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun BrailleRecognizerScreen(
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onBackToPractice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.BrailleRecognizer,
+        sessionFactory = { PracticeSessionGenerator.generateLevel2() },
+        onSessionCompleted = onSessionCompleted,
+        onBackToPractice = onBackToPractice,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun BraillePracticeLevelScreen(
+    level: PracticeLevel,
+    sessionFactory: () -> PracticeSession,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onBackToPractice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var sessionKey by rememberSaveable { mutableStateOf(0) }
-    val session = remember(sessionKey) { PracticeSessionGenerator.generate() }
+    val session = remember(sessionKey) { sessionFactory() }
     var state by remember(session) { mutableStateOf(PracticeSessionState(session)) }
     var completionPending by remember(session) { mutableStateOf(false) }
     var completionFailed by remember(session) { mutableStateOf(false) }
 
     if (state.isCompleted) {
-        BrailleExplorerSummary(
+        BraillePracticeSummary(
+            level = level,
             summary = state.summary(),
             onPracticeAgain = { sessionKey += 1 },
             onBackToPractice = onBackToPractice,
             modifier = modifier,
         )
     } else {
-        BrailleExplorerExercise(
+        BraillePracticeExercise(
+            level = level,
             state = state,
             completionPending = completionPending,
             completionFailed = completionFailed,
@@ -114,7 +150,8 @@ fun BrailleExplorerScreen(
 }
 
 @Composable
-private fun BrailleExplorerExercise(
+private fun BraillePracticeExercise(
+    level: PracticeLevel,
     state: PracticeSessionState,
     completionPending: Boolean,
     completionFailed: Boolean,
@@ -142,7 +179,7 @@ private fun BrailleExplorerExercise(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BrailuxScreenHeader(
-                title = stringResource(R.string.practice_level_1_title),
+                title = stringResource(level.titleResource()),
                 subtitle = stringResource(R.string.practice_reading_mode),
                 onBack = onBack,
             )
@@ -177,6 +214,13 @@ private fun BrailleExplorerExercise(
                     modifier = Modifier.padding(top = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
+                state.hintsRemaining?.let { hintsRemaining ->
+                    Text(
+                        text = stringResource(R.string.practice_hints_available, hintsRemaining),
+                        modifier = Modifier.padding(top = 4.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(14.dp))
             BrailuxSectionCard(
@@ -283,6 +327,7 @@ private fun BrailleExplorerExercise(
             BrailuxSecondaryButton(
                 text = stringResource(R.string.practice_show_hint),
                 onClick = { onStateChange(state.showHint()) },
+                enabled = state.hintsRemaining != 0 && !state.hintVisible,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
@@ -482,7 +527,8 @@ private fun PointNumberToggle(
 }
 
 @Composable
-private fun BrailleExplorerSummary(
+private fun BraillePracticeSummary(
+    level: PracticeLevel,
     summary: PracticeSessionSummary,
     onPracticeAgain: () -> Unit,
     onBackToPractice: () -> Unit,
@@ -501,7 +547,7 @@ private fun BrailleExplorerSummary(
         ) {
             BrailuxScreenHeader(
                 title = stringResource(R.string.practice_level_completed),
-                subtitle = stringResource(R.string.practice_level_1_title),
+                subtitle = stringResource(level.titleResource()),
             )
             Spacer(modifier = Modifier.height(22.dp))
             BrailuxSectionCard(
@@ -511,7 +557,11 @@ private fun BrailleExplorerSummary(
             ) {
                 SummaryLine(
                     stringResource(
-                        R.string.practice_summary_completed,
+                        if (level == PracticeLevel.BrailleRecognizer) {
+                            R.string.practice_summary_exercises_done
+                        } else {
+                            R.string.practice_summary_completed
+                        },
                         summary.exercisesCompleted,
                     ),
                 )
@@ -528,6 +578,11 @@ private fun BrailleExplorerSummary(
                         summary.accuracyPercentage,
                     ),
                 )
+                if (level == PracticeLevel.BrailleRecognizer) {
+                    SummaryLine(
+                        stringResource(R.string.practice_summary_hints_used, summary.hintsUsed),
+                    )
+                }
                 SummaryLine(
                     stringResource(
                         R.string.practice_summary_letters,
@@ -578,3 +633,9 @@ private fun hintText(hint: PracticeHint): String = stringResource(
 
 private fun activePointsText(character: BrailleCharacter): String =
     character.cell.activePoints().joinToString(", ")
+
+@androidx.annotation.StringRes
+private fun PracticeLevel.titleResource(): Int = when (this) {
+    PracticeLevel.BrailleExplorer -> R.string.practice_level_1_title
+    PracticeLevel.BrailleRecognizer -> R.string.practice_level_2_title
+}
