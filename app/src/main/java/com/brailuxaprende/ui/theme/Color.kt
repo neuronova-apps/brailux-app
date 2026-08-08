@@ -20,6 +20,16 @@ val BrailuxErrorContainer = Color(0xFFF9DEDC)
 val BrailuxOutline = Color(0xFF6F7F93)
 val BrailuxSurfaceVariant = Color(0xFFE7F1FC)
 
+val BrailuxDarkBackground = Color(0xFF081421)
+val BrailuxDarkSurface = Color(0xFF0F2236)
+val BrailuxDarkSurfaceVariant = Color(0xFF1B344D)
+val BrailuxDarkPrimary = Color(0xFF8CC8FF)
+val BrailuxDarkPrimaryContainer = Color(0xFF164A70)
+val BrailuxDarkText = Color(0xFFF3F8FF)
+val BrailuxDarkTextSecondary = Color(0xFFC4D5E7)
+val BrailuxDarkOutline = Color(0xFF8FA3B8)
+val BrailuxDarkOutlineVariant = Color(0xFF40566D)
+
 val HighContrastBackground = Color(0xFF000000)
 val HighContrastForeground = Color(0xFFFFFFFF)
 val HighContrastPrimary = Color(0xFFFFE000)
@@ -51,6 +61,17 @@ internal val RegularStatusColors = BrailuxStatusColors(
     onWarning = Color.White,
     warningContainer = BrailuxWarningContainer,
     onWarningContainer = Color(0xFF4A2100),
+)
+
+internal val DarkStatusColors = BrailuxStatusColors(
+    success = Color(0xFF80D982),
+    onSuccess = Color(0xFF00390A),
+    successContainer = Color(0xFF0C4A1E),
+    onSuccessContainer = Color(0xFFA1F3A3),
+    warning = Color(0xFFFFB870),
+    onWarning = Color(0xFF4B2800),
+    warningContainer = Color(0xFF633B08),
+    onWarningContainer = Color(0xFFFFDCC0),
 )
 
 internal val HighContrastStatusColors = BrailuxStatusColors(

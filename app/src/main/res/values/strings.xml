@@ -47,7 +47,11 @@
     <string name="progress_description">Aquí podrás consultar tu avance en las lecciones y prácticas.</string>
 
     <string name="settings_title">Configuración</string>
-    <string name="settings_description">Personaliza la accesibilidad y la retroalimentación de toda la aplicación.</string>
+    <string name="settings_description">Personaliza la apariencia, la accesibilidad y la retroalimentación de toda la aplicación.</string>
+    <string name="settings_appearance">Apariencia</string>
+    <string name="settings_appearance_system">Seguir sistema</string>
+    <string name="settings_appearance_light">Claro</string>
+    <string name="settings_appearance_dark">Oscuro</string>
     <string name="settings_sound">Sonido</string>
     <string name="settings_vibration">Vibración</string>
     <string name="settings_high_contrast">Modo de alto contraste</string>
@@ -59,6 +63,31 @@
     <string name="settings_state_disabled">Desactivado</string>
     <string name="settings_state_selected">Seleccionado</string>
     <string name="settings_state_not_selected">No seleccionado</string>
+    <string name="settings_seasonal_themes">Temas de temporada</string>
+    <string name="settings_seasonal_themes_description">Aplica detalles visuales discretos durante fechas especiales.</string>
+    <string name="settings_seasonal_themes_enabled">Activados</string>
+    <string name="settings_seasonal_themes_disabled">Desactivados</string>
+
+    <string name="seasonal_banner_label">Tema de temporada</string>
+    <string name="seasonal_banner_hide">Ocultar</string>
+    <string name="season_world_braille_day">Día Mundial del Braille</string>
+    <string name="season_message_world_braille_day">Celebramos el Braille y su aporte a la lectura y la autonomía.</string>
+    <string name="season_valentines_day">San Valentín</string>
+    <string name="season_message_valentines_day">Una fecha para compartir aprendizaje y amistad.</string>
+    <string name="season_book_day">Día del Libro</string>
+    <string name="season_message_book_day">Cada lectura abre una nueva forma de aprender.</string>
+    <string name="season_peru_independence">Fiestas Patrias del Perú</string>
+    <string name="season_message_peru_independence">Celebramos la diversidad y la historia del Perú.</string>
+    <string name="season_white_cane_day">Día Internacional del Bastón Blanco</string>
+    <string name="season_message_white_cane_day">Reconocemos la autonomía y la movilidad de las personas ciegas.</string>
+    <string name="season_halloween">Halloween</string>
+    <string name="season_message_halloween">Un detalle de temporada acompaña tu aprendizaje.</string>
+    <string name="season_disability_day">Día Internacional de las Personas con Discapacidad</string>
+    <string name="season_message_disability_day">La accesibilidad permite que todas las personas participen.</string>
+    <string name="season_christmas">Navidad</string>
+    <string name="season_message_christmas">Te acompañamos en estas fechas con un detalle especial.</string>
+    <string name="season_new_year">Año Nuevo</string>
+    <string name="season_message_new_year">Un nuevo año para seguir aprendiendo paso a paso.</string>
 
     <string name="about_title">Acerca de</string>
     <string name="about_app_name">Aplicación: Brailux Aprende</string>

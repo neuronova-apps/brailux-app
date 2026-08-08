@@ -31,7 +31,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.brailuxaprende.R
+import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
+import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
@@ -77,10 +79,13 @@ private val routesWithoutBottomBar = setOf(
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
+    seasonalEvent: SeasonalEvent? = null,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
     onHighContrastEnabledChange: (Boolean) -> Unit,
     onTextSizeChange: (TextSizePreference) -> Unit,
+    onAppearanceChange: (AppearancePreference) -> Unit,
+    onSeasonalThemesEnabledChange: (Boolean) -> Unit,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -102,10 +107,13 @@ fun BrailuxApp(
         BrailuxNavHost(
             navController = navController,
             preferences = preferences,
+            seasonalEvent = seasonalEvent,
             onSoundEnabledChange = onSoundEnabledChange,
             onVibrationEnabledChange = onVibrationEnabledChange,
             onHighContrastEnabledChange = onHighContrastEnabledChange,
             onTextSizeChange = onTextSizeChange,
+            onAppearanceChange = onAppearanceChange,
+            onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -188,10 +196,13 @@ private fun BrailuxBottomBar(
 private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
+    seasonalEvent: SeasonalEvent?,
     onSoundEnabledChange: (Boolean) -> Unit,
     onVibrationEnabledChange: (Boolean) -> Unit,
     onHighContrastEnabledChange: (Boolean) -> Unit,
     onTextSizeChange: (TextSizePreference) -> Unit,
+    onAppearanceChange: (AppearancePreference) -> Unit,
+    onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun goBack() {
@@ -216,6 +227,7 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.HOME) {
             HomeScreen(
+                seasonalEvent = seasonalEvent,
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
                 onPlay = { navController.navigate(BrailuxRoutes.PLAY) },
@@ -259,6 +271,8 @@ private fun BrailuxNavHost(
                 onVibrationEnabledChange = onVibrationEnabledChange,
                 onHighContrastEnabledChange = onHighContrastEnabledChange,
                 onTextSizeChange = onTextSizeChange,
+                onAppearanceChange = onAppearanceChange,
+                onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
                 onBack = ::goBack,
             )
         }

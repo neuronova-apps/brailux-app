@@ -5,7 +5,21 @@ data class AccessibilityPreferences(
     val vibrationEnabled: Boolean = true,
     val highContrastEnabled: Boolean = false,
     val textSize: TextSizePreference = TextSizePreference.Normal,
+    val appearance: AppearancePreference = AppearancePreference.System,
+    val seasonalThemesEnabled: Boolean = true,
 )
+
+enum class AppearancePreference(internal val storedValue: String) {
+    System(storedValue = "system"),
+    Light(storedValue = "light"),
+    Dark(storedValue = "dark"),
+    ;
+
+    companion object {
+        fun fromStoredValue(value: String?): AppearancePreference =
+            entries.firstOrNull { it.storedValue == value } ?: System
+    }
+}
 
 enum class TextSizePreference(
     internal val storedValue: String,

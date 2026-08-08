@@ -31,4 +31,12 @@ class AccessibilitySettingsState(
     fun setTextSize(textSize: TextSizePreference) {
         scope.launch { repository.setTextSize(textSize) }
     }
+
+    fun setAppearance(appearance: AppearancePreference) {
+        scope.launch { repository.setAppearance(appearance) }
+    }
+
+    fun setSeasonalThemesEnabled(enabled: Boolean) {
+        scope.launch { repository.setSeasonalThemesEnabled(enabled) }
+    }
 }

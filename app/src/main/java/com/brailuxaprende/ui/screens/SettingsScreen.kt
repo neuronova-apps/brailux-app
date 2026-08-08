@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
+import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSectionCard
@@ -42,6 +43,8 @@ fun SettingsScreen(
     onVibrationEnabledChange: (Boolean) -> Unit,
     onHighContrastEnabledChange: (Boolean) -> Unit,
     onTextSizeChange: (TextSizePreference) -> Unit,
+    onAppearanceChange: (AppearancePreference) -> Unit,
+    onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -62,6 +65,39 @@ fun SettingsScreen(
                 onBack = onBack,
             )
             Spacer(modifier = Modifier.height(22.dp))
+            BrailuxSectionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_appearance),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Column(
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .selectableGroup(),
+                ) {
+                    SelectionOptionRow(
+                        label = stringResource(R.string.settings_appearance_system),
+                        selected = preferences.appearance == AppearancePreference.System,
+                        onSelect = { onAppearanceChange(AppearancePreference.System) },
+                    )
+                    SelectionOptionRow(
+                        label = stringResource(R.string.settings_appearance_light),
+                        selected = preferences.appearance == AppearancePreference.Light,
+                        onSelect = { onAppearanceChange(AppearancePreference.Light) },
+                    )
+                    SelectionOptionRow(
+                        label = stringResource(R.string.settings_appearance_dark),
+                        selected = preferences.appearance == AppearancePreference.Dark,
+                        onSelect = { onAppearanceChange(AppearancePreference.Dark) },
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
             BrailuxSectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -101,22 +137,51 @@ fun SettingsScreen(
                         .padding(top = 8.dp)
                         .selectableGroup(),
                 ) {
-                    TextSizeOptionRow(
+                    SelectionOptionRow(
                         label = stringResource(R.string.settings_text_normal),
                         selected = preferences.textSize == TextSizePreference.Normal,
                         onSelect = { onTextSizeChange(TextSizePreference.Normal) },
                     )
-                    TextSizeOptionRow(
+                    SelectionOptionRow(
                         label = stringResource(R.string.settings_text_large),
                         selected = preferences.textSize == TextSizePreference.Large,
                         onSelect = { onTextSizeChange(TextSizePreference.Large) },
                     )
-                    TextSizeOptionRow(
+                    SelectionOptionRow(
                         label = stringResource(R.string.settings_text_very_large),
                         selected = preferences.textSize == TextSizePreference.VeryLarge,
                         onSelect = { onTextSizeChange(TextSizePreference.VeryLarge) },
                     )
                 }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+            BrailuxSectionCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_seasonal_themes),
+                    modifier = Modifier.semantics { heading() },
+                    style = MaterialTheme.typography.titleLarge,
+                )
+                Text(
+                    text = stringResource(R.string.settings_seasonal_themes_description),
+                    modifier = Modifier.padding(top = 6.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SettingsToggle(
+                    label = stringResource(
+                        if (preferences.seasonalThemesEnabled) {
+                            R.string.settings_seasonal_themes_enabled
+                        } else {
+                            R.string.settings_seasonal_themes_disabled
+                        },
+                    ),
+                    checked = preferences.seasonalThemesEnabled,
+                    onCheckedChange = onSeasonalThemesEnabledChange,
+                )
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -156,7 +221,7 @@ private fun SettingsToggle(
 }
 
 @Composable
-private fun TextSizeOptionRow(
+private fun SelectionOptionRow(
     label: String,
     selected: Boolean,
     onSelect: () -> Unit,

@@ -18,6 +18,8 @@ internal const val SoundEnabledKeyName = "sound_enabled"
 internal const val VibrationEnabledKeyName = "vibration_enabled"
 internal const val HighContrastEnabledKeyName = "high_contrast_enabled"
 internal const val TextSizeKeyName = "text_size"
+internal const val AppearanceKeyName = "appearance"
+internal const val SeasonalThemesEnabledKeyName = "seasonal_themes_enabled"
 
 val Context.accessibilityPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = DataStoreName,
@@ -52,11 +54,21 @@ class AccessibilityPreferencesRepository(
         dataStore.edit { preferences -> preferences[TextSizeKey] = textSize.storedValue }
     }
 
+    suspend fun setAppearance(appearance: AppearancePreference) {
+        dataStore.edit { preferences -> preferences[AppearanceKey] = appearance.storedValue }
+    }
+
+    suspend fun setSeasonalThemesEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[SeasonalThemesEnabledKey] = enabled }
+    }
+
     private companion object {
         val SoundEnabledKey = booleanPreferencesKey(SoundEnabledKeyName)
         val VibrationEnabledKey = booleanPreferencesKey(VibrationEnabledKeyName)
         val HighContrastEnabledKey = booleanPreferencesKey(HighContrastEnabledKeyName)
         val TextSizeKey = stringPreferencesKey(TextSizeKeyName)
+        val AppearanceKey = stringPreferencesKey(AppearanceKeyName)
+        val SeasonalThemesEnabledKey = booleanPreferencesKey(SeasonalThemesEnabledKeyName)
     }
 }
 
@@ -66,6 +78,8 @@ private fun Preferences.toAccessibilityPreferences(): AccessibilityPreferences =
         vibrationEnabled = valueNamed(VibrationEnabledKeyName) as? Boolean ?: true,
         highContrastEnabled = valueNamed(HighContrastEnabledKeyName) as? Boolean ?: false,
         textSize = TextSizePreference.fromStoredValue(valueNamed(TextSizeKeyName) as? String),
+        appearance = AppearancePreference.fromStoredValue(valueNamed(AppearanceKeyName) as? String),
+        seasonalThemesEnabled = valueNamed(SeasonalThemesEnabledKeyName) as? Boolean ?: true,
     )
 
 private fun Preferences.valueNamed(name: String): Any? =

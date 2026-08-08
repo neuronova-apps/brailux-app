@@ -49,6 +49,49 @@ class AccessibilityPreferencesRepositoryTest {
     }
 
     @Test
+    fun appearanceDefaultsToFollowSystem() = runBlocking {
+        assertEquals(AppearancePreference.System, repository.preferences.first().appearance)
+    }
+
+    @Test
+    fun lightAppearanceIsPersisted() = runBlocking {
+        repository.setAppearance(AppearancePreference.Light)
+
+        val reopenedRepository = reopenRepository()
+
+        assertEquals(AppearancePreference.Light, reopenedRepository.preferences.first().appearance)
+    }
+
+    @Test
+    fun darkAppearanceIsPersisted() = runBlocking {
+        repository.setAppearance(AppearancePreference.Dark)
+
+        val reopenedRepository = reopenRepository()
+
+        assertEquals(AppearancePreference.Dark, reopenedRepository.preferences.first().appearance)
+    }
+
+    @Test
+    fun followSystemAppearanceIsPersisted() = runBlocking {
+        repository.setAppearance(AppearancePreference.Dark)
+        repository.setAppearance(AppearancePreference.System)
+
+        val reopenedRepository = reopenRepository()
+
+        assertEquals(AppearancePreference.System, reopenedRepository.preferences.first().appearance)
+    }
+
+    @Test
+    fun seasonalThemesDefaultToEnabledAndCanBePersisted() = runBlocking {
+        assertTrue(repository.preferences.first().seasonalThemesEnabled)
+
+        repository.setSeasonalThemesEnabled(false)
+        val reopenedRepository = reopenRepository()
+
+        assertFalse(reopenedRepository.preferences.first().seasonalThemesEnabled)
+    }
+
+    @Test
     fun highContrastChangeIsPersisted() = runBlocking {
         repository.setHighContrastEnabled(true)
 
@@ -91,6 +134,8 @@ class AccessibilityPreferencesRepositoryTest {
             preferences[stringPreferencesKey(VibrationEnabledKeyName)] = "unknown"
             preferences[stringPreferencesKey(HighContrastEnabledKeyName)] = "unknown"
             preferences[stringPreferencesKey(TextSizeKeyName)] = "enormous"
+            preferences[stringPreferencesKey(AppearanceKeyName)] = "automatic-ish"
+            preferences[stringPreferencesKey(SeasonalThemesEnabledKeyName)] = "unknown"
         }
 
         val preferences = repository.preferences.first()
@@ -99,6 +144,8 @@ class AccessibilityPreferencesRepositoryTest {
         assertTrue(preferences.vibrationEnabled)
         assertFalse(preferences.highContrastEnabled)
         assertEquals(TextSizePreference.Normal, preferences.textSize)
+        assertEquals(AppearancePreference.System, preferences.appearance)
+        assertTrue(preferences.seasonalThemesEnabled)
     }
 
     private fun createRepository() {
