@@ -21,6 +21,11 @@ internal const val Level2FirstAttemptCorrectKeyName = "practice_level_2_first_at
 internal const val Level2ErrorsKeyName = "practice_level_2_errors"
 internal const val Level2HintsUsedKeyName = "practice_level_2_hints_used"
 internal const val Level2LastPracticeDateKeyName = "practice_level_2_last_practice_date"
+internal const val Level3CompletedSessionsKeyName = "practice_level_3_completed_sessions"
+internal const val Level3TotalExercisesKeyName = "practice_level_3_total_exercises"
+internal const val Level3FirstAttemptCorrectKeyName = "practice_level_3_first_attempt_correct"
+internal const val Level3ErrorsKeyName = "practice_level_3_errors"
+internal const val Level3LastPracticeDateKeyName = "practice_level_3_last_practice_date"
 
 data class PracticeProgress(
     val level1CompletedSessions: Int = 0,
@@ -33,6 +38,11 @@ data class PracticeProgress(
     val level2Errors: Int = 0,
     val level2HintsUsed: Int = 0,
     val level2LastPracticeDate: String? = null,
+    val level3CompletedSessions: Int = 0,
+    val level3TotalExercises: Int = 0,
+    val level3FirstAttemptCorrect: Int = 0,
+    val level3Errors: Int = 0,
+    val level3LastPracticeDate: String? = null,
 ) {
     val level1AccuracyPercentage: Int
         get() {
@@ -54,20 +64,7 @@ class PracticeProgressRepository(
                 throw exception
             }
         }
-        .map { preferences ->
-            PracticeProgress(
-                level1CompletedSessions = preferences[Level1CompletedSessionsKey] ?: 0,
-                level1TotalExercises = preferences[Level1TotalExercisesKey] ?: 0,
-                level1FirstAttemptCorrect = preferences[Level1FirstAttemptCorrectKey] ?: 0,
-                level1LastPracticeDate = preferences[Level1LastPracticeDateKey],
-                level2CompletedSessions = preferences[Level2CompletedSessionsKey] ?: 0,
-                level2TotalExercises = preferences[Level2TotalExercisesKey] ?: 0,
-                level2FirstAttemptCorrect = preferences[Level2FirstAttemptCorrectKey] ?: 0,
-                level2Errors = preferences[Level2ErrorsKey] ?: 0,
-                level2HintsUsed = preferences[Level2HintsUsedKey] ?: 0,
-                level2LastPracticeDate = preferences[Level2LastPracticeDateKey],
-            )
-        }
+        .map { preferences -> preferences.toPracticeProgress() }
 
     suspend fun recordLevel1Session(
         exercisesCompleted: Int,
@@ -80,20 +77,13 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         dataStore.edit { preferences ->
-            val updatedProgress = PracticeProgress(
-                level1CompletedSessions =
-                    (preferences[Level1CompletedSessionsKey] ?: 0) + 1,
-                level1TotalExercises =
-                    (preferences[Level1TotalExercisesKey] ?: 0) + exercisesCompleted,
+            val currentProgress = preferences.toPracticeProgress()
+            val updatedProgress = currentProgress.copy(
+                level1CompletedSessions = currentProgress.level1CompletedSessions + 1,
+                level1TotalExercises = currentProgress.level1TotalExercises + exercisesCompleted,
                 level1FirstAttemptCorrect =
-                    (preferences[Level1FirstAttemptCorrectKey] ?: 0) + firstAttemptCorrect,
+                    currentProgress.level1FirstAttemptCorrect + firstAttemptCorrect,
                 level1LastPracticeDate = practiceDate,
-                level2CompletedSessions = preferences[Level2CompletedSessionsKey] ?: 0,
-                level2TotalExercises = preferences[Level2TotalExercisesKey] ?: 0,
-                level2FirstAttemptCorrect = preferences[Level2FirstAttemptCorrectKey] ?: 0,
-                level2Errors = preferences[Level2ErrorsKey] ?: 0,
-                level2HintsUsed = preferences[Level2HintsUsedKey] ?: 0,
-                level2LastPracticeDate = preferences[Level2LastPracticeDateKey],
             )
             preferences[Level1CompletedSessionsKey] = updatedProgress.level1CompletedSessions
             preferences[Level1TotalExercisesKey] = updatedProgress.level1TotalExercises
@@ -119,18 +109,14 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         dataStore.edit { preferences ->
-            val updatedProgress = PracticeProgress(
-                level1CompletedSessions = preferences[Level1CompletedSessionsKey] ?: 0,
-                level1TotalExercises = preferences[Level1TotalExercisesKey] ?: 0,
-                level1FirstAttemptCorrect = preferences[Level1FirstAttemptCorrectKey] ?: 0,
-                level1LastPracticeDate = preferences[Level1LastPracticeDateKey],
-                level2CompletedSessions = (preferences[Level2CompletedSessionsKey] ?: 0) + 1,
-                level2TotalExercises =
-                    (preferences[Level2TotalExercisesKey] ?: 0) + exercisesCompleted,
+            val currentProgress = preferences.toPracticeProgress()
+            val updatedProgress = currentProgress.copy(
+                level2CompletedSessions = currentProgress.level2CompletedSessions + 1,
+                level2TotalExercises = currentProgress.level2TotalExercises + exercisesCompleted,
                 level2FirstAttemptCorrect =
-                    (preferences[Level2FirstAttemptCorrectKey] ?: 0) + firstAttemptCorrect,
-                level2Errors = (preferences[Level2ErrorsKey] ?: 0) + errors,
-                level2HintsUsed = (preferences[Level2HintsUsedKey] ?: 0) + hintsUsed,
+                    currentProgress.level2FirstAttemptCorrect + firstAttemptCorrect,
+                level2Errors = currentProgress.level2Errors + errors,
+                level2HintsUsed = currentProgress.level2HintsUsed + hintsUsed,
                 level2LastPracticeDate = practiceDate,
             )
             preferences[Level2CompletedSessionsKey] = updatedProgress.level2CompletedSessions
@@ -144,6 +130,56 @@ class PracticeProgressRepository(
         return checkNotNull(recordedProgress)
     }
 
+    suspend fun recordLevel3Session(
+        exercisesCompleted: Int,
+        firstAttemptCorrect: Int,
+        errors: Int,
+        practiceDate: String,
+    ): PracticeProgress {
+        require(exercisesCompleted >= 0)
+        require(firstAttemptCorrect in 0..exercisesCompleted)
+        require(errors >= 0)
+        require(practiceDate.isNotBlank())
+
+        var recordedProgress: PracticeProgress? = null
+        dataStore.edit { preferences ->
+            val currentProgress = preferences.toPracticeProgress()
+            val updatedProgress = currentProgress.copy(
+                level3CompletedSessions = currentProgress.level3CompletedSessions + 1,
+                level3TotalExercises = currentProgress.level3TotalExercises + exercisesCompleted,
+                level3FirstAttemptCorrect =
+                    currentProgress.level3FirstAttemptCorrect + firstAttemptCorrect,
+                level3Errors = currentProgress.level3Errors + errors,
+                level3LastPracticeDate = practiceDate,
+            )
+            preferences[Level3CompletedSessionsKey] = updatedProgress.level3CompletedSessions
+            preferences[Level3TotalExercisesKey] = updatedProgress.level3TotalExercises
+            preferences[Level3FirstAttemptCorrectKey] = updatedProgress.level3FirstAttemptCorrect
+            preferences[Level3ErrorsKey] = updatedProgress.level3Errors
+            preferences[Level3LastPracticeDateKey] = practiceDate
+            recordedProgress = updatedProgress
+        }
+        return checkNotNull(recordedProgress)
+    }
+
+    private fun Preferences.toPracticeProgress(): PracticeProgress = PracticeProgress(
+        level1CompletedSessions = this[Level1CompletedSessionsKey] ?: 0,
+        level1TotalExercises = this[Level1TotalExercisesKey] ?: 0,
+        level1FirstAttemptCorrect = this[Level1FirstAttemptCorrectKey] ?: 0,
+        level1LastPracticeDate = this[Level1LastPracticeDateKey],
+        level2CompletedSessions = this[Level2CompletedSessionsKey] ?: 0,
+        level2TotalExercises = this[Level2TotalExercisesKey] ?: 0,
+        level2FirstAttemptCorrect = this[Level2FirstAttemptCorrectKey] ?: 0,
+        level2Errors = this[Level2ErrorsKey] ?: 0,
+        level2HintsUsed = this[Level2HintsUsedKey] ?: 0,
+        level2LastPracticeDate = this[Level2LastPracticeDateKey],
+        level3CompletedSessions = this[Level3CompletedSessionsKey] ?: 0,
+        level3TotalExercises = this[Level3TotalExercisesKey] ?: 0,
+        level3FirstAttemptCorrect = this[Level3FirstAttemptCorrectKey] ?: 0,
+        level3Errors = this[Level3ErrorsKey] ?: 0,
+        level3LastPracticeDate = this[Level3LastPracticeDateKey],
+    )
+
     private companion object {
         val Level1CompletedSessionsKey = intPreferencesKey(Level1CompletedSessionsKeyName)
         val Level1TotalExercisesKey = intPreferencesKey(Level1TotalExercisesKeyName)
@@ -155,5 +191,10 @@ class PracticeProgressRepository(
         val Level2ErrorsKey = intPreferencesKey(Level2ErrorsKeyName)
         val Level2HintsUsedKey = intPreferencesKey(Level2HintsUsedKeyName)
         val Level2LastPracticeDateKey = stringPreferencesKey(Level2LastPracticeDateKeyName)
+        val Level3CompletedSessionsKey = intPreferencesKey(Level3CompletedSessionsKeyName)
+        val Level3TotalExercisesKey = intPreferencesKey(Level3TotalExercisesKeyName)
+        val Level3FirstAttemptCorrectKey = intPreferencesKey(Level3FirstAttemptCorrectKeyName)
+        val Level3ErrorsKey = intPreferencesKey(Level3ErrorsKeyName)
+        val Level3LastPracticeDateKey = stringPreferencesKey(Level3LastPracticeDateKeyName)
     }
 }

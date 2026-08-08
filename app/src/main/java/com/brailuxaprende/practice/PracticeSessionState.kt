@@ -88,7 +88,10 @@ data class PracticeSessionState(
         )
     }
 
-    fun togglePointNumbers(): PracticeSessionState = copy(showPointNumbers = !showPointNumbers)
+    fun togglePointNumbers(): PracticeSessionState {
+        if (!session.level.allowsPointNumberToggle) return this
+        return copy(showPointNumbers = !showPointNumbers)
+    }
 
     fun showHint(): PracticeSessionState {
         if (hintVisible || hintsRemaining == 0) return this

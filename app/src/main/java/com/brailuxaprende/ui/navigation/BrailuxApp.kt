@@ -39,6 +39,7 @@ import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
+import com.brailuxaprende.ui.screens.BrailleChallengeScreen
 import com.brailuxaprende.ui.screens.BrailleExplorerScreen
 import com.brailuxaprende.ui.screens.BrailleRecognizerScreen
 import com.brailuxaprende.ui.screens.HomeScreen
@@ -63,6 +64,7 @@ object BrailuxRoutes {
     const val LETTER_A_EXERCISE = "ejercicio_letra_a"
     const val BRAILLE_EXPLORER = "practica_explorador_braille"
     const val BRAILLE_RECOGNIZER = "practica_reconocedor_braille"
+    const val BRAILLE_CHALLENGE = "practica_desafio_braille"
 }
 
 private data class BottomDestination(
@@ -84,6 +86,7 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.LETTER_A_EXERCISE,
     BrailuxRoutes.BRAILLE_EXPLORER,
     BrailuxRoutes.BRAILLE_RECOGNIZER,
+    BrailuxRoutes.BRAILLE_CHALLENGE,
 )
 
 @Composable
@@ -99,6 +102,8 @@ fun BrailuxApp(
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
+        { _, onRecorded -> onRecorded(true) },
+    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
         { _, onRecorded -> onRecorded(true) },
 ) {
     val navController = rememberNavController()
@@ -131,6 +136,7 @@ fun BrailuxApp(
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
             onLevel1SessionCompleted = onLevel1SessionCompleted,
             onLevel2SessionCompleted = onLevel2SessionCompleted,
+            onLevel3SessionCompleted = onLevel3SessionCompleted,
             modifier = Modifier.padding(innerPadding),
         )
     }
@@ -223,6 +229,7 @@ private fun BrailuxNavHost(
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun goBack() {
@@ -273,6 +280,7 @@ private fun BrailuxNavHost(
             PracticeScreen(
                 onStartLevel1 = { navController.navigate(BrailuxRoutes.BRAILLE_EXPLORER) },
                 onStartLevel2 = { navController.navigate(BrailuxRoutes.BRAILLE_RECOGNIZER) },
+                onStartLevel3 = { navController.navigate(BrailuxRoutes.BRAILLE_CHALLENGE) },
                 onBack = ::goBack,
             )
         }
@@ -325,6 +333,12 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.BRAILLE_RECOGNIZER) {
             BrailleRecognizerScreen(
                 onSessionCompleted = onLevel2SessionCompleted,
+                onBackToPractice = ::backToPractice,
+            )
+        }
+        composable(BrailuxRoutes.BRAILLE_CHALLENGE) {
+            BrailleChallengeScreen(
+                onSessionCompleted = onLevel3SessionCompleted,
                 onBackToPractice = ::backToPractice,
             )
         }

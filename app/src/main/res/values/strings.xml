@@ -51,11 +51,12 @@
     <string name="practice_level_1_description">Reconoce las letras A a J mediante signos y caracteres.</string>
     <string name="practice_level_2_title">Nivel 2 - Reconocedor Braille</string>
     <string name="practice_level_2_description">Reconoce el alfabeto español completo con ejercicios de mayor dificultad.</string>
-    <string name="practice_level_3_title">Nivel 3</string>
-    <string name="practice_level_3_description">Contenido reservado para una próxima etapa.</string>
-    <string name="practice_level_4_title">Nivel 4</string>
+    <string name="practice_level_3_title">Nivel 3 - Desafío Braille</string>
+    <string name="practice_level_3_description">Resuelve ejercicios del alfabeto español sin pistas ni numeración.</string>
+    <string name="practice_level_4_title">Nivel 4 - Práctica personalizada</string>
     <string name="practice_level_4_description">Contenido reservado para una próxima etapa.</string>
     <string name="practice_reading_mode">Modo Lectura</string>
+    <string name="practice_level_3_intro">En este nivel resolverás los ejercicios sin pistas ni numeración de puntos.</string>
     <string name="practice_point_orientation">Puntos 1, 2 y 3 a la izquierda.
 Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_exercise_count">Ejercicio %1$d de %2$d</string>
@@ -81,6 +82,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_check_answer">Comprobar</string>
     <string name="practice_next_exercise">Siguiente ejercicio</string>
     <string name="practice_level_completed">Nivel completado</string>
+    <string name="practice_challenge_completed">Desafío completado</string>
     <string name="practice_summary_completed">Ejercicios completados: %1$d</string>
     <string name="practice_summary_exercises_done">%1$d ejercicios realizados</string>
     <string name="practice_summary_accuracy">Precisión: %1$d%%</string>

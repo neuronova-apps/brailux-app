@@ -36,6 +36,7 @@ import com.brailuxaprende.ui.components.BrailuxSectionCard
 fun PracticeScreen(
     onStartLevel1: () -> Unit,
     onStartLevel2: () -> Unit,
+    onStartLevel3: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -93,9 +94,10 @@ fun PracticeScreen(
                     description = stringResource(R.string.practice_level_2_description),
                     onClick = onStartLevel2,
                 )
-                UnavailableLevelCard(
+                AvailableLevelCard(
                     title = stringResource(R.string.practice_level_3_title),
                     description = stringResource(R.string.practice_level_3_description),
+                    onClick = onStartLevel3,
                 )
                 UnavailableLevelCard(
                     title = stringResource(R.string.practice_level_4_title),

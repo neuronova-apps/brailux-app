@@ -13,15 +13,21 @@ object PracticeSessionGenerator {
         return generateLevel(PracticeLevel.BrailleRecognizer, random)
     }
 
+    fun generateLevel3(random: Random = Random.Default): PracticeSession {
+        return generateLevel(PracticeLevel.BrailleChallenge, random)
+    }
+
     private fun generateLevel(level: PracticeLevel, random: Random): PracticeSession {
         val characters = when (level) {
             PracticeLevel.BrailleExplorer -> BrailleRepository.getLevel1Characters()
             PracticeLevel.BrailleRecognizer -> BrailleRepository.getLevel2Characters()
+            PracticeLevel.BrailleChallenge -> BrailleRepository.getLevel2Characters()
         }
 
         val targets = when (level) {
             PracticeLevel.BrailleExplorer -> characters.shuffled(random)
-            PracticeLevel.BrailleRecognizer -> buildList {
+            PracticeLevel.BrailleRecognizer,
+            PracticeLevel.BrailleChallenge -> buildList {
                 repeat(level.exerciseCount) {
                     val previous = lastOrNull()
                     add(characters.filterNot { it == previous }.random(random))

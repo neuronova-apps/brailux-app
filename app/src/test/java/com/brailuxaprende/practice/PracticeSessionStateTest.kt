@@ -8,6 +8,50 @@ import org.junit.Test
 
 class PracticeSessionStateTest {
     @Test
+    fun level3DisablesPointNumbersAndHintsCompletely() {
+        val state = newLevel3State()
+
+        assertFalse(state.showPointNumbers)
+        assertFalse(state.togglePointNumbers().showPointNumbers)
+        assertEquals(0, state.hintsRemaining)
+        assertFalse(state.showHint().hintVisible)
+        assertEquals(0, state.showHint().hintsUsed)
+    }
+
+    @Test
+    fun level3ValidatesCorrectAndIncorrectAnswersWithoutBlockingRetry() {
+        val initial = newLevel3State()
+        val afterError = initial.selectAnswer(incorrectAnswer(initial)).checkAnswer()
+        val afterRetry = afterError
+            .selectAnswer(initial.currentExercise.target.printedCharacter)
+            .checkAnswer()
+
+        assertEquals(PracticeValidationState.Incorrect, afterError.validation)
+        assertEquals(1, afterError.errors)
+        assertEquals(PracticeValidationState.Correct, afterRetry.validation)
+        assertEquals(0, afterRetry.firstAttemptCorrect)
+    }
+
+    @Test
+    fun level3CountsFirstAttemptsCalculatesAccuracyAndCompletesAfterTwentyExercises() {
+        var state = newLevel3State()
+
+        repeat(20) { index ->
+            if (index >= 16) {
+                state = state.selectAnswer(incorrectAnswer(state)).checkAnswer()
+            }
+            state = answerCorrectlyAndAdvance(state)
+        }
+
+        assertTrue(state.isCompleted)
+        assertEquals(20, state.completedExercises)
+        assertEquals(16, state.firstAttemptCorrect)
+        assertEquals(4, state.errors)
+        assertEquals(80, state.accuracyPercentage)
+        assertEquals(20, state.summary().exercisesCompleted)
+    }
+
+    @Test
     fun level2StartsWithoutPointNumbersAndWithThreeHints() {
         val state = newLevel2State()
 
@@ -147,6 +191,10 @@ class PracticeSessionStateTest {
 
     private fun newLevel2State(): PracticeSessionState = PracticeSessionState(
         PracticeSessionGenerator.generateLevel2(Random(14)),
+    )
+
+    private fun newLevel3State(): PracticeSessionState = PracticeSessionState(
+        PracticeSessionGenerator.generateLevel3(Random(15)),
     )
 
     private fun incorrectAnswer(state: PracticeSessionState): Char = state.currentExercise.options

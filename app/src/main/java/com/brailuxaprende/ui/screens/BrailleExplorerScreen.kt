@@ -96,6 +96,21 @@ fun BrailleRecognizerScreen(
 }
 
 @Composable
+fun BrailleChallengeScreen(
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onBackToPractice: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.BrailleChallenge,
+        sessionFactory = { PracticeSessionGenerator.generateLevel3() },
+        onSessionCompleted = onSessionCompleted,
+        onBackToPractice = onBackToPractice,
+        modifier = modifier,
+    )
+}
+
+@Composable
 private fun BraillePracticeLevelScreen(
     level: PracticeLevel,
     sessionFactory: () -> PracticeSession,
@@ -183,6 +198,19 @@ private fun BraillePracticeExercise(
                 subtitle = stringResource(R.string.practice_reading_mode),
                 onBack = onBack,
             )
+            if (level == PracticeLevel.BrailleChallenge && state.currentExerciseIndex == 0) {
+                Spacer(modifier = Modifier.height(18.dp))
+                BrailuxSectionCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.practice_level_3_intro),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(18.dp))
             BrailuxSectionCard(
                 modifier = Modifier
@@ -214,35 +242,39 @@ private fun BraillePracticeExercise(
                     modifier = Modifier.padding(top = 4.dp),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                state.hintsRemaining?.let { hintsRemaining ->
-                    Text(
-                        text = stringResource(R.string.practice_hints_available, hintsRemaining),
-                        modifier = Modifier.padding(top = 4.dp),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+                if (level.hintLimit != 0) {
+                    state.hintsRemaining?.let { hintsRemaining ->
+                        Text(
+                            text = stringResource(R.string.practice_hints_available, hintsRemaining),
+                            modifier = Modifier.padding(top = 4.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
             }
-            Spacer(modifier = Modifier.height(14.dp))
-            BrailuxSectionCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.practice_orientation_reading),
-                    modifier = Modifier.semantics { heading() },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = stringResource(R.string.practice_point_orientation),
-                    modifier = Modifier.padding(top = 6.dp),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-                PointNumberToggle(
-                    checked = state.showPointNumbers,
-                    onCheckedChange = { onStateChange(state.togglePointNumbers()) },
-                    modifier = Modifier.padding(top = 8.dp),
-                )
+            if (level.allowsPointNumberToggle) {
+                Spacer(modifier = Modifier.height(14.dp))
+                BrailuxSectionCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                ) {
+                    Text(
+                        text = stringResource(R.string.practice_orientation_reading),
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        text = stringResource(R.string.practice_point_orientation),
+                        modifier = Modifier.padding(top = 6.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    PointNumberToggle(
+                        checked = state.showPointNumbers,
+                        onCheckedChange = { onStateChange(state.togglePointNumbers()) },
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(14.dp))
             BrailuxSectionCard(
@@ -323,15 +355,17 @@ private fun BraillePracticeExercise(
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
-            BrailuxSecondaryButton(
-                text = stringResource(R.string.practice_show_hint),
-                onClick = { onStateChange(state.showHint()) },
-                enabled = state.hintsRemaining != 0 && !state.hintVisible,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            )
+            if (level.hintLimit != 0) {
+                Spacer(modifier = Modifier.height(14.dp))
+                BrailuxSecondaryButton(
+                    text = stringResource(R.string.practice_show_hint),
+                    onClick = { onStateChange(state.showHint()) },
+                    enabled = state.hintsRemaining != 0 && !state.hintVisible,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(10.dp))
             if (state.validation == PracticeValidationState.Correct) {
                 BrailuxPrimaryButton(
@@ -546,7 +580,7 @@ private fun BraillePracticeSummary(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BrailuxScreenHeader(
-                title = stringResource(R.string.practice_level_completed),
+                title = stringResource(level.completionTitleResource()),
                 subtitle = stringResource(level.titleResource()),
             )
             Spacer(modifier = Modifier.height(22.dp))
@@ -557,7 +591,7 @@ private fun BraillePracticeSummary(
             ) {
                 SummaryLine(
                     stringResource(
-                        if (level == PracticeLevel.BrailleRecognizer) {
+                        if (level != PracticeLevel.BrailleExplorer) {
                             R.string.practice_summary_exercises_done
                         } else {
                             R.string.practice_summary_completed
@@ -638,4 +672,12 @@ private fun activePointsText(character: BrailleCharacter): String =
 private fun PracticeLevel.titleResource(): Int = when (this) {
     PracticeLevel.BrailleExplorer -> R.string.practice_level_1_title
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_2_title
+    PracticeLevel.BrailleChallenge -> R.string.practice_level_3_title
+}
+
+@androidx.annotation.StringRes
+private fun PracticeLevel.completionTitleResource(): Int = when (this) {
+    PracticeLevel.BrailleChallenge -> R.string.practice_challenge_completed
+    PracticeLevel.BrailleExplorer,
+    PracticeLevel.BrailleRecognizer -> R.string.practice_level_completed
 }

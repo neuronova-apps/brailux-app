@@ -6,19 +6,29 @@ enum class PracticeLevel(
     val exerciseCount: Int,
     val optionCount: Int,
     val showPointNumbersByDefault: Boolean,
+    val allowsPointNumberToggle: Boolean,
     val hintLimit: Int?,
 ) {
     BrailleExplorer(
         exerciseCount = 10,
         optionCount = 4,
         showPointNumbersByDefault = true,
+        allowsPointNumberToggle = true,
         hintLimit = null,
     ),
     BrailleRecognizer(
         exerciseCount = 15,
         optionCount = 6,
         showPointNumbersByDefault = false,
+        allowsPointNumberToggle = true,
         hintLimit = 3,
+    ),
+    BrailleChallenge(
+        exerciseCount = 20,
+        optionCount = 6,
+        showPointNumbersByDefault = false,
+        allowsPointNumberToggle = false,
+        hintLimit = 0,
     ),
 }
 

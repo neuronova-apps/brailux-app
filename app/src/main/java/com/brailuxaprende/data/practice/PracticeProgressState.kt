@@ -70,6 +70,30 @@ class PracticeProgressState(
         }
     }
 
+    fun recordLevel3Session(
+        summary: PracticeSessionSummary,
+        practicedAt: Date = Date(),
+        onRecorded: (Boolean) -> Unit = {},
+    ) {
+        val practiceDate = SimpleDateFormat(DatePattern, Locale.ROOT).format(practicedAt)
+        scope.launch {
+            try {
+                val recordedProgress = repository.recordLevel3Session(
+                    exercisesCompleted = summary.exercisesCompleted,
+                    firstAttemptCorrect = summary.firstAttemptCorrect,
+                    errors = summary.errors,
+                    practiceDate = practiceDate,
+                )
+                progress.first { observedProgress -> observedProgress == recordedProgress }
+                onRecorded(true)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                onRecorded(false)
+            }
+        }
+    }
+
     private companion object {
         const val DatePattern = "yyyy-MM-dd"
     }

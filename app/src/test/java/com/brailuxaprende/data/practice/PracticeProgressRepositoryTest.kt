@@ -66,6 +66,30 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.level2Errors)
         assertEquals(0, progress.level2HintsUsed)
         assertNull(progress.level2LastPracticeDate)
+        assertEquals(0, progress.level3CompletedSessions)
+        assertEquals(0, progress.level3TotalExercises)
+        assertEquals(0, progress.level3FirstAttemptCorrect)
+        assertEquals(0, progress.level3Errors)
+        assertNull(progress.level3LastPracticeDate)
+    }
+
+    @Test
+    fun level3ProgressPersistsIndependentlyFromPreviousLevels() = runBlocking {
+        repository.recordLevel3Session(20, 16, 4, "2026-08-06")
+        repository.recordLevel1Session(10, 8, "2026-08-07")
+        repository.recordLevel2Session(15, 12, 3, 2, "2026-08-08")
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.level1CompletedSessions)
+        assertEquals(10, progress.level1TotalExercises)
+        assertEquals(1, progress.level2CompletedSessions)
+        assertEquals(15, progress.level2TotalExercises)
+        assertEquals(1, progress.level3CompletedSessions)
+        assertEquals(20, progress.level3TotalExercises)
+        assertEquals(16, progress.level3FirstAttemptCorrect)
+        assertEquals(4, progress.level3Errors)
+        assertEquals("2026-08-06", progress.level3LastPracticeDate)
     }
 
     @Test

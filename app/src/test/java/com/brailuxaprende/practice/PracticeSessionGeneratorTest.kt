@@ -7,6 +7,44 @@ import org.junit.Test
 
 class PracticeSessionGeneratorTest {
     @Test
+    fun level3GeneratesTwentyExercisesWithoutConsecutiveRepetition() {
+        val session = PracticeSessionGenerator.generateLevel3(Random(30))
+
+        assertEquals(PracticeLevel.BrailleChallenge, session.level)
+        assertEquals(20, session.exercises.size)
+        assertTrue(
+            session.exercises.zipWithNext().all { (first, second) ->
+                first.target.printedCharacter != second.target.printedCharacter && first != second
+            },
+        )
+    }
+
+    @Test
+    fun level3AlternatesTypesAndProvidesSixDistinctOptions() {
+        val session = PracticeSessionGenerator.generateLevel3(Random(31))
+
+        assertEquals(PracticeExerciseType.SignToCharacter, session.exercises.first().type)
+        assertTrue(session.exercises.map { it.type }.zipWithNext().all { (first, second) ->
+            first != second
+        })
+        session.exercises.forEach { exercise ->
+            assertEquals(6, exercise.options.size)
+            assertEquals(6, exercise.options.map { it.printedCharacter }.distinct().size)
+            assertTrue(exercise.target in exercise.options)
+        }
+    }
+
+    @Test
+    fun level3UsesCompleteSpanishAlphabet() {
+        val alphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".toSet()
+
+        repeat(20) { seed ->
+            val session = PracticeSessionGenerator.generateLevel3(Random(seed))
+            assertTrue(session.exercises.all { it.target.printedCharacter in alphabet })
+        }
+    }
+
+    @Test
     fun level2GeneratesFifteenExercisesWithoutConsecutiveRepetition() {
         val session = PracticeSessionGenerator.generateLevel2(Random(20))
 
