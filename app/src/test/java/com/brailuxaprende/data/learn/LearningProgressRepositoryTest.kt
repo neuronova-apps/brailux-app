@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -48,6 +47,8 @@ class LearningProgressRepositoryTest {
         repository.markCompleted(LearningLesson.SixDots)
         repository.markCompleted(LearningLesson.Vowels)
         repository.markCompleted(LearningLesson.LettersAtoJ)
+        repository.markCompleted(LearningLesson.LettersKtoT)
+        repository.markCompleted(LearningLesson.LettersUtoZAndEnye)
 
         val progress = reopenRepository().progress.first()
 
@@ -56,31 +57,29 @@ class LearningProgressRepositoryTest {
                 LearningLesson.SixDots,
                 LearningLesson.Vowels,
                 LearningLesson.LettersAtoJ,
+                LearningLesson.LettersKtoT,
+                LearningLesson.LettersUtoZAndEnye,
             ),
             progress.completedLessons,
         )
     }
 
     @Test
-    fun `repeating a lesson does not duplicate progress`() = runBlocking {
-        repository.markCompleted(LearningLesson.Vowels)
-        repository.markCompleted(LearningLesson.Vowels)
+    fun `returning and repeating final lessons does not duplicate progress`() = runBlocking {
+        repository.markCompleted(LearningLesson.LettersKtoT)
+        repository.markCompleted(LearningLesson.LettersUtoZAndEnye)
 
-        val progress = repository.progress.first()
+        val progressAfterReturning = reopenRepository().progress.first()
 
-        assertEquals(1, progress.completedLessons.size)
-        assertTrue(progress.isCompleted(LearningLesson.Vowels))
-    }
-
-    @Test
-    fun `future lessons cannot be persisted as completed`() = runBlocking {
         repository.markCompleted(LearningLesson.LettersKtoT)
         repository.markCompleted(LearningLesson.LettersUtoZAndEnye)
 
         val progress = repository.progress.first()
 
-        assertFalse(progress.isCompleted(LearningLesson.LettersKtoT))
-        assertFalse(progress.isCompleted(LearningLesson.LettersUtoZAndEnye))
+        assertEquals(progressAfterReturning, progress)
+        assertEquals(2, progress.completedLessons.size)
+        assertTrue(progress.isCompleted(LearningLesson.LettersKtoT))
+        assertTrue(progress.isCompleted(LearningLesson.LettersUtoZAndEnye))
     }
 
     private fun createRepository() {

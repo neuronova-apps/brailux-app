@@ -65,6 +65,7 @@ fun VowelsLessonScreen(
 @Composable
 fun LettersAtoJLessonScreen(
     onCompleted: () -> Unit,
+    onNextLesson: () -> Unit,
     onBackToLearn: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
@@ -81,11 +82,68 @@ fun LettersAtoJLessonScreen(
                 if (index < 5) R.string.letters_group_a_e else R.string.letters_group_f_j,
             )
         },
+        nextLessonLabel = stringResource(R.string.lesson_next_letters_k_t),
+        onCompleted = onCompleted,
+        onNextLesson = onNextLesson,
+        onBackToLearn = onBackToLearn,
+        onBack = onBack,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun LettersKtoTLessonScreen(
+    onCompleted: () -> Unit,
+    onNextLesson: () -> Unit,
+    onBackToLearn: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    GuidedCharacterLessonScreen(
+        lessonNumber = 4,
+        title = stringResource(R.string.learning_lesson_4_title),
+        characters = LearningPath.lettersKtoT,
+        practiceCharacters = listOf('K', 'M', 'P', 'R', 'T'),
+        explanation = { character -> stringResource(letterKtoTExplanationResource(character)) },
+        groupLabel = { index ->
+            stringResource(
+                if (index < 5) R.string.letters_group_k_o else R.string.letters_group_p_t,
+            )
+        },
+        nextLessonLabel = stringResource(R.string.lesson_next_letters_u_z_enye),
+        onCompleted = onCompleted,
+        onNextLesson = onNextLesson,
+        onBackToLearn = onBackToLearn,
+        onBack = onBack,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun LettersUtoZAndEnyeLessonScreen(
+    onCompleted: () -> Unit,
+    onPracticeAlphabet: () -> Unit,
+    onBackToLearn: () -> Unit,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    GuidedCharacterLessonScreen(
+        lessonNumber = 5,
+        title = stringResource(R.string.learning_lesson_5_title),
+        characters = LearningPath.lettersUtoZAndEnye,
+        practiceCharacters = listOf('U', 'W', 'X', 'Z', 'Ñ'),
+        explanation = { character -> stringResource(letterUtoZExplanationResource(character)) },
+        groupLabel = { index ->
+            stringResource(
+                if (index < 3) R.string.letters_group_u_w else R.string.letters_group_x_z_enye,
+            )
+        },
         nextLessonLabel = null,
         onCompleted = onCompleted,
         onNextLesson = null,
         onBackToLearn = onBackToLearn,
         onBack = onBack,
+        onPracticeAlphabet = onPracticeAlphabet,
         modifier = modifier,
     )
 }
@@ -103,6 +161,7 @@ private fun GuidedCharacterLessonScreen(
     onNextLesson: (() -> Unit)?,
     onBackToLearn: () -> Unit,
     onBack: () -> Unit,
+    onPracticeAlphabet: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     var stage by rememberSaveable { mutableIntStateOf(CHARACTER_PRESENTATION_STAGE) }
@@ -212,12 +271,20 @@ private fun GuidedCharacterLessonScreen(
                     )
                 }
 
-                else -> LessonCompletionActions(
-                    nextLabel = nextLessonLabel,
-                    onNext = onNextLesson,
-                    onRepeat = ::repeatLesson,
-                    onBackToLearn = onBackToLearn,
-                )
+                else -> if (onPracticeAlphabet == null) {
+                    LessonCompletionActions(
+                        nextLabel = nextLessonLabel,
+                        onNext = onNextLesson,
+                        onRepeat = ::repeatLesson,
+                        onBackToLearn = onBackToLearn,
+                    )
+                } else {
+                    AlphabetRouteCompletionActions(
+                        onBackToLearn = onBackToLearn,
+                        onPracticeAlphabet = onPracticeAlphabet,
+                        onRepeat = ::repeatLesson,
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(20.dp))
         }
@@ -251,6 +318,12 @@ private fun CharacterPresentationCard(
             style = MaterialTheme.typography.displayMedium,
             fontWeight = FontWeight.Bold,
         )
+        Text(
+            text = stringResource(R.string.lesson_braille_sign),
+            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 12.dp),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         BrailleCellView(
             cell = character.cell,
             contentDescription = character.accessibleDescription,
@@ -267,6 +340,38 @@ private fun CharacterPresentationCard(
             modifier = Modifier.padding(top = 8.dp),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun AlphabetRouteCompletionActions(
+    onBackToLearn: () -> Unit,
+    onPracticeAlphabet: () -> Unit,
+    onRepeat: () -> Unit,
+) {
+    BrailuxSectionCard(modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp)) {
+        Text(
+            text = stringResource(R.string.alphabet_route_completed),
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        BrailuxSecondaryButton(
+            text = stringResource(R.string.lesson_back_to_learn),
+            onClick = onBackToLearn,
+            modifier = Modifier.fillMaxWidth().padding(top = 22.dp),
+        )
+        BrailuxPrimaryButton(
+            text = stringResource(R.string.practice_alphabet),
+            onClick = onPracticeAlphabet,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+        )
+        BrailuxSecondaryButton(
+            text = stringResource(R.string.lesson_repeat),
+            onClick = onRepeat,
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
     }
 }
@@ -291,5 +396,30 @@ private fun letterComparisonResource(character: Char): Int = when (character) {
     'H' -> R.string.letter_h_comparison
     'I' -> R.string.letter_i_comparison
     'J' -> R.string.letter_j_comparison
+    else -> error("Unsupported character: $character")
+}
+
+private fun letterKtoTExplanationResource(character: Char): Int = when (character) {
+    'K' -> R.string.letter_k_comparison
+    'L' -> R.string.letter_l_comparison
+    'M' -> R.string.letter_m_comparison
+    'N' -> R.string.letter_n_comparison
+    'O' -> R.string.letter_o_comparison
+    'P' -> R.string.letter_p_comparison
+    'Q' -> R.string.letter_q_comparison
+    'R' -> R.string.letter_r_comparison
+    'S' -> R.string.letter_s_comparison
+    'T' -> R.string.letter_t_comparison
+    else -> error("Unsupported character: $character")
+}
+
+private fun letterUtoZExplanationResource(character: Char): Int = when (character) {
+    'U' -> R.string.letter_u_comparison
+    'V' -> R.string.letter_v_comparison
+    'W' -> R.string.letter_w_comparison
+    'X' -> R.string.letter_x_comparison
+    'Y' -> R.string.letter_y_comparison
+    'Z' -> R.string.letter_z_comparison
+    'Ñ' -> R.string.letter_enye_comparison
     else -> error("Unsupported character: $character")
 }

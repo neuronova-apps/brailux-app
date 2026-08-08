@@ -148,5 +148,4 @@ internal fun LearningLesson.titleResource(): Int = when (this) {
 private fun LearningLessonStatus.labelResource(): Int = when (this) {
     LearningLessonStatus.Available -> R.string.learning_status_available
     LearningLessonStatus.Completed -> R.string.learning_status_completed
-    LearningLessonStatus.ComingSoon -> R.string.learning_status_coming_soon
 }

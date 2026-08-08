@@ -62,6 +62,28 @@ class BrailuxNavigationTest {
     }
 
     @Test
+    fun `letters A to J continue to letters K to T`() {
+        assertEquals(
+            BrailuxRoutes.LETTERS_K_TO_T_LESSON,
+            nextLearningRoute(LearningLesson.LettersAtoJ),
+        )
+    }
+
+    @Test
+    fun `lesson four continues to lesson five`() {
+        assertEquals(
+            BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON,
+            nextLearningRoute(LearningLesson.LettersKtoT),
+        )
+    }
+
+    @Test
+    fun `alphabet route ends after lesson five and practice reuses its main destination`() {
+        assertNull(nextLearningRoute(LearningLesson.LettersUtoZAndEnye))
+        assertEquals(BrailuxRoutes.PRACTICE, alphabetPracticeRoute())
+    }
+
+    @Test
     fun `back from a guided lesson returns to the learning path`() {
         assertEquals(BrailuxRoutes.LEARN, learningParentRoute())
     }

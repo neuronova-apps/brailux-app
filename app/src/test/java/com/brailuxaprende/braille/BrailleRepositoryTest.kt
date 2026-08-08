@@ -79,6 +79,49 @@ class BrailleRepositoryTest {
     }
 
     @Test
+    fun mapsLettersKThroughTToCorrectBrailleCells() {
+        val expectedPoints = linkedMapOf(
+            'K' to listOf(1, 3),
+            'L' to listOf(1, 2, 3),
+            'M' to listOf(1, 3, 4),
+            'N' to listOf(1, 3, 4, 5),
+            'O' to listOf(1, 3, 5),
+            'P' to listOf(1, 2, 3, 4),
+            'Q' to listOf(1, 2, 3, 4, 5),
+            'R' to listOf(1, 2, 3, 5),
+            'S' to listOf(2, 3, 4),
+            'T' to listOf(2, 3, 4, 5),
+        )
+
+        assertEquals(
+            expectedPoints,
+            BrailleRepository.getLettersKToT().associate {
+                it.printedCharacter to it.cell.activePoints()
+            },
+        )
+    }
+
+    @Test
+    fun mapsLettersUThroughZAndEnyeToCorrectBrailleCells() {
+        val expectedPoints = linkedMapOf(
+            'U' to listOf(1, 3, 6),
+            'V' to listOf(1, 2, 3, 6),
+            'W' to listOf(2, 4, 5, 6),
+            'X' to listOf(1, 3, 4, 6),
+            'Y' to listOf(1, 3, 4, 5, 6),
+            'Z' to listOf(1, 3, 5, 6),
+            'Ñ' to listOf(1, 2, 4, 5, 6),
+        )
+
+        assertEquals(
+            expectedPoints,
+            BrailleRepository.getLettersUToZAndEnye().associate {
+                it.printedCharacter to it.cell.activePoints()
+            },
+        )
+    }
+
+    @Test
     fun findsLevel1CharactersIgnoringCase() {
         assertSame(BrailleRepository.findCharacter('B'), BrailleRepository.findCharacter('b'))
         assertSame(BrailleRepository.findCharacter('J'), BrailleRepository.findCharacter('j'))

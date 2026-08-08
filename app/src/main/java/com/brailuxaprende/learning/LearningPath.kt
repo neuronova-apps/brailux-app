@@ -3,21 +3,17 @@ package com.brailuxaprende.learning
 import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.braille.BrailleRepository
 
-enum class LearningLesson(
-    val number: Int,
-    val implemented: Boolean,
-) {
-    SixDots(number = 1, implemented = true),
-    Vowels(number = 2, implemented = true),
-    LettersAtoJ(number = 3, implemented = true),
-    LettersKtoT(number = 4, implemented = false),
-    LettersUtoZAndEnye(number = 5, implemented = false),
+enum class LearningLesson(val number: Int) {
+    SixDots(number = 1),
+    Vowels(number = 2),
+    LettersAtoJ(number = 3),
+    LettersKtoT(number = 4),
+    LettersUtoZAndEnye(number = 5),
 }
 
 enum class LearningLessonStatus {
     Available,
     Completed,
-    ComingSoon,
 }
 
 object LearningPath {
@@ -29,6 +25,12 @@ object LearningPath {
     val lettersAtoJ: List<BrailleCharacter>
         get() = BrailleRepository.getLevel1Characters()
 
+    val lettersKtoT: List<BrailleCharacter>
+        get() = BrailleRepository.getLettersKToT()
+
+    val lettersUtoZAndEnye: List<BrailleCharacter>
+        get() = BrailleRepository.getLettersUToZAndEnye()
+
     fun nextLesson(lesson: LearningLesson): LearningLesson? {
         val index = lessons.indexOf(lesson)
         return lessons.getOrNull(index + 1)
@@ -38,7 +40,6 @@ object LearningPath {
         lesson: LearningLesson,
         completedLessons: Set<LearningLesson>,
     ): LearningLessonStatus = when {
-        !lesson.implemented -> LearningLessonStatus.ComingSoon
         lesson in completedLessons -> LearningLessonStatus.Completed
         else -> LearningLessonStatus.Available
     }

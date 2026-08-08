@@ -1,9 +1,7 @@
 package com.brailuxaprende.learning
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LearningPathTest {
@@ -38,18 +36,44 @@ class LearningPathTest {
     }
 
     @Test
+    fun `letters K to T keep their guided lesson order`() {
+        assertEquals(
+            ('K'..'T').toList(),
+            LearningPath.lettersKtoT.map { it.printedCharacter },
+        )
+    }
+
+    @Test
+    fun `letters U to Z and enye keep their guided lesson order`() {
+        assertEquals(
+            ('U'..'Z').toList() + 'Ñ',
+            LearningPath.lettersUtoZAndEnye.map { it.printedCharacter },
+        )
+    }
+
+    @Test
     fun `next lesson follows the guided path without loops`() {
         assertEquals(LearningLesson.Vowels, LearningPath.nextLesson(LearningLesson.SixDots))
         assertEquals(LearningLesson.LettersAtoJ, LearningPath.nextLesson(LearningLesson.Vowels))
+        assertEquals(LearningLesson.LettersKtoT, LearningPath.nextLesson(LearningLesson.LettersAtoJ))
+        assertEquals(
+            LearningLesson.LettersUtoZAndEnye,
+            LearningPath.nextLesson(LearningLesson.LettersKtoT),
+        )
         assertNull(LearningPath.nextLesson(LearningLesson.LettersUtoZAndEnye))
     }
 
     @Test
-    fun `future lessons remain explicitly unavailable`() {
-        assertTrue(LearningLesson.SixDots.implemented)
-        assertTrue(LearningLesson.Vowels.implemented)
-        assertTrue(LearningLesson.LettersAtoJ.implemented)
-        assertFalse(LearningLesson.LettersKtoT.implemented)
-        assertFalse(LearningLesson.LettersUtoZAndEnye.implemented)
+    fun `all alphabet lessons are available or completed`() {
+        assertEquals(
+            List(5) { LearningLessonStatus.Available },
+            LearningPath.lessons.map { LearningPath.statusFor(it, emptySet()) },
+        )
+        assertEquals(
+            List(5) { LearningLessonStatus.Completed },
+            LearningPath.lessons.map {
+                LearningPath.statusFor(it, LearningPath.lessons.toSet())
+            },
+        )
     }
 }

@@ -141,6 +141,10 @@ object BrailleRepository {
 
     private val vowels = characters.filter { it.printedCharacter in setOf('A', 'E', 'I', 'O', 'U') }
     private val level1Characters = characters.filter { it.printedCharacter in 'A'..'J' }
+    private val lettersKToT = characters.filter { it.printedCharacter in 'K'..'T' }
+    private val lettersUToZAndEnye = (('U'..'Z').toList() + 'Ñ').map { character ->
+        requireNotNull(characters.firstOrNull { it.printedCharacter == character })
+    }
     private val spanishAlphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".toList()
     private val level2Characters = spanishAlphabet.map { character ->
         requireNotNull(characters.firstOrNull { it.printedCharacter == character })
@@ -149,6 +153,10 @@ object BrailleRepository {
     fun getVowels(): List<BrailleCharacter> = vowels
 
     fun getLevel1Characters(): List<BrailleCharacter> = level1Characters
+
+    fun getLettersKToT(): List<BrailleCharacter> = lettersKToT
+
+    fun getLettersUToZAndEnye(): List<BrailleCharacter> = lettersUToZAndEnye
 
     fun getLevel2Characters(): List<BrailleCharacter> = level2Characters
 

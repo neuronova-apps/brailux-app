@@ -60,8 +60,9 @@ import com.brailuxaprende.ui.screens.DailyPracticeScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LettersAtoJLessonScreen
+import com.brailuxaprende.ui.screens.LettersKtoTLessonScreen
+import com.brailuxaprende.ui.screens.LettersUtoZAndEnyeLessonScreen
 import com.brailuxaprende.ui.screens.VowelsLessonScreen
-import com.brailuxaprende.ui.screens.ComingSoonLessonScreen
 import com.brailuxaprende.ui.screens.PlaceholderScreen
 import com.brailuxaprende.ui.screens.PracticeScreen
 import com.brailuxaprende.ui.screens.ProgressScreen
@@ -361,6 +362,13 @@ private fun BrailuxNavHost(
         }
     }
 
+    fun openAlphabetPractice() {
+        navController.navigate(alphabetPracticeRoute()) {
+            popUpTo(BrailuxRoutes.LEARN)
+            launchSingleTop = true
+        }
+    }
+
     NavHost(
         navController = navController,
         startDestination = BrailuxRoutes.WELCOME,
@@ -478,21 +486,32 @@ private fun BrailuxNavHost(
                 onCompleted = {
                     onLearningLessonCompleted(LearningLesson.LettersAtoJ)
                 },
+                onNextLesson = {
+                    openNextLearningLesson(LearningLesson.LettersAtoJ)
+                },
                 onBackToLearn = ::backToLearn,
                 onBack = ::goBack,
             )
         }
         composable(BrailuxRoutes.LETTERS_K_TO_T_LESSON) {
-            ComingSoonLessonScreen(
-                lessonNumber = 4,
-                title = stringResource(R.string.learning_lesson_4_title),
+            LettersKtoTLessonScreen(
+                onCompleted = {
+                    onLearningLessonCompleted(LearningLesson.LettersKtoT)
+                },
+                onNextLesson = {
+                    openNextLearningLesson(LearningLesson.LettersKtoT)
+                },
+                onBackToLearn = ::backToLearn,
                 onBack = ::goBack,
             )
         }
         composable(BrailuxRoutes.LETTERS_U_TO_Z_AND_ENYE_LESSON) {
-            ComingSoonLessonScreen(
-                lessonNumber = 5,
-                title = stringResource(R.string.learning_lesson_5_title),
+            LettersUtoZAndEnyeLessonScreen(
+                onCompleted = {
+                    onLearningLessonCompleted(LearningLesson.LettersUtoZAndEnye)
+                },
+                onPracticeAlphabet = ::openAlphabetPractice,
+                onBackToLearn = ::backToLearn,
                 onBack = ::goBack,
             )
         }
@@ -583,3 +602,5 @@ internal fun nextLearningRoute(current: LearningLesson): String? =
     LearningPath.nextLesson(current)?.let(::learningRouteFor)
 
 internal fun learningParentRoute(): String = BrailuxRoutes.LEARN
+
+internal fun alphabetPracticeRoute(): String = BrailuxRoutes.PRACTICE

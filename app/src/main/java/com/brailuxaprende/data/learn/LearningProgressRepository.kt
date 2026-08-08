@@ -42,6 +42,9 @@ class LearningProgressRepository(
             LearningLesson.SixDots to booleanPreferencesKey("learning_lesson_1_completed"),
             LearningLesson.Vowels to booleanPreferencesKey("learning_lesson_2_completed"),
             LearningLesson.LettersAtoJ to booleanPreferencesKey("learning_lesson_3_completed"),
+            LearningLesson.LettersKtoT to booleanPreferencesKey("learning_lesson_4_completed"),
+            LearningLesson.LettersUtoZAndEnye to
+                booleanPreferencesKey("learning_lesson_5_completed"),
         )
     }
 }
