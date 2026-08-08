@@ -71,6 +71,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_option_incorrect">Respuesta incorrecta</string>
     <string name="practice_answer_correct">¡Muy bien! La respuesta correcta es la letra %1$s.</string>
     <string name="practice_answer_incorrect">Revisa la respuesta y vuelve a intentarlo.</string>
+    <string name="practice_progress_save_error">No se pudo guardar el progreso. Inténtalo de nuevo.</string>
     <string name="practice_show_hint">Ver pista</string>
     <string name="practice_hint_one_point">Esta letra utiliza un solo punto. Observa primero la parte superior.</string>
     <string name="practice_hint_two_points">Esta letra utiliza dos puntos. Compara con atención su posición.</string>

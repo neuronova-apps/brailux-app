@@ -65,13 +65,15 @@ private enum class AnswerResult {
 
 @Composable
 fun BrailleExplorerScreen(
-    onSessionCompleted: (PracticeSessionSummary) -> Unit,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var sessionKey by rememberSaveable { mutableStateOf(0) }
     val session = remember(sessionKey) { PracticeSessionGenerator.generate() }
     var state by remember(session) { mutableStateOf(PracticeSessionState(session)) }
+    var completionPending by remember(session) { mutableStateOf(false) }
+    var completionFailed by remember(session) { mutableStateOf(false) }
 
     if (state.isCompleted) {
         BrailleExplorerSummary(
@@ -83,13 +85,27 @@ fun BrailleExplorerScreen(
     } else {
         BrailleExplorerExercise(
             state = state,
+            completionPending = completionPending,
+            completionFailed = completionFailed,
             onStateChange = { state = it },
             onNext = {
-                val nextState = state.nextExercise()
-                if (nextState.isCompleted) {
-                    onSessionCompleted(nextState.summary())
+                if (!completionPending) {
+                    val nextState = state.nextExercise()
+                    if (nextState.isCompleted) {
+                        completionPending = true
+                        completionFailed = false
+                        onSessionCompleted(nextState.summary()) { recorded ->
+                            completionPending = false
+                            if (recorded) {
+                                state = nextState
+                            } else {
+                                completionFailed = true
+                            }
+                        }
+                    } else {
+                        state = nextState
+                    }
                 }
-                state = nextState
             },
             onBack = onBackToPractice,
             modifier = modifier,
@@ -100,6 +116,8 @@ fun BrailleExplorerScreen(
 @Composable
 private fun BrailleExplorerExercise(
     state: PracticeSessionState,
+    completionPending: Boolean,
+    completionFailed: Boolean,
     onStateChange: (PracticeSessionState) -> Unit,
     onNext: () -> Unit,
     onBack: () -> Unit,
@@ -251,6 +269,16 @@ private fun BrailleExplorerExercise(
                 )
             }
 
+            if (completionFailed) {
+                Spacer(modifier = Modifier.height(14.dp))
+                BrailuxFeedbackCard(
+                    message = stringResource(R.string.practice_progress_save_error),
+                    type = BrailuxFeedbackType.Error,
+                    announceForAccessibility = true,
+                    modifier = Modifier.widthIn(max = 560.dp),
+                )
+            }
+
             Spacer(modifier = Modifier.height(14.dp))
             BrailuxSecondaryButton(
                 text = stringResource(R.string.practice_show_hint),
@@ -264,6 +292,7 @@ private fun BrailleExplorerExercise(
                 BrailuxPrimaryButton(
                     text = stringResource(R.string.practice_next_exercise),
                     onClick = onNext,
+                    enabled = !completionPending,
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 560.dp),

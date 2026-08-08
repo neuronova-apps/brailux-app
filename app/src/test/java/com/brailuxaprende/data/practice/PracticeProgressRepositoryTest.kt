@@ -3,18 +3,27 @@ package com.brailuxaprende.data.practice
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import com.brailuxaprende.practice.PracticeSessionSummary
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -37,7 +46,9 @@ class PracticeProgressRepositoryTest {
 
     @After
     fun tearDown() {
-        dataStoreScope.cancel()
+        runBlocking {
+            dataStoreScope.coroutineContext[Job]?.cancelAndJoin()
+        }
     }
 
     @Test
@@ -118,6 +129,55 @@ class PracticeProgressRepositoryTest {
         assertEquals(20, secondSession.level1TotalExercises)
         assertEquals(14, secondSession.level1FirstAttemptCorrect)
         assertEquals("2026-08-07", secondSession.level1LastPracticeDate)
+    }
+
+    @Test
+    fun practiceProgressStatePublishesACompletedSessionToItsObservedFlow() = runBlocking {
+        val state = PracticeProgressState(repository, dataStoreScope)
+        val updates = Channel<PracticeProgress>(capacity = Channel.UNLIMITED)
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+            state.progress.collect { progress -> updates.send(progress) }
+        }
+        val progressAtCallback = CompletableDeferred<Pair<Boolean, PracticeProgress>>()
+
+        try {
+            assertEquals(0, withTimeout(5_000L) { updates.receive() }.level1CompletedSessions)
+
+            state.recordLevel1Session(
+                summary = PracticeSessionSummary(
+                    exercisesCompleted = 10,
+                    firstAttemptCorrect = 8,
+                    errors = 2,
+                    accuracyPercentage = 80,
+                    practicedLetters = ('A'..'J').toList(),
+                ),
+                practicedAt = SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).parse("2026-08-07")!!,
+                onRecorded = { recorded ->
+                    progressAtCallback.complete(recorded to state.progress.value)
+                },
+            )
+
+            val (recorded, progressObservedByState) = withTimeout(5_000L) {
+                progressAtCallback.await()
+            }
+            assertTrue(recorded)
+            assertEquals(1, progressObservedByState.level1CompletedSessions)
+            val progress = withTimeout(5_000L) {
+                var observed: PracticeProgress
+                do {
+                    observed = updates.receive()
+                } while (observed.level1CompletedSessions != 1)
+                observed
+            }
+
+            assertEquals(1, progress.level1CompletedSessions)
+            assertEquals(10, progress.level1TotalExercises)
+            assertEquals(8, progress.level1FirstAttemptCorrect)
+            assertEquals(80, progress.level1AccuracyPercentage)
+            assertEquals("2026-08-07", progress.level1LastPracticeDate)
+        } finally {
+            collector.cancelAndJoin()
+        }
     }
 
     private fun createRepository() {

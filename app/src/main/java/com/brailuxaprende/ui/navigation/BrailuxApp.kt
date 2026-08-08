@@ -94,7 +94,7 @@ fun BrailuxApp(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
-    onLevel1SessionCompleted: (PracticeSessionSummary) -> Unit,
+    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -215,7 +215,7 @@ private fun BrailuxNavHost(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
-    onLevel1SessionCompleted: (PracticeSessionSummary) -> Unit,
+    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     fun goBack() {

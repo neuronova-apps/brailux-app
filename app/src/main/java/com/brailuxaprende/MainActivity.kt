@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
-import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
 import com.brailuxaprende.data.seasonal.AnnualDate
@@ -44,9 +43,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val preferences by settingsState.preferences.collectAsState()
-            val practiceProgress by practiceProgressState.progress.collectAsState(
-                initial = PracticeProgress(),
-            )
+            val practiceProgress by practiceProgressState.progress.collectAsState()
             val currentDate = rememberCurrentAnnualDate()
             val seasonalEvent = SeasonalThemeResolver.activeEvent(
                 date = currentDate,
@@ -69,7 +66,12 @@ class MainActivity : ComponentActivity() {
                     onTextSizeChange = settingsState::setTextSize,
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
-                    onLevel1SessionCompleted = practiceProgressState::recordLevel1Session,
+                    onLevel1SessionCompleted = { summary, onRecorded ->
+                        practiceProgressState.recordLevel1Session(
+                            summary = summary,
+                            onRecorded = onRecorded,
+                        )
+                    },
                 )
             }
         }

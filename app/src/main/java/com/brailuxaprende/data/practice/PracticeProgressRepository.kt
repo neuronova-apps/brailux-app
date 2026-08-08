@@ -55,20 +55,29 @@ class PracticeProgressRepository(
         exercisesCompleted: Int,
         firstAttemptCorrect: Int,
         practiceDate: String,
-    ) {
+    ): PracticeProgress {
         require(exercisesCompleted >= 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
         require(practiceDate.isNotBlank())
 
+        var recordedProgress: PracticeProgress? = null
         dataStore.edit { preferences ->
-            preferences[Level1CompletedSessionsKey] =
-                (preferences[Level1CompletedSessionsKey] ?: 0) + 1
-            preferences[Level1TotalExercisesKey] =
-                (preferences[Level1TotalExercisesKey] ?: 0) + exercisesCompleted
-            preferences[Level1FirstAttemptCorrectKey] =
-                (preferences[Level1FirstAttemptCorrectKey] ?: 0) + firstAttemptCorrect
+            val updatedProgress = PracticeProgress(
+                level1CompletedSessions =
+                    (preferences[Level1CompletedSessionsKey] ?: 0) + 1,
+                level1TotalExercises =
+                    (preferences[Level1TotalExercisesKey] ?: 0) + exercisesCompleted,
+                level1FirstAttemptCorrect =
+                    (preferences[Level1FirstAttemptCorrectKey] ?: 0) + firstAttemptCorrect,
+                level1LastPracticeDate = practiceDate,
+            )
+            preferences[Level1CompletedSessionsKey] = updatedProgress.level1CompletedSessions
+            preferences[Level1TotalExercisesKey] = updatedProgress.level1TotalExercises
+            preferences[Level1FirstAttemptCorrectKey] = updatedProgress.level1FirstAttemptCorrect
             preferences[Level1LastPracticeDateKey] = practiceDate
+            recordedProgress = updatedProgress
         }
+        return checkNotNull(recordedProgress)
     }
 
     private companion object {
