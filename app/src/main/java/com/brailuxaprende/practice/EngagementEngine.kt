@@ -6,10 +6,26 @@ object EngagementEngine {
         session: EngagementSession,
         date: PracticeDate,
     ): EngagementUpdate {
+        if (
+            session.kind == PracticeSessionKind.Daily &&
+            current.isDailyPracticeCompleted(date)
+        ) {
+            return EngagementUpdate(
+                progress = current,
+                reward = EngagementReward(
+                    xpEarned = 0,
+                    addedPracticeDay = false,
+                    weeklyPracticeDays = current.weeklyPracticeDays(date),
+                    currentStreak = current.currentStreak,
+                    miniAchievementCompleted = null,
+                    newlyUnlockedAchievements = emptySet(),
+                ),
+            )
+        }
+
         val addedPracticeDay = date !in current.activityDates
         val newActivityDates = current.activityDates + date
         val streak = updatedStreak(current, date)
-        val dailyAlreadyCompleted = date in current.dailyPracticeDates
         val dailyPracticeDates = if (session.kind == PracticeSessionKind.Daily) {
             current.dailyPracticeDates + date
         } else {
@@ -17,13 +33,7 @@ object EngagementEngine {
         }
         val monthly = updatedMonthlyProgress(current, session.exercisesCompleted, date)
         val mini = updatedMiniAchievement(current, session, date)
-        val sessionBonus = if (
-            session.kind == PracticeSessionKind.Daily && dailyAlreadyCompleted
-        ) {
-            0
-        } else {
-            session.kind.completionBonusXp
-        }
+        val sessionBonus = session.kind.completionBonusXp
         val miniXp = if (mini.completedNow != null) DailyMiniAchievementXp else 0
         val xpEarned = session.exercisesCompleted * XpPerCompletedExercise + sessionBonus + miniXp
 

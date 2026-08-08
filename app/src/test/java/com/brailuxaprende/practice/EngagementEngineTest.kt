@@ -183,7 +183,7 @@ class EngagementEngineTest {
     }
 
     @Test
-    fun dailyCompletionBonusIsGrantedOnlyOncePerDate() {
+    fun repeatedDailyCompletionIsFullyIdempotentForTheSameDate() {
         val date = neutralMiniDate()
         val first = record(EngagementProgress(), session(PracticeSessionKind.Daily), date)
         val repeated = record(first.progress, session(PracticeSessionKind.Daily), date)
@@ -195,7 +195,8 @@ class EngagementEngineTest {
         )
 
         assertEquals(20, first.reward.xpEarned)
-        assertEquals(10, repeated.reward.xpEarned)
+        assertEquals(0, repeated.reward.xpEarned)
+        assertEquals(first.progress, repeated.progress)
         assertEquals(20, anotherDay.reward.xpEarned)
         assertEquals(setOf(date, sameMiniTypeOnAnotherDate), anotherDay.progress.dailyPracticeDates)
     }

@@ -141,7 +141,7 @@ private fun ConsistencySection(
 ) {
     val weeklyDays = engagementProgress.weeklyPracticeDays(currentDate).coerceAtLeast(0)
     val todayStatus = stringResource(
-        if (engagementProgress.isDailyPracticeCompleted(currentDate)) {
+        if (isPracticeCompletedToday(engagementProgress, currentDate)) {
             R.string.progress_daily_practice_completed
         } else {
             R.string.progress_daily_practice_pending
@@ -176,6 +176,11 @@ private fun ConsistencySection(
         value = formattedPracticeDate(engagementProgress.lastActivityDate),
     )
 }
+
+internal fun isPracticeCompletedToday(
+    progress: EngagementProgress,
+    date: PracticeDate,
+): Boolean = progress.hasPracticed(date)
 
 @Composable
 private fun DailyMiniAchievementSection(

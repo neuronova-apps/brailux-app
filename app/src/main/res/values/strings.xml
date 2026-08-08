@@ -17,7 +17,7 @@
     <string name="home_access_practice_description">Elige un nivel o configura tu propia sesión.</string>
     <string name="home_daily_practice">Práctica diaria</string>
     <string name="home_daily_practice_description">Aquí encontrarás una actividad breve para reforzar lo aprendido.</string>
-    <string name="home_daily_practice_details">5 ejercicios · 3-5 min</string>
+    <string name="home_daily_practice_details">5 ejercicios · 3–5 min</string>
     <string name="home_daily_practice_pending">Pendiente</string>
     <string name="home_daily_practice_completed_today">Completada hoy</string>
     <string name="home_daily_practice_start">Comenzar</string>
@@ -54,7 +54,7 @@
     <string name="nav_selected_mark">✓</string>
 
     <string name="action_back">Volver</string>
-    <string name="content_coming_later">El contenido completo se incorporará en próximas etapas.</string>
+    <string name="content_coming_later">Próximamente</string>
 
     <string name="learn_title">Aprende</string>
     <string name="learn_description">Conoce los fundamentos del sistema Braille mediante lecciones guiadas.</string>
@@ -67,7 +67,7 @@
     <string name="learning_status_available">Disponible</string>
     <string name="learning_status_completed">Completada</string>
 
-    <string name="practice_title">Practica</string>
+    <string name="practice_title">Práctica</string>
     <string name="practice_description">Refuerza el reconocimiento de letras Braille con ejercicios accesibles.</string>
     <string name="practice_orientation_title">Orientación</string>
     <string name="practice_orientation_reading">Lectura</string>
@@ -340,7 +340,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
 
     <string name="about_title">Acerca de</string>
     <string name="about_app_name">Aplicación: Brailux Aprende</string>
-    <string name="about_version">Versión provisional: 0.1</string>
+    <string name="about_version">Versión: 1.0</string>
     <string name="about_purpose">Propósito: enseñar los fundamentos del sistema Braille mediante lecciones, prácticas y juegos accesibles.</string>
     <string name="about_offline">La aplicación funciona completamente sin conexión.</string>
     <string name="about_educational_notice">Brailux Aprende es una herramienta educativa y no sustituye la formación especializada.</string>
@@ -425,11 +425,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="letter_z_comparison">La Z parte de la O y añade el punto 6.</string>
     <string name="letter_enye_comparison">La Ñ usa los puntos 1, 2, 4, 5 y 6.</string>
 
-    <string name="exercise_title">Forma la letra A</string>
-    <string name="exercise_instruction">Activa los puntos correctos</string>
-    <string name="exercise_cell_description">Celda Braille interactiva para formar la letra A</string>
     <string name="exercise_check">Comprobar</string>
-    <string name="exercise_correct">¡Muy bien! La letra A se forma con el punto 1.</string>
     <string name="exercise_incorrect">Revisa los puntos e inténtalo otra vez.</string>
     <string name="exercise_try_again">Intentar de nuevo</string>
     <string name="guided_exercise_cell_description">Celda Braille interactiva para formar la letra %1$s</string>

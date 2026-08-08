@@ -110,7 +110,7 @@ class EngagementProgressRepositoryTest {
     }
 
     @Test
-    fun dailyBonusRemainsIdempotentAfterRestoration() = runBlocking {
+    fun dailyCompletionRemainsFullyIdempotentAfterRestoration() = runBlocking {
         val date = dateForMini(DailyMiniAchievement.ThreeFirstAttemptCorrect)
         val dailySession = session(
             kind = PracticeSessionKind.Daily,
@@ -122,8 +122,11 @@ class EngagementProgressRepositoryTest {
         val repeated = reopenRepository().recordSession(dailySession, date)
 
         assertEquals(20, first.reward.xpEarned)
-        assertEquals(10, repeated.reward.xpEarned)
-        assertEquals(30L, repeated.progress.totalXp)
+        assertEquals(0, repeated.reward.xpEarned)
+        assertEquals(20L, repeated.progress.totalXp)
+        assertEquals(1, repeated.progress.totalSessions)
+        assertEquals(5L, repeated.progress.totalExercises)
+        assertEquals(mapOf(date.monthKey to 5), repeated.progress.monthlyExerciseCounts)
         assertEquals(setOf(date), repeated.progress.dailyPracticeDates)
         assertEquals(1, repeated.progress.activityDates.size)
     }
