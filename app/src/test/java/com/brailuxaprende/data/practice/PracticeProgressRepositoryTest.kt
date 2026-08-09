@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import com.brailuxaprende.practice.DailyMiniAchievement
+import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeDate
 import java.io.File
@@ -291,7 +292,7 @@ class PracticeProgressRepositoryTest {
         val collector = launch(start = CoroutineStart.UNDISPATCHED) {
             state.progress.collect { progress -> updates.send(progress) }
         }
-        val progressAtCallback = CompletableDeferred<Boolean>()
+        val rewardAtCallback = CompletableDeferred<EngagementReward?>()
 
         try {
             assertEquals(0, withTimeout(5_000L) { updates.receive() }.level1CompletedSessions)
@@ -305,15 +306,13 @@ class PracticeProgressRepositoryTest {
                     practicedLetters = ('A'..'J').toList(),
                     longestFirstAttemptCorrectStreak = 3,
                 ),
-                onRecorded = { recorded ->
-                    progressAtCallback.complete(recorded)
+                onRecorded = { reward ->
+                    rewardAtCallback.complete(reward)
                 },
             )
 
-            val recorded = withTimeout(5_000L) {
-                progressAtCallback.await()
-            }
-            assertTrue(recorded)
+            val reward = requireNotNull(withTimeout(5_000L) { rewardAtCallback.await() })
+            assertEquals(40, reward.xpEarned)
             val progress = withTimeout(5_000L) {
                 var observed: PracticeProgress
                 do {

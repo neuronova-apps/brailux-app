@@ -1,7 +1,6 @@
 package com.brailuxaprende.ui.identity
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Test
 
 class InstitutionalIdentityTest {
@@ -15,7 +14,10 @@ class InstitutionalIdentityTest {
             identity.brailuxWebsiteUrl,
         )
         assertEquals("https://neuronova-apps.github.io/", identity.studioWebsiteUrl)
-        assertNull(identity.privacyPolicyUrl)
+        assertEquals(
+            "https://neuronova-apps.github.io/brailux-apps/privacy/",
+            identity.privacyPolicyUrl,
+        )
         assertEquals("Gabriel Berrospi", identity.leadDeveloper)
     }
 }

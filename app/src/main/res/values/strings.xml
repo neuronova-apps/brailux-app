@@ -166,7 +166,8 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_challenge_completed">Desafío completado</string>
     <string name="custom_practice_completed">Práctica completada</string>
     <string name="daily_practice_completed">Práctica diaria completada</string>
-    <string name="daily_practice_reward_xp">+%1$d XP</string>
+    <string name="practice_reward_xp">+%1$d XP obtenidos</string>
+    <string name="practice_reward_xp_accessibility">Has obtenido %1$d puntos de experiencia.</string>
     <string name="daily_practice_reward_new_day">Hoy sumaste un nuevo día de práctica.</string>
     <string name="daily_practice_reward_day_already_counted">El día de hoy ya estaba registrado en tu práctica.</string>
     <string name="daily_practice_reward_week">Esta semana: %1$d de %2$d días</string>

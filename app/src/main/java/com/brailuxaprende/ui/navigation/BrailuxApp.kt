@@ -141,17 +141,17 @@ fun BrailuxApp(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
-    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
-    onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
-        { _, onRecorded -> onRecorded(true) },
-    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit =
-        { _, onRecorded -> onRecorded(true) },
+    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
+    onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit =
+        { _, onRecorded -> onRecorded(null) },
+    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit =
+        { _, onRecorded -> onRecorded(null) },
     customPracticeConfiguration: CustomPracticeConfiguration = CustomPracticeConfiguration(),
     onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit = {},
     onCustomSessionCompleted: (
         PracticeSessionSummary,
-        onRecorded: (Boolean) -> Unit,
-    ) -> Unit = { _, onRecorded -> onRecorded(true) },
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit = { _, onRecorded -> onRecorded(null) },
     onDailySessionCompleted: (
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
@@ -303,14 +303,14 @@ private fun BrailuxNavHost(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
-    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
-    onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
-    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
+    onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
+    onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     customPracticeConfiguration: CustomPracticeConfiguration,
     onCustomPracticeConfigurationUsed: (CustomPracticeConfiguration) -> Unit,
     onCustomSessionCompleted: (
         PracticeSessionSummary,
-        onRecorded: (Boolean) -> Unit,
+        onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit,
     onDailySessionCompleted: (
         PracticeSessionSummary,

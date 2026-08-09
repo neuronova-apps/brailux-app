@@ -1,7 +1,8 @@
 package com.brailuxaprende.data.practice
 
-import com.brailuxaprende.practice.PracticeSessionSummary
+import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeClock
+import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -23,12 +24,12 @@ class PracticeProgressState(
 
     fun recordLevel1Session(
         summary: PracticeSessionSummary,
-        onRecorded: (Boolean) -> Unit = {},
+        onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
         scope.launch {
             try {
-                repository.recordLevel1Session(
+                val record = repository.recordLevel1Session(
                     exercisesCompleted = summary.exercisesCompleted,
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     practiceDate = practiceDate,
@@ -36,23 +37,23 @@ class PracticeProgressState(
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
                     sessionId = summary.sessionId,
                 )
-                onRecorded(true)
+                onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
                 throw exception
             } catch (_: Exception) {
-                onRecorded(false)
+                onRecorded(null)
             }
         }
     }
 
     fun recordLevel2Session(
         summary: PracticeSessionSummary,
-        onRecorded: (Boolean) -> Unit = {},
+        onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
         scope.launch {
             try {
-                repository.recordLevel2Session(
+                val record = repository.recordLevel2Session(
                     exercisesCompleted = summary.exercisesCompleted,
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
@@ -62,23 +63,23 @@ class PracticeProgressState(
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
                     sessionId = summary.sessionId,
                 )
-                onRecorded(true)
+                onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
                 throw exception
             } catch (_: Exception) {
-                onRecorded(false)
+                onRecorded(null)
             }
         }
     }
 
     fun recordLevel3Session(
         summary: PracticeSessionSummary,
-        onRecorded: (Boolean) -> Unit = {},
+        onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
         scope.launch {
             try {
-                repository.recordLevel3Session(
+                val record = repository.recordLevel3Session(
                     exercisesCompleted = summary.exercisesCompleted,
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
@@ -87,11 +88,11 @@ class PracticeProgressState(
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
                     sessionId = summary.sessionId,
                 )
-                onRecorded(true)
+                onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
                 throw exception
             } catch (_: Exception) {
-                onRecorded(false)
+                onRecorded(null)
             }
         }
     }

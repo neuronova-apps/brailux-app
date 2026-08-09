@@ -5,6 +5,8 @@ import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -37,7 +39,7 @@ class HomeNavigationTest {
                     onTextSizeChange = {},
                     onAppearanceChange = {},
                     onSeasonalThemesEnabledChange = {},
-                    onLevel1SessionCompleted = { _, onRecorded -> onRecorded(true) },
+                    onLevel1SessionCompleted = { _, onRecorded -> onRecorded(null) },
                 )
             }
         }
@@ -48,6 +50,33 @@ class HomeNavigationTest {
         composeRule.onAllNodesWithText(context.getString(R.string.nav_play)).assertCountEquals(1)
         composeRule.onAllNodesWithText(context.getString(R.string.nav_progress)).assertCountEquals(1)
         composeRule.onAllNodesWithText(context.getString(R.string.progress_title)).assertCountEquals(0)
+        composeRule.onAllNodes(
+            hasText(context.getString(R.string.home_title)) and isHeading(),
+        ).assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.home_welcome_message))
+            .assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.home_continue_learning))
+            .assertCountEquals(0)
+
+        val dailyTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_daily_practice))
+            .fetchSemanticsNode().boundsInRoot.top
+        val practiceTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_access_practice))
+            .fetchSemanticsNode().boundsInRoot.top
+        val challengeTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_daily_challenge))
+            .fetchSemanticsNode().boundsInRoot.top
+        val settingsTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_access_settings))
+            .fetchSemanticsNode().boundsInRoot.top
+        val aboutTop = composeRule
+            .onNodeWithText(context.getString(R.string.home_access_about))
+            .fetchSemanticsNode().boundsInRoot.top
+        assertTrue(practiceTop > dailyTop)
+        assertTrue(challengeTop > practiceTop)
+        assertTrue(settingsTop > challengeTop)
+        assertTrue(aboutTop > settingsTop)
 
         composeRule.onNodeWithText(context.getString(R.string.home_daily_practice))
             .performScrollTo()
@@ -71,21 +100,7 @@ class HomeNavigationTest {
             .assertIsDisplayed()
             .assertHasNoClickAction()
 
-        val dailyTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_daily_practice))
-            .fetchSemanticsNode().boundsInRoot.top
-        val practiceTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_access_practice))
-            .fetchSemanticsNode().boundsInRoot.top
-        val learnTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_continue_learning))
-            .fetchSemanticsNode().boundsInRoot.top
-        assertTrue(practiceTop > dailyTop)
-        assertTrue(learnTop > practiceTop)
-
-        composeRule.onNodeWithText(context.getString(R.string.home_continue_learning))
-            .performScrollTo()
-            .performClick()
+        composeRule.onNodeWithText(context.getString(R.string.nav_learn)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.learn_title)).assertIsDisplayed()
 
         composeRule.onNodeWithText(context.getString(R.string.nav_home)).performClick()

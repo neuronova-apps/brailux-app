@@ -105,7 +105,7 @@ fun DailyPracticeScreen(
 @Composable
 fun BrailleExplorerScreen(
     mode: PracticeMode,
-    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     storedSnapshot: PracticeSessionSnapshot?,
     sessionsLoaded: Boolean,
@@ -140,7 +140,7 @@ fun BrailleExplorerScreen(
 @Composable
 fun BrailleRecognizerScreen(
     mode: PracticeMode,
-    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     storedSnapshot: PracticeSessionSnapshot?,
     sessionsLoaded: Boolean,
@@ -175,7 +175,7 @@ fun BrailleRecognizerScreen(
 @Composable
 fun BrailleChallengeScreen(
     mode: PracticeMode,
-    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onBackToPractice: () -> Unit,
     storedSnapshot: PracticeSessionSnapshot?,
     sessionsLoaded: Boolean,
@@ -210,7 +210,7 @@ fun BrailleChallengeScreen(
 @Composable
 fun CustomBraillePracticeScreen(
     configuration: CustomPracticeConfiguration,
-    onSessionCompleted: (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit,
+    onSessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onChangeConfiguration: () -> Unit,
     onBackToPractice: () -> Unit,
     storedSnapshot: PracticeSessionSnapshot?,
@@ -250,7 +250,7 @@ private fun BraillePracticeLevelScreen(
     level: PracticeLevel,
     sessionFactory: () -> PracticeSession,
     onSessionCompleted: (
-        (PracticeSessionSummary, onRecorded: (Boolean) -> Unit) -> Unit
+        (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit
     )? = null,
     onDailySessionCompleted: (
         (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit
@@ -303,15 +303,16 @@ private fun BraillePracticeLevelScreen(
                         )
                     }
                 } else {
-                    requireNotNull(onSessionCompleted)(requireNotNull(snapshot.summary)) { recorded ->
+                    requireNotNull(onSessionCompleted)(requireNotNull(snapshot.summary)) { reward ->
                         onSnapshotCreditResolved(
-                            snapshot.copy(
-                                phase = if (recorded) {
-                                    PracticeSessionPhase.Credited
-                                } else {
-                                    PracticeSessionPhase.CreditFailed
-                                },
-                            ),
+                            if (reward == null) {
+                                snapshot.copy(phase = PracticeSessionPhase.CreditFailed)
+                            } else {
+                                snapshot.copy(
+                                    phase = PracticeSessionPhase.Credited,
+                                    engagementReward = reward,
+                                )
+                            },
                         )
                     }
                 }
@@ -788,7 +789,7 @@ private fun PointNumberToggle(
 }
 
 @Composable
-private fun BraillePracticeSummary(
+internal fun BraillePracticeSummary(
     level: PracticeLevel,
     summary: PracticeSessionSummary,
     onPracticeAgain: () -> Unit,
@@ -872,13 +873,10 @@ private fun BraillePracticeSummary(
                         ),
                     )
                 }
+                if (engagementReward != null) {
+                    XpRewardSummary(engagementReward.xpEarned)
+                }
                 if (level == PracticeLevel.Daily && engagementReward != null) {
-                    SummaryLine(
-                        stringResource(
-                            R.string.daily_practice_reward_xp,
-                            engagementReward.xpEarned,
-                        ),
-                    )
                     SummaryLine(
                         stringResource(
                             if (engagementReward.addedPracticeDay) {
@@ -947,6 +945,25 @@ private fun BraillePracticeSummary(
             )
         }
     }
+}
+
+@Composable
+private fun XpRewardSummary(xpEarned: Int) {
+    val accessibilityDescription = stringResource(
+        R.string.practice_reward_xp_accessibility,
+        xpEarned,
+    )
+    Text(
+        text = stringResource(R.string.practice_reward_xp, xpEarned),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .semantics {
+                contentDescription = accessibilityDescription
+            },
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.Bold,
+    )
 }
 
 @Composable

@@ -76,7 +76,7 @@ class ProgressNavigationTest {
                     onTextSizeChange = {},
                     onAppearanceChange = {},
                     onSeasonalThemesEnabledChange = {},
-                    onLevel1SessionCompleted = { _, onRecorded -> onRecorded(true) },
+                    onLevel1SessionCompleted = { _, onRecorded -> onRecorded(null) },
                 )
             }
         }

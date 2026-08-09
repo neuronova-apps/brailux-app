@@ -13,6 +13,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.brailuxaprende.MainActivity
 import com.brailuxaprende.R
+import com.brailuxaprende.data.practice.EngagementProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.practiceSessionSnapshotKeyName
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
@@ -42,6 +43,7 @@ class PracticeSessionRecreationTest {
     fun level1SessionAndSummarySurviveActivityRecreationWithoutDuplicateCredit() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val baselineSessions = level1CompletedSessions()
+        val baselineXp = totalXp()
 
         composeRule.onNodeWithText(context.getString(R.string.welcome_start)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.home_access_practice))
@@ -66,6 +68,10 @@ class PracticeSessionRecreationTest {
         }
         composeRule.onNodeWithText(completedTitle).assertIsDisplayed()
         assertEquals(baselineSessions + 1, level1CompletedSessions())
+        val accreditedXp = (totalXp() - baselineXp).toInt()
+        composeRule.onNodeWithText(
+            context.getString(R.string.practice_reward_xp, accreditedXp),
+        ).performScrollTo().assertIsDisplayed()
 
         composeRule.activityRule.scenario.recreate()
 
@@ -74,12 +80,17 @@ class PracticeSessionRecreationTest {
         }
         composeRule.onNodeWithText(completedTitle).assertIsDisplayed()
         assertEquals(baselineSessions + 1, level1CompletedSessions())
+        assertEquals(baselineXp + accreditedXp, totalXp())
+        composeRule.onNodeWithText(
+            context.getString(R.string.practice_reward_xp, accreditedXp),
+        ).performScrollTo().assertIsDisplayed()
 
         composeRule.onNodeWithText(context.getString(R.string.practice_again))
             .performScrollTo()
             .performClick()
         waitForExercise(number = 1)
         assertEquals(baselineSessions + 1, level1CompletedSessions())
+        assertEquals(baselineXp + accreditedXp, totalXp())
     }
 
     private fun answerCurrentExerciseAndAdvance() {
@@ -130,6 +141,16 @@ class PracticeSessionRecreationTest {
                 .progress
                 .first()
                 .level1CompletedSessions
+        }
+    }
+
+    private fun totalXp(): Long {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        return runBlocking {
+            EngagementProgressRepository(context.accessibilityPreferencesDataStore)
+                .progress
+                .first()
+                .totalXp
         }
     }
 }

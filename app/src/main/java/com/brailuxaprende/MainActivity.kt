@@ -151,7 +151,7 @@ class MainActivity : ComponentActivity() {
                         engagementProgressState.recordSession(
                             summary = summary,
                             kind = PracticeSessionKind.Custom,
-                            onRecorded = { reward -> onRecorded(reward != null) },
+                            onRecorded = onRecorded,
                         )
                     },
                     onDailySessionCompleted = { summary, onRecorded ->

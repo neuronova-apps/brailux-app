@@ -32,11 +32,19 @@ La primera version esta pensada para estudiantes, familias, docentes y personas 
 
 ## Jerarquia de informacion
 
-- Inicio es el tablero de acciones: prioriza Practica diaria, Practica y la continuacion de Aprende; las funciones futuras se identifican sin simular controles ni datos.
+- Inicio es el tablero de acciones: prioriza Practica diaria y Practica; Aprende conserva su acceso permanente en la barra inferior y las funciones futuras se identifican sin simular controles ni datos.
 - Mi progreso es el centro unico de constancia, XP, metas, mini logros, estadisticas de Practica, avance de Aprende y logros permanentes.
 - Acerca de presenta a Brailux Aprende como parte de NeuroNova Apps, matriz de aplicaciones educativas y accesibles, y acredita a Gabriel Berrospi como desarrollador.
 
-El sitio de NeuroNova Apps es `https://neuronova-apps.github.io/` y el sitio especifico de Brailux Aprende es `https://neuronova-apps.github.io/brailux-apps/`. La politica de privacidad continua pendiente; mientras no exista una URL real, la aplicacion la presenta como proximamente y sin interaccion.
+El sitio de NeuroNova Apps es `https://neuronova-apps.github.io/`, el sitio especifico de Brailux Aprende es `https://neuronova-apps.github.io/brailux-apps/` y su politica de privacidad es `https://neuronova-apps.github.io/brailux-apps/privacy/`.
+
+## Generacion actual de XP
+
+- Aprende no genera XP actualmente; registra unicamente el progreso y el completado de las lecciones.
+- Practica genera XP y conserva exactamente las reglas de acreditacion existentes.
+- Practica diaria genera XP de acuerdo con esas reglas existentes.
+- Juega no tiene una recompensa de XP definida ni implementada; es una decision futura.
+- Desafio del dia no tiene una recompensa de XP definida ni implementada; es una decision futura.
 
 ## Primera version minima
 

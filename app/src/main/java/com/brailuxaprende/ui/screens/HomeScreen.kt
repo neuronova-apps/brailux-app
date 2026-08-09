@@ -32,6 +32,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -62,8 +63,11 @@ fun HomeScreen(
     onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val screenTitle = stringResource(R.string.home_title)
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .semantics { paneTitle = screenTitle },
         color = MaterialTheme.colorScheme.background,
     ) {
         Column(
@@ -77,23 +81,6 @@ fun HomeScreen(
                 painter = painterResource(R.drawable.ic_brailux_identity),
                 contentDescription = null,
                 modifier = Modifier.size(84.dp),
-            )
-            Spacer(modifier = Modifier.height(12.dp))
-            Text(
-                text = stringResource(R.string.home_title),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.onBackground,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.home_welcome_message),
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .widthIn(max = 560.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
             )
             if (seasonalEvent != null) {
                 var showSeasonalBanner by rememberSaveable(seasonalEvent.id) {
@@ -126,12 +113,6 @@ fun HomeScreen(
                     description = stringResource(R.string.home_access_practice_description),
                     iconResource = R.drawable.ic_practice,
                     onClick = onPractice,
-                )
-                BrailuxMenuCard(
-                    title = stringResource(R.string.home_continue_learning),
-                    description = stringResource(R.string.home_continue_learning_description),
-                    iconResource = R.drawable.ic_learn,
-                    onClick = onLearn,
                 )
                 DailyChallengeCard()
             }

@@ -1,6 +1,5 @@
 package com.brailuxaprende.ui.screens
 
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -24,7 +23,7 @@ class AboutScreenTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun definitiveIdentityLinksAndPendingPrivacyArePresentedCorrectly() {
+    fun definitiveIdentityLinksAndActivePrivacyArePresentedCorrectly() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val identity = InstitutionalIdentity.current
         val openedUrls = mutableListOf<String>()
@@ -68,21 +67,21 @@ class AboutScreenTest {
             .assertHasClickAction()
             .performClick()
 
-        assertEquals(
-            listOf(identity.brailuxWebsiteUrl, identity.studioWebsiteUrl),
-            openedUrls,
-        )
-
-        val privacyLabel = context.getString(R.string.about_privacy_policy)
         composeRule.onNodeWithContentDescription(
-            context.getString(
-                R.string.about_future_accessibility,
-                privacyLabel,
-                context.getString(R.string.about_coming_soon),
-            ),
+            context.getString(R.string.about_privacy_policy),
         )
             .performScrollTo()
             .assertIsDisplayed()
-            .assertHasNoClickAction()
+            .assertHasClickAction()
+            .performClick()
+
+        assertEquals(
+            listOf(
+                identity.brailuxWebsiteUrl,
+                identity.studioWebsiteUrl,
+                identity.privacyPolicyUrl,
+            ),
+            openedUrls,
+        )
     }
 }
