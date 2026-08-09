@@ -34,9 +34,9 @@ La primera version esta pensada para estudiantes, familias, docentes y personas 
 
 - Inicio es el tablero de acciones: prioriza Practica diaria, Practica y la continuacion de Aprende; las funciones futuras se identifican sin simular controles ni datos.
 - Mi progreso es el centro unico de constancia, XP, metas, mini logros, estadisticas de Practica, avance de Aprende y logros permanentes.
-- Acerca de conserva la identidad de Brailux Aprende y prepara su integracion futura con una matriz general de aplicaciones educativas y accesibles.
+- Acerca de presenta a Brailux Aprende como parte de NeuroNova Apps, matriz de aplicaciones educativas y accesibles, y acredita a Gabriel Berrospi como desarrollador.
 
-El nombre definitivo de la matriz, el sitio especifico de Brailux Aprende, el sitio de la matriz y la politica de privacidad quedan pendientes. Hasta contar con nombres y URL reales, la aplicacion los presenta como proximamente y no crea enlaces interactivos.
+El sitio de NeuroNova Apps es `https://neuronova-apps.github.io/` y el sitio especifico de Brailux Aprende es `https://neuronova-apps.github.io/brailux-apps/`. La politica de privacidad continua pendiente; mientras no exista una URL real, la aplicacion la presenta como proximamente y sin interaccion.
 
 ## Primera version minima
 

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/brailux_launcher_blue"
+        android:pathData="M54,4C81.61,4 104,26.39 104,54C104,81.61 81.61,104 54,104C26.39,104 4,81.61 4,54C4,26.39 26.39,4 54,4Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M54,12L54,19M24,23L29,29M84,23L79,29M16,52L23,52M92,52L85,52"
+        android:strokeColor="@color/brailux_launcher_sky"
+        android:strokeLineCap="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M54,20C39.64,20 28,31.64 28,46C28,55.86 33.52,64.47 41.5,68.85L41.5,75C41.5,77.76 43.74,80 46.5,80L61.5,80C64.26,80 66.5,77.76 66.5,75L66.5,68.85C74.48,64.47 80,55.86 80,46C80,31.64 68.36,20 54,20Z" />
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M36,41C37.25,33.78 42.35,28.72 49.5,27"
+        android:strokeColor="#FFC8F3FF"
+        android:strokeLineCap="round"
+        android:strokeWidth="3" />
+    <path
+        android:fillColor="@color/brailux_launcher_blue"
+        android:pathData="M43,34C40.79,34 39,35.79 39,38C39,40.21 40.79,42 43,42C45.21,42 47,40.21 47,38C47,35.79 45.21,34 43,34ZM65,34C62.79,34 61,35.79 61,38C61,40.21 62.79,42 65,42C67.21,42 69,40.21 69,38C69,35.79 67.21,34 65,34ZM43,46C40.79,46 39,47.79 39,50C39,52.21 40.79,54 43,54C45.21,54 47,52.21 47,50C47,47.79 45.21,46 43,46ZM65,46C62.79,46 61,47.79 61,50C61,52.21 62.79,54 65,54C67.21,54 69,52.21 69,50C69,47.79 67.21,46 65,46ZM43,58C40.79,58 39,59.79 39,62C39,64.21 40.79,66 43,66C45.21,66 47,64.21 47,62C47,59.79 45.21,58 43,58ZM65,58C62.79,58 61,59.79 61,62C61,64.21 62.79,66 65,66C67.21,66 69,64.21 69,62C69,59.79 67.21,58 65,58Z" />
+    <path
+        android:fillColor="@color/brailux_launcher_sky"
+        android:pathData="M43,83L65,83L65,87C65,90.31 62.31,93 59,93L49,93C45.69,93 43,90.31 43,87Z" />
+</vector>

@@ -6,12 +6,15 @@ import org.junit.Test
 
 class InstitutionalIdentityTest {
     @Test
-    fun `identity keeps future names and urls undefined`() {
+    fun `identity exposes definitive NeuroNova and Brailux data`() {
         val identity = InstitutionalIdentity.current
 
-        assertNull(identity.studioName)
-        assertNull(identity.brailuxWebsiteUrl)
-        assertNull(identity.studioWebsiteUrl)
+        assertEquals("NeuroNova Apps", identity.studioName)
+        assertEquals(
+            "https://neuronova-apps.github.io/brailux-apps/",
+            identity.brailuxWebsiteUrl,
+        )
+        assertEquals("https://neuronova-apps.github.io/", identity.studioWebsiteUrl)
         assertNull(identity.privacyPolicyUrl)
         assertEquals("Gabriel Berrospi", identity.leadDeveloper)
     }

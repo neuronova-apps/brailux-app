@@ -344,16 +344,16 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="about_purpose">Propósito: enseñar los fundamentos del sistema Braille mediante lecciones, prácticas y juegos accesibles.</string>
     <string name="about_offline">La aplicación funciona completamente sin conexión.</string>
     <string name="about_educational_notice">Brailux Aprende es una herramienta educativa y no sustituye la formación especializada.</string>
-    <string name="about_studio_name_placeholder">[Nombre de la matriz]</string>
-    <string name="about_studio_title">Parte de %1$s</string>
-    <string name="about_studio_description">%1$s reúne aplicaciones educativas y accesibles desarrolladas bajo una misma línea de trabajo.</string>
-    <string name="about_lead_developer">Desarrollador principal</string>
+    <string name="about_studio_description">Matriz de aplicaciones educativas y accesibles.</string>
+    <string name="about_studio_membership">Brailux Aprende forma parte de %1$s.</string>
+    <string name="about_developer_credit">Desarrollado por %1$s</string>
     <string name="about_brailux_website">Visitar sitio de Brailux Aprende</string>
     <string name="about_studio_website">Conocer %1$s</string>
     <string name="about_privacy_policy">Política de privacidad</string>
     <string name="about_coming_soon">Próximamente</string>
-    <string name="about_link_configured">Enlace configurado para una integración futura.</string>
-    <string name="about_value_accessibility">%1$s, %2$s.</string>
+    <string name="about_open_website">Abrir</string>
+    <string name="about_brailux_website_accessibility">Visitar sitio web de Brailux Aprende.</string>
+    <string name="about_studio_website_accessibility">Conocer %1$s.</string>
     <string name="about_future_accessibility">%1$s. %2$s.</string>
 
     <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>

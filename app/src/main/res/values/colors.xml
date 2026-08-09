@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="brailux_launcher_blue">#FF0B5B9A</color>
+    <color name="brailux_launcher_blue_light">#FF1976D2</color>
+    <color name="brailux_launcher_sky">#FF8EDFF5</color>
 </resources>

@@ -34,6 +34,10 @@ Los ViewModel se usaran unicamente cuando exista estado de pantalla que deba sob
 
 La navegacion principal se implementara con Navigation Compose cuando el proyecto necesite cambiar entre secciones como Inicio, Aprende, Practica, Juega, Mi progreso y Configuracion.
 
+## Identidad institucional
+
+`InstitutionalIdentity` es la fuente unica para el nombre de NeuroNova Apps, el sitio de la matriz, el sitio de Brailux Aprende y el credito de Gabriel Berrospi. La politica de privacidad permanece sin URL hasta que exista una direccion oficial.
+
 ## Persistencia
 
 El progreso y las preferencias se guardaran localmente con DataStore cuando se implemente esa etapa. No habra cuentas, sincronizacion remota ni dependencias de servidor.

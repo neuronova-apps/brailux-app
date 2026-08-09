@@ -7,22 +7,19 @@
     <path
         android:fillColor="#00000000"
         android:pathData="M54,16L54,21M29,27L33,32M79,27L75,32"
-        android:strokeColor="@color/brailux_launcher_sky"
+        android:strokeColor="#FFFFFFFF"
         android:strokeLineCap="round"
         android:strokeWidth="3" />
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:pathData="M54,23C40.75,23 30,33.75 30,47C30,56.1 35.1,64.05 42.6,68.1L42.6,74C42.6,76.21 44.39,78 46.6,78L61.4,78C63.61,78 65.4,76.21 65.4,74L65.4,68.1C72.9,64.05 78,56.1 78,47C78,33.75 67.25,23 54,23Z" />
     <path
         android:fillColor="#00000000"
-        android:pathData="M38,43C39.2,35.9 43.7,31.3 49.5,29.6"
-        android:strokeColor="#FFC8F3FF"
-        android:strokeLineCap="round"
-        android:strokeWidth="3" />
+        android:pathData="M54,23C40.75,23 30,33.75 30,47C30,56.1 35.1,64.05 42.6,68.1L42.6,74C42.6,76.21 44.39,78 46.6,78L61.4,78C63.61,78 65.4,76.21 65.4,74L65.4,68.1C72.9,64.05 78,56.1 78,47C78,33.75 67.25,23 54,23Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineJoin="round"
+        android:strokeWidth="4" />
     <path
-        android:fillColor="@color/brailux_launcher_blue"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M44,36C41.79,36 40,37.79 40,40C40,42.21 41.79,44 44,44C46.21,44 48,42.21 48,40C48,37.79 46.21,36 44,36ZM64,36C61.79,36 60,37.79 60,40C60,42.21 61.79,44 64,44C66.21,44 68,42.21 68,40C68,37.79 66.21,36 64,36ZM44,47C41.79,47 40,48.79 40,51C40,53.21 41.79,55 44,55C46.21,55 48,53.21 48,51C48,48.79 46.21,47 44,47ZM64,47C61.79,47 60,48.79 60,51C60,53.21 61.79,55 64,55C66.21,55 68,53.21 68,51C68,48.79 66.21,47 64,47ZM44,58C41.79,58 40,59.79 40,62C40,64.21 41.79,66 44,66C46.21,66 48,64.21 48,62C48,59.79 46.21,58 44,58ZM64,58C61.79,58 60,59.79 60,62C60,64.21 61.79,66 64,66C66.21,66 68,64.21 68,62C68,59.79 66.21,58 64,58Z" />
     <path
-        android:fillColor="@color/brailux_launcher_sky"
+        android:fillColor="#FFFFFFFF"
         android:pathData="M44,81L64,81L64,84C64,86.76 61.76,89 59,89L49,89C46.24,89 44,86.76 44,84Z" />
 </vector>

@@ -1,6 +1,7 @@
 package com.brailuxaprende.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,6 +73,12 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            Image(
+                painter = painterResource(R.drawable.ic_brailux_identity),
+                contentDescription = null,
+                modifier = Modifier.size(84.dp),
+            )
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = stringResource(R.string.home_title),
                 modifier = Modifier.semantics { heading() },
