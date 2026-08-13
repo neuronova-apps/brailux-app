@@ -10,7 +10,7 @@ La web se organiza en:
 
 - `index.html`: portal principal y accesos a las rutas de Brailux;
 - `portal.css`: estilos exclusivos del portal principal;
-- `portal.js`: navegación móvil, ranking de exhibición y carga del módulo compartido de accesibilidad en el portal;
+- `portal.js`: navegación móvil y ranking de exhibición;
 - `aprende.html`: contenido teórico e interactivo de aprendizaje;
 - `styles.css`: estilos de la experiencia Aprende;
 - `script.js`: constructor Braille, series, prácticas y demás interacciones didácticas;
@@ -27,7 +27,7 @@ Esta separación evita mezclar la portada de navegación con la experiencia did�
 
 Brailux consume el núcleo central de accesibilidad de Neuronova Apps. Esto permite mantener criterios comunes entre proyectos y evita duplicar implementaciones generales.
 
-`aprende.html` y la política de privacidad declaran directamente los recursos compartidos. El portal principal los carga actualmente desde `portal.js`; esta diferencia puede simplificarse en una revisión posterior cuando el cambio pueda verificarse sin alterar el funcionamiento publicado.
+`index.html`, `aprende.html` y `privacy/index.html` declaran directamente los recursos compartidos de accesibilidad. El JavaScript específico de cada experiencia queda limitado a su propia interacción y no vuelve a cargar el núcleo central.
 
 Entre las funciones compartidas se contemplan:
 
