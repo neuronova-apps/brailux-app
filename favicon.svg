@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Brailux">
+  <rect width="512" height="512" rx="112" fill="#07111f"/>
+  <rect x="18" y="18" width="476" height="476" rx="96" fill="none" stroke="#2f6f8c" stroke-width="12"/>
+  <g fill="#58d3f5">
+    <circle cx="156" cy="168" r="31"/>
+    <circle cx="236" cy="168" r="31"/>
+    <circle cx="156" cy="256" r="31"/>
+    <circle cx="236" cy="256" r="31"/>
+    <circle cx="156" cy="344" r="31"/>
+    <circle cx="236" cy="344" r="31"/>
+    <path d="M300 142h54c61 0 97 31 97 78 0 31-16 54-45 67 31 12 50 37 50 72 0 50-39 83-102 83h-54v-57h48c32 0 50-14 50-38 0-24-18-38-50-38h-48v-55h45c30 0 47-13 47-35 0-21-17-35-47-35h-45z"/>
+  </g>
+</svg>
