@@ -8,15 +8,26 @@ Brailux se desarrolla de forma modular y progresiva. La prioridad es mantener pr
 
 La web se organiza en:
 
-- `index.html`: portal principal de Brailux;
-- `aprende.html`: contenido teórico e interactivo;
-- hojas de estilo propias para cada experiencia;
-- JavaScript para navegación, ejercicios, ranking de exhibición e interacción;
-- módulo de accesibilidad consumido desde el repositorio raíz de Neuronova Apps.
+- `index.html`: portal principal y accesos a las rutas de Brailux;
+- `portal.css`: estilos exclusivos del portal principal;
+- `portal.js`: navegación móvil, ranking de exhibición y carga del módulo compartido de accesibilidad en el portal;
+- `aprende.html`: contenido teórico e interactivo de aprendizaje;
+- `styles.css`: estilos de la experiencia Aprende;
+- `script.js`: constructor Braille, series, prácticas y demás interacciones didácticas;
+- `privacy/index.html`: política de privacidad;
+- `privacy/styles.css`: estilos exclusivos de privacidad;
+- `sitemap.xml`: URLs públicas indexables;
+- `favicon.svg`: identidad gráfica del sitio;
+- `docs/`: documentación de proyecto, alcance, desarrollo y roadmap;
+- `.nojekyll`: publicación estática directa mediante GitHub Pages.
+
+Esta separación evita mezclar la portada de navegación con la experiencia didáctica y con la política de privacidad.
 
 ## Accesibilidad compartida
 
-Brailux consume el núcleo central de accesibilidad de Neuronova Apps. Esto permite mantener criterios comunes entre proyectos y evita duplicar implementaciones.
+Brailux consume el núcleo central de accesibilidad de Neuronova Apps. Esto permite mantener criterios comunes entre proyectos y evita duplicar implementaciones generales.
+
+`aprende.html` y la política de privacidad declaran directamente los recursos compartidos. El portal principal los carga actualmente desde `portal.js`; esta diferencia puede simplificarse en una revisión posterior cuando el cambio pueda verificarse sin alterar el funcionamiento publicado.
 
 Entre las funciones compartidas se contemplan:
 
@@ -30,6 +41,8 @@ Entre las funciones compartidas se contemplan:
 - resaltado de enlaces;
 - foco de teclado reforzado.
 
+La experiencia Aprende conserva además un control local de alto contraste. Su eventual eliminación debe realizarse únicamente después de comprobar que el módulo compartido cubre todos los estados visuales específicos de Brailux.
+
 ## Criterios técnicos
 
 Cada componente debe procurar:
@@ -41,7 +54,8 @@ Cada componente debe procurar:
 - indicadores visibles de foco;
 - diseño adaptable;
 - compatibilidad con preferencias de movimiento reducido;
-- separación entre contenido, presentación y lógica.
+- separación entre contenido, presentación y lógica;
+- evitar estilos o scripts duplicados cuando ya exista una responsabilidad claramente asignada a otro archivo.
 
 ## Contenidos
 
