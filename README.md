@@ -2,6 +2,8 @@
 
 Brailux es una iniciativa personal orientada a acercar el sistema Braille a más personas mediante una experiencia web accesible, interactiva y progresiva.
 
+**Estado actual: MVP web en desarrollo activo.**
+
 El proyecto busca ofrecer una alternativa digital para conocer qué es el Braille, comprender la lógica de su estructura, explorar sus signos básicos, practicar contenidos introductorios y contribuir a su difusión como sistema de lectoescritura utilizado por personas ciegas, sordociegas y con discapacidad visual grave.
 
 Brailux forma parte del ecosistema [Neuronova Apps](https://neuronova-apps.github.io/) y se desarrolla como un proyecto personal e independiente de Gabriel Berrospi.
@@ -190,7 +192,7 @@ Referencias:
 
 ## Desarrollo
 
-Brailux se encuentra en desarrollo activo. Los contenidos, funciones y componentes de interfaz pueden modificarse conforme se realicen pruebas de funcionamiento, accesibilidad, precisión de los contenidos y experiencia de usuario.
+Brailux es un **MVP web en desarrollo activo**. Los contenidos, funciones y componentes de interfaz pueden modificarse conforme se realicen pruebas de funcionamiento, accesibilidad, precisión de los contenidos y experiencia de usuario.
 
 ## Ecosistema
 
@@ -202,4 +204,4 @@ Proyecto personal desarrollado por Gabriel Berrospi.
 
 ## Estado
 
-En desarrollo.
+MVP web en desarrollo activo.
