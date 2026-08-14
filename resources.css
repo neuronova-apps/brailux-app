@@ -92,6 +92,42 @@
   margin: 0;
 }
 
+.source-note {
+  margin: 22px 0 0;
+  padding: 14px 16px;
+  border-left: 2px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+  background: rgba(86,224,255,.025);
+  color: var(--muted);
+  font-size: .84rem;
+}
+
+.source-note strong {
+  color: var(--text);
+}
+
+.source-note a,
+.source-list a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.source-list {
+  margin-top: 24px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255,255,255,.02);
+}
+
+.source-list h3 {
+  margin-top: 0;
+}
+
+.source-list ul {
+  margin-bottom: 0;
+}
+
 .resource-aside {
   position: sticky;
   top: 92px;
