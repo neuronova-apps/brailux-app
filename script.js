@@ -95,14 +95,6 @@ if (menuButton && mainNav) {
   }));
 }
 
-const contrastToggle = document.querySelector('#contrastToggle');
-if (contrastToggle) {
-  contrastToggle.addEventListener('click', () => {
-    const active = document.body.classList.toggle('high-contrast');
-    contrastToggle.setAttribute('aria-pressed', String(active));
-  });
-}
-
 const revealElements = document.querySelectorAll('.reveal');
 if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
   const observer = new IntersectionObserver(entries => {
