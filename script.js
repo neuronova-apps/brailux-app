@@ -144,21 +144,50 @@ if (clearCell) {
   });
 }
 
-// Series del alfabeto
+// Series del alfabeto: patrón de pestañas accesible con panel dinámico
 const alphabetGrid = document.querySelector('#alphabetGrid');
+const seriesNav = document.querySelector('.series-nav');
 const seriesTabs = [...document.querySelectorAll('.series-tab')];
+const seriesExplainer = document.querySelector('.series-explainer');
 const seriesBadge = document.querySelector('#seriesBadge');
 const seriesTitle = document.querySelector('#seriesTitle');
 const seriesText = document.querySelector('#seriesText');
 const seriesRule = document.querySelector('#seriesRule');
+let seriesPanel = null;
+
+function setupSeriesTabs() {
+  if (!seriesNav || !seriesTabs.length || !seriesExplainer || !alphabetGrid) return;
+
+  seriesNav.setAttribute('aria-orientation', 'horizontal');
+
+  seriesPanel = document.createElement('div');
+  seriesPanel.id = 'series-panel';
+  seriesPanel.setAttribute('role', 'tabpanel');
+  seriesPanel.setAttribute('tabindex', '0');
+
+  seriesExplainer.parentNode.insertBefore(seriesPanel, seriesExplainer);
+  seriesPanel.append(seriesExplainer, alphabetGrid);
+  alphabetGrid.removeAttribute('aria-live');
+
+  seriesTabs.forEach((tab, index) => {
+    const active = index === 0;
+    tab.id = `series-tab-${index + 1}`;
+    tab.setAttribute('aria-controls', seriesPanel.id);
+    tab.setAttribute('aria-selected', String(active));
+    tab.tabIndex = active ? 0 : -1;
+    tab.classList.toggle('active', active);
+  });
+
+  seriesPanel.setAttribute('aria-labelledby', seriesTabs[0].id);
+}
 
 function renderSeries(id = 1) {
   const data = seriesData[id];
   if (!data || !alphabetGrid) return;
-  seriesBadge.textContent = data.badge;
-  seriesTitle.textContent = data.title;
-  seriesText.textContent = data.text;
-  seriesRule.textContent = data.rule;
+  if (seriesBadge) seriesBadge.textContent = data.badge;
+  if (seriesTitle) seriesTitle.textContent = data.title;
+  if (seriesText) seriesText.textContent = data.text;
+  if (seriesRule) seriesRule.textContent = data.rule;
   alphabetGrid.innerHTML = '';
 
   data.items.forEach(item => {
@@ -192,14 +221,38 @@ function loadBuilder(points, label) {
   document.querySelector('#generador')?.scrollIntoView({behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
 }
 
-seriesTabs.forEach(tab => {
-  tab.addEventListener('click', () => {
-    seriesTabs.forEach(other => {
-      const active = other === tab;
-      other.classList.toggle('active', active);
-      other.setAttribute('aria-selected', String(active));
-    });
-    renderSeries(Number(tab.dataset.series));
+function activateSeriesTab(tab, moveFocus = false) {
+  if (!tab || !seriesTabs.includes(tab)) return;
+
+  seriesTabs.forEach(other => {
+    const active = other === tab;
+    other.classList.toggle('active', active);
+    other.setAttribute('aria-selected', String(active));
+    other.tabIndex = active ? 0 : -1;
+  });
+
+  if (seriesPanel) seriesPanel.setAttribute('aria-labelledby', tab.id);
+  renderSeries(Number(tab.dataset.series));
+  if (moveFocus) tab.focus();
+}
+
+setupSeriesTabs();
+
+seriesTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => activateSeriesTab(tab));
+
+  tab.addEventListener('keydown', event => {
+    let nextIndex = null;
+
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % seriesTabs.length;
+    if (event.key === 'ArrowLeft') nextIndex = (index - 1 + seriesTabs.length) % seriesTabs.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = seriesTabs.length - 1;
+
+    if (nextIndex !== null) {
+      event.preventDefault();
+      activateSeriesTab(seriesTabs[nextIndex], true);
+    }
   });
 });
 renderSeries(1);
@@ -270,6 +323,11 @@ let currentAnswer = 'a';
 let attempts = 0;
 let correctAnswers = 0;
 let answered = false;
+
+if (quizOptions) {
+  quizOptions.setAttribute('role', 'group');
+  quizOptions.setAttribute('aria-label', 'Opciones de respuesta del ejercicio');
+}
 
 function shuffle(array) {
   const copy = [...array];
