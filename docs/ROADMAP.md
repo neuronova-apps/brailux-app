@@ -14,12 +14,12 @@
 ## Etapa 2 — Aprendizaje estructurado
 
 - ruta inicial de seis unidades progresivas implementada en la experiencia web;
+- progreso local inicial implementado para unidades, práctica y última actividad;
 - ejercicios por tema;
 - retroalimentación más clara;
-- sistema de niveles;
-- progreso local.
+- sistema de niveles.
 
-La ruta actual organiza fundamentos, celda Braille, alfabeto, lectura y escritura, números y signos, y práctica. El seguimiento persistente del avance todavía no forma parte de esta etapa implementada.
+La ruta actual organiza fundamentos, celda Braille, alfabeto, lectura y escritura, números y signos, y práctica. El avance se conserva mediante `localStorage` en el navegador e incluye unidades visitadas y completadas, resultados acumulados del quiz, uso del conversor y última actividad. No requiere cuenta ni sincronización con un servidor.
 
 ## Etapa 3 — Gamificación
 
@@ -29,13 +29,15 @@ La ruta actual organiza fundamentos, celda Braille, alfabeto, lectura y escritur
 - ranking;
 - desafíos de práctica.
 
+La gamificación se mantiene separada del seguimiento básico y solo se incorporará cuando la experiencia de aprendizaje y el progreso local estén suficientemente consolidados.
+
 ## Etapa 4 — Aplicación móvil
 
 - integración con la app Android;
 - acceso desde Google Play;
 - sincronización de contenidos esenciales;
 - experiencia optimizada para móvil;
-- progreso persistente.
+- estrategia de migración o sincronización del progreso local.
 
 ## Etapa 5 — Ampliación
 
