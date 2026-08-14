@@ -13,11 +13,13 @@
 
 ## Etapa 2 — Aprendizaje estructurado
 
-- dividir contenidos en unidades progresivas;
+- ruta inicial de seis unidades progresivas implementada en la experiencia web;
 - ejercicios por tema;
 - retroalimentación más clara;
 - sistema de niveles;
 - progreso local.
+
+La ruta actual organiza fundamentos, celda Braille, alfabeto, lectura y escritura, números y signos, y práctica. El seguimiento persistente del avance todavía no forma parte de esta etapa implementada.
 
 ## Etapa 3 — Gamificación
 
