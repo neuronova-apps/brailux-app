@@ -57,4 +57,4 @@ Proyecto personal desarrollado por Gabriel Berrospi.
 
 ## Estado
 
-En desarrollo activo.
+MVP web en desarrollo activo.
