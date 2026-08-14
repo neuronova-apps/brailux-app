@@ -75,4 +75,4 @@ Las pruebas deben considerar:
 
 ## Estado
 
-Desarrollo activo. La arquitectura puede evolucionar conforme se incorporen nuevas actividades y se realicen pruebas de accesibilidad y experiencia de usuario.
+MVP web en desarrollo activo. La arquitectura puede evolucionar conforme se incorporen nuevas actividades y se realicen pruebas de accesibilidad y experiencia de usuario.
