@@ -29,19 +29,6 @@ body {
   overflow-x: hidden;
 }
 
-body.high-contrast {
-  --bg: #000;
-  --bg-soft: #050505;
-  --surface: #0a0a0a;
-  --surface-2: #111;
-  --text: #fff;
-  --muted: #f0f0f0;
-  --accent: #00ffff;
-  --accent-2: #fff;
-  --line: rgba(255,255,255,.4);
-  --line-strong: #00ffff;
-}
-
 a { color: inherit; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -85,7 +72,6 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: rgba(7,17,31,.84);
   backdrop-filter: blur(18px);
 }
-.high-contrast .site-header { background: rgba(0,0,0,.95); }
 
 .header-inner {
   min-height: 68px;
@@ -131,7 +117,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .main-nav a:hover, .main-nav a:focus-visible { color: var(--text); }
 
 .header-tools { display: flex; gap: 8px; align-items: center; }
-.tool-button, .matrix-link, .small-button {
+.matrix-link, .small-button {
   min-height: 38px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -142,7 +128,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   font-weight: 750;
   cursor: pointer;
 }
-.tool-button:hover, .matrix-link:hover, .small-button:hover { border-color: var(--line-strong); background: rgba(86,224,255,.07); }
+.matrix-link:hover, .small-button:hover { border-color: var(--line-strong); background: rgba(86,224,255,.07); }
 .menu-button { display: none; margin-left: auto; width: 42px; height: 40px; border: 1px solid var(--line); border-radius: 11px; background: transparent; padding: 9px; cursor: pointer; }
 .menu-button span { display: block; height: 2px; margin: 4px 0; background: var(--text); border-radius: 2px; }
 
@@ -175,7 +161,6 @@ p { margin-top: 0; }
   cursor: pointer;
 }
 .button.primary { color: #061019; background: linear-gradient(135deg, var(--accent), #90edff 55%, var(--accent-2)); }
-.high-contrast .button.primary { color: #000; background: var(--accent); }
 .button.ghost, .button.secondary { color: var(--text); border-color: var(--line); background: rgba(255,255,255,.035); }
 .button:hover { transform: translateY(-1px); }
 .button.full { width: 100%; }
@@ -391,7 +376,6 @@ p { margin-top: 0; }
 
 @media (max-width: 1050px) {
   .main-nav { gap: 14px; }
-  .header-tools .tool-button { display: none; }
   .hero-grid, .generator-grid, .reading-grid { grid-template-columns: 1fr; }
   .hero-visual { min-height: 400px; }
   .alphabet-grid { grid-template-columns: repeat(4, 1fr); }
