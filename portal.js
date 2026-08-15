@@ -18,7 +18,48 @@ Object.entries(innerOrbitLabels).forEach(([selector, label]) => {
   if (element) element.textContent = label;
 });
 
-if (year) {
+/* Mantiene el mismo contenido estructural del footer principal, adaptado a Brailux. */
+const footerMain = document.querySelector('.footer-main');
+const footerBottom = document.querySelector('.footer-bottom');
+
+if (footerMain) {
+  footerMain.innerHTML = `
+    <div>
+      <a class="brand" href="#inicio" aria-label="Brailux, volver al inicio">
+        <span class="brand-cell" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+        <span><strong>Brailux</strong><small>by Neuronova Apps</small></span>
+      </a>
+      <p>Aplicación educativa orientada a conocer, aprender y practicar el sistema Braille mediante una experiencia web accesible.</p>
+    </div>
+    <div>
+      <h2>Explorar</h2>
+      <a href="aprende.html">Aprende</a>
+      <a href="aprende.html#practica">Practica</a>
+      <a href="#recursos">Recursos</a>
+      <a href="aprende.html#ruta-aprendizaje">Progreso</a>
+      <a href="https://github.com/neuronova-apps/brailux-app" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+    <div>
+      <h2>Contacto</h2>
+      <a href="mailto:berm_km@hotmail.com">berm_km@hotmail.com</a>
+      <span>Pucallpa, Ucayali · Perú</span>
+      <span>Proyecto independiente</span>
+      <a href="privacy/">Política de privacidad</a>
+    </div>`;
+}
+
+if (footerBottom) {
+  footerBottom.innerHTML = `
+    <p>© <span id="year"></span> Brailux · Neuronova Apps. Todos los derechos reservados.</p>
+    <p>Diseñado para la web · Accesibilidad · Aprendizaje · Tecnología</p>`;
+}
+
+const currentYear = document.querySelector('#year');
+if (currentYear) {
+  currentYear.textContent = new Date().getFullYear();
+}
+
+if (year && year !== currentYear) {
   year.textContent = new Date().getFullYear();
 }
 
