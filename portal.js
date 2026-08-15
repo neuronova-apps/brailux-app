@@ -5,7 +5,6 @@ document.head.appendChild(alignmentStylesheet);
 
 const menuButton = document.querySelector('.menu-button');
 const mainNav = document.querySelector('.main-nav');
-const year = document.querySelector('#year');
 
 const innerOrbitLabels = {
   '.chip-a b': 'CELDA 2×3',
@@ -18,7 +17,7 @@ Object.entries(innerOrbitLabels).forEach(([selector, label]) => {
   if (element) element.textContent = label;
 });
 
-/* Mantiene el mismo contenido estructural del footer principal, adaptado a Brailux. */
+/* Footer definitivo del ecosistema Neuronova, adaptado a Brailux. */
 const footerMain = document.querySelector('.footer-main');
 const footerBottom = document.querySelector('.footer-bottom');
 
@@ -44,23 +43,13 @@ if (footerMain) {
       <a href="mailto:berm_km@hotmail.com">berm_km@hotmail.com</a>
       <span>Pucallpa, Ucayali · Perú</span>
       <span>Proyecto independiente</span>
-      <a href="privacy/">Política de privacidad</a>
     </div>`;
 }
 
 if (footerBottom) {
   footerBottom.innerHTML = `
-    <p>© <span id="year"></span> Brailux · Neuronova Apps. Todos los derechos reservados.</p>
-    <p>Diseñado para la web · Accesibilidad · Aprendizaje · Tecnología</p>`;
-}
-
-const currentYear = document.querySelector('#year');
-if (currentYear) {
-  currentYear.textContent = new Date().getFullYear();
-}
-
-if (year && year !== currentYear) {
-  year.textContent = new Date().getFullYear();
+    <p>© 2026 Brailux · Neuronova Apps</p>
+    <p><a href="privacy/">Política de privacidad</a></p>`;
 }
 
 if (menuButton && mainNav) {
