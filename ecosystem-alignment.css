@@ -144,6 +144,45 @@ body::before{
 .orbit-two{width:220px;height:220px;margin:-110px 0 0 -110px}
 .cell{transform:scale(.92)}
 
+/* Etiquetas del anillo interior: permanecen ancladas a la circunferencia durante todo el giro */
+.orbit-two .system-chip{
+  margin:0;
+  transform-origin:center;
+}
+.orbit-two .chip-a{
+  top:0;
+  left:50%;
+  right:auto;
+  bottom:auto;
+  min-width:84px;
+  transform:translate(-50%,-50%) rotate(0deg)
+}
+.orbit-two .chip-b{
+  top:75%;
+  left:93.3%;
+  right:auto;
+  bottom:auto;
+  min-width:72px;
+  transform:translate(-50%,-50%) rotate(0deg)
+}
+.orbit-two .chip-c{
+  top:75%;
+  left:6.7%;
+  right:auto;
+  bottom:auto;
+  min-width:76px;
+  transform:translate(-50%,-50%) rotate(0deg)
+}
+
+@keyframes brailuxChipCounterSpin{
+  from{transform:translate(-50%,-50%) rotate(0deg)}
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+
+.orbit-two .system-chip{
+  animation:brailuxChipCounterSpin 34s linear infinite
+}
+
 .section{padding:72px 0}
 .section-heading{grid-template-columns:1fr .8fr;gap:clamp(32px,6vw,72px);align-items:end;margin-bottom:36px}
 
@@ -160,4 +199,8 @@ body::before{
   .stats div{flex:1 1 30%;padding-right:10px;margin-right:10px}
   .stats span{font-size:.68rem}
   .section{padding:58px 0}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .orbit-two .system-chip{animation:none!important}
 }
