@@ -217,7 +217,7 @@ fun BrailuxApp(
 private fun BrailuxBottomBar(
     selectedRoute: String?,
     onNavigate: (String) -> Unit,
-) {
+) {|
     NavigationBar {
         bottomDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
