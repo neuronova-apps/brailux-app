@@ -28,6 +28,7 @@
   <meta name="twitter:image:alt" content="Brailux · Aprende y practica Braille">
   <title>Brailux | Aprende y practica Braille</title>
   <link rel="stylesheet" href="portal.css">
+  <link rel="stylesheet" href="ecosystem-alignment.css">
   <link rel="stylesheet" href="https://neuronova-apps.github.io/assets/accessibility/accessibility.css" data-neuronova-a11y="true">
   <script src="https://neuronova-apps.github.io/assets/accessibility/accessibility.js" defer data-neuronova-a11y="true"></script>
 </head>
@@ -79,7 +80,7 @@
             <span class="orbit-node node-a11y"><b>A11Y</b></span>
           </div>
           <div class="orbit orbit-two" aria-hidden="true">
-            <span class="system-chip chip-a"><b>BRAILLE 2×3</b></span>
+            <span class="system-chip chip-a"><b>CELDA 2×3</b></span>
             <span class="system-chip chip-b"><b>LECTURA</b></span>
             <span class="system-chip chip-c"><b>ESCRITURA</b></span>
           </div>
@@ -191,11 +192,32 @@
 
   <footer class="site-footer">
     <div class="container footer-main">
-      <div><a class="footer-brand" href="#inicio">Brailux</a><p>Una iniciativa personal para conocer, aprender y difundir el sistema Braille mediante tecnología accesible.</p></div>
-      <div><h2>Explorar</h2><a href="aprende.html">Aprende</a><a href="aprende.html#practica">Practica</a><a href="#recursos">Recursos</a><a href="aprende.html#ruta-aprendizaje">Progreso</a></div>
-      <div><h2>Ecosistema</h2><a href="https://neuronova-apps.github.io/">Neuronova Apps</a><a href="https://github.com/neuronova-apps/brailux-app">GitHub</a><a href="privacy/">Política de privacidad</a><span>MVP web en desarrollo activo</span></div>
+      <div>
+        <a class="brand" href="#inicio" aria-label="Brailux, volver al inicio">
+          <span class="brand-cell" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+          <span><strong>Brailux</strong><small>by Neuronova Apps</small></span>
+        </a>
+        <p>Aplicación educativa orientada a conocer, aprender y practicar el sistema Braille mediante una experiencia web accesible.</p>
+      </div>
+      <div>
+        <h2>Explorar</h2>
+        <a href="aprende.html">Aprende</a>
+        <a href="aprende.html#practica">Practica</a>
+        <a href="#recursos">Recursos</a>
+        <a href="aprende.html#ruta-aprendizaje">Progreso</a>
+        <a href="https://github.com/neuronova-apps/brailux-app" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+      <div>
+        <h2>Contacto</h2>
+        <a href="mailto:berm_km@hotmail.com">berm_km@hotmail.com</a>
+        <span>Pucallpa, Ucayali · Perú</span>
+        <span>Proyecto independiente</span>
+      </div>
     </div>
-    <div class="container footer-bottom"><p>© <span id="year"></span> Brailux · Neuronova Apps</p><p>Accesibilidad · Aprendizaje · Tecnología</p></div>
+    <div class="container footer-bottom">
+      <p>© 2026 Brailux · Neuronova Apps</p>
+      <p><a href="privacy/">Política de privacidad</a></p>
+    </div>
   </footer>
 
   <script src="portal.js"></script>
