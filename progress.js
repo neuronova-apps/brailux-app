@@ -1,3 +1,6 @@
+const quizCellVisual = document.querySelector('#quizCell[aria-label]');
+if (quizCellVisual && !quizCellVisual.hasAttribute('role')) quizCellVisual.setAttribute('role', 'img');
+
 const BRAILUX_PROGRESS_KEY = 'brailux-progress-v1';
 const BRAILUX_UNITS = [
   { id: 'conoce', name: 'Fundamentos' },
