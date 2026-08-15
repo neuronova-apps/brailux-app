@@ -68,16 +68,17 @@ body {
   font-weight:720;
 }
 
+/* Hero compacto: evita reservar una pantalla completa cuando el contenido no la necesita */
 .hero {
-  min-height:calc(100vh - 66px);
-  display:grid;
-  align-items:center;
-  padding:78px 0 72px;
+  min-height:0;
+  display:block;
+  padding:56px 0 62px;
 }
 
 .hero-grid {
-  grid-template-columns:minmax(0,1.08fr) minmax(360px,.92fr);
-  gap:clamp(42px,7vw,86px);
+  display:grid;
+  grid-template-columns:minmax(0,1.08fr) minmax(340px,.92fr);
+  gap:clamp(38px,6vw,76px);
   align-items:center;
 }
 
@@ -93,8 +94,8 @@ body {
 
 h1 {
   max-width:650px;
-  margin-bottom:24px;
-  font-size:clamp(3rem,5.5vw,5.35rem);
+  margin-bottom:20px;
+  font-size:clamp(3rem,5.25vw,5.1rem);
   line-height:1.02;
   letter-spacing:-.045em;
 }
@@ -112,7 +113,7 @@ h1 em {
 }
 
 .hero-actions {
-  margin-top:30px;
+  margin-top:26px;
 }
 
 .button {
@@ -124,13 +125,13 @@ h1 em {
 .stats {
   display:flex;
   gap:0;
-  margin-top:46px;
+  margin-top:34px;
 }
 
 .stats div {
-  min-width:135px;
-  padding:0 24px 0 0;
-  margin-right:24px;
+  min-width:128px;
+  padding:0 20px 0 0;
+  margin-right:20px;
   border:0;
   border-right:1px solid var(--line);
   border-radius:0;
@@ -143,7 +144,7 @@ h1 em {
 }
 
 .hero-system {
-  width:min(100%,500px);
+  width:min(100%,430px);
   aspect-ratio:1;
   min-height:0;
   justify-self:end;
@@ -165,45 +166,47 @@ h1 em {
 }
 
 .orbit-one {
-  width:340px;
-  height:340px;
-  margin:-170px 0 0 -170px;
+  width:310px;
+  height:310px;
+  margin:-155px 0 0 -155px;
 }
 
 .orbit-two {
-  width:240px;
-  height:240px;
-  margin:-120px 0 0 -120px;
+  width:220px;
+  height:220px;
+  margin:-110px 0 0 -110px;
 }
 
 .cell {
-  transform:scale(.96);
+  transform:scale(.92);
 }
 
+/* Las secciones siguientes comienzan antes y mantienen el ritmo del portal general */
 .section {
-  padding:96px 0;
+  padding:72px 0;
 }
 
 .section-heading {
   grid-template-columns:1fr .8fr;
   gap:clamp(32px,6vw,72px);
   align-items:end;
-  margin-bottom:40px;
+  margin-bottom:36px;
 }
 
 @media(max-width:960px) {
   .hero {
-    min-height:auto;
+    padding:52px 0 58px;
   }
   .hero-grid {
     grid-template-columns:1fr;
+    gap:38px;
   }
   .hero-copy {
     max-width:760px;
   }
   .hero-system {
     justify-self:center;
-    width:min(100%,460px);
+    width:min(100%,410px);
   }
 }
 
@@ -214,15 +217,21 @@ h1 em {
     gap:2px;
   }
   .hero {
-    padding:58px 0 56px;
+    padding:44px 0 48px;
   }
   h1 {
     font-size:clamp(2.65rem,13vw,4.1rem);
+  }
+  .stats {
+    margin-top:28px;
   }
   .stats div {
     min-width:0;
     flex:1 1 30%;
     padding-right:12px;
     margin-right:12px;
+  }
+  .section {
+    padding:58px 0;
   }
 }
