@@ -305,3 +305,12 @@ body::before{
 .site-header .menu-button:not(:has(span)){font-size:0}
 .site-header .menu-button:not(:has(span))::before{content:"☰";font-size:1.15rem;line-height:1}
 @media(max-width:900px){.site-header .main-nav{display:none}.site-header .menu-button,.site-header .menu{display:block}.site-header .main-nav.open{display:flex;position:absolute;top:62px;left:14px;right:14px;flex-direction:column;align-items:stretch;padding:10px;border:1px solid var(--line);border-radius:14px;background:var(--ecosystem-menu-bg);z-index:120}.site-header .main-nav.open a,.site-header .main-nav.open button{width:100%;justify-content:flex-start;min-height:42px}}
+
+/* Regla orbital definitiva · Neuronova Apps */
+.hero-grid{gap:clamp(30px,5vw,64px)}
+.hero-system{width:min(100%,430px);aspect-ratio:1;justify-self:end}
+.orbit-one{width:332px;height:332px;margin:-166px 0 0 -166px}
+.orbit-two{width:214px;height:214px;margin:-107px 0 0 -107px}
+.cell{width:107px;height:107px;transform:rotate(-4deg)}
+@media(max-width:900px){.hero-system{width:min(82vw,390px);justify-self:center}}
+@media(max-width:700px){.hero-grid{gap:30px}.hero-system{width:min(88vw,340px)}.orbit-one{width:286px;height:286px;margin:-143px 0 0 -143px}.orbit-two{width:186px;height:186px;margin:-93px 0 0 -93px}.cell{width:96px;height:96px;transform:rotate(-4deg)}}
