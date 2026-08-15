@@ -76,14 +76,37 @@ for (const viewport of viewports) {
       }
     }
 
-    const layout = await page.evaluate(() => ({
-      viewportWidth: window.innerWidth,
-      documentWidth: document.documentElement.scrollWidth,
-      bodyWidth: document.body.scrollWidth
-    }));
+    const layout = await page.evaluate(() => {
+      const viewportWidth = window.innerWidth;
+      const documentWidth = document.documentElement.scrollWidth;
+      const bodyWidth = document.body.scrollWidth;
+      const offenders = [...document.querySelectorAll('body *')]
+        .map((element) => {
+          const rect = element.getBoundingClientRect();
+          return {
+            tag: element.tagName.toLowerCase(),
+            id: element.id || '',
+            className: typeof element.className === 'string' ? element.className.trim() : '',
+            left: Math.round(rect.left),
+            right: Math.round(rect.right),
+            width: Math.round(rect.width)
+          };
+        })
+        .filter((item) => item.width > 0 && (item.right > viewportWidth + 2 || item.left < -2))
+        .sort((a, b) => Math.max(b.right - viewportWidth, -b.left) - Math.max(a.right - viewportWidth, -a.left))
+        .slice(0, 6);
+      return { viewportWidth, documentWidth, bodyWidth, offenders };
+    });
+
     const widest = Math.max(layout.documentWidth, layout.bodyWidth);
     if (widest > layout.viewportWidth + 2) {
-      errors.push(`Horizontal overflow: document ${widest}px > viewport ${layout.viewportWidth}px.`);
+      const details = layout.offenders
+        .map((item) => {
+          const identity = `${item.tag}${item.id ? `#${item.id}` : ''}${item.className ? `.${item.className.split(/\s+/).join('.')}` : ''}`;
+          return `${identity} [${item.left}, ${item.right}] width=${item.width}px`;
+        })
+        .join('; ');
+      errors.push(`Horizontal overflow: document ${widest}px > viewport ${layout.viewportWidth}px.${details ? ` Offenders: ${details}` : ''}`);
     }
 
     if (viewport.width <= 900) {
