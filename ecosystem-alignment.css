@@ -143,17 +143,19 @@ body::before{
 .orbit-one{width:310px;height:310px;margin:-155px 0 0 -155px}
 .orbit-two{width:220px;height:220px;margin:-110px 0 0 -110px}
 
-/* Núcleo Brailux: mismo volumen del núcleo NN usando el favicon oficial */
+/* Núcleo Brailux: conserva el shell visual de Neuronova y usa solo el símbolo del favicon */
 .cell{
   width:107px;
   height:107px;
   padding:0;
-  display:block;
+  display:grid;
+  place-items:center;
   border:1px solid rgba(101,221,255,.34);
   border-radius:28px;
-  background:
-    url('favicon.svg') center/cover no-repeat,
-    linear-gradient(145deg,rgba(11,33,51,.96),rgba(6,19,32,.98));
+  background-image:url('assets/brailux-core-mark.svg'),linear-gradient(145deg,rgba(11,33,51,.96),rgba(6,19,32,.98));
+  background-repeat:no-repeat,no-repeat;
+  background-position:center 40%,center;
+  background-size:64px auto,100% 100%;
   box-shadow:
     0 18px 44px rgba(0,0,0,.30),
     0 0 34px rgba(101,221,255,.10),
@@ -169,6 +171,19 @@ body::before{
   border:1px solid rgba(127,156,255,.18);
   border-radius:22px;
   pointer-events:none
+}
+.cell::after{
+  content:"BRAILUX";
+  position:absolute;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  color:#7f93a9;
+  font-size:.43rem;
+  font-weight:800;
+  letter-spacing:.07em;
+  line-height:1;
+  text-transform:uppercase
 }
 .cell span{display:none!important}
 
@@ -227,8 +242,9 @@ body::before{
   .stats div{flex:1 1 30%;padding-right:10px;margin-right:10px}
   .stats span{font-size:.68rem}
   .section{padding:58px 0}
-  .cell{width:96px;height:96px;border-radius:25px}
+  .cell{width:96px;height:96px;border-radius:25px;background-size:57px auto,100% 100%}
   .cell::before{border-radius:19px}
+  .cell::after{bottom:10px;font-size:.39rem}
 }
 
 @media(prefers-reduced-motion:reduce){
