@@ -1,3 +1,8 @@
+const alignmentStylesheet = document.createElement('link');
+alignmentStylesheet.rel = 'stylesheet';
+alignmentStylesheet.href = 'ecosystem-alignment.css';
+document.head.appendChild(alignmentStylesheet);
+
 const menuButton = document.querySelector('.menu-button');
 const mainNav = document.querySelector('.main-nav');
 const year = document.querySelector('#year');
