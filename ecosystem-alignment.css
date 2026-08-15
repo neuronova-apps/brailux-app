@@ -142,7 +142,51 @@ body::before{
 }
 .orbit-one{width:310px;height:310px;margin:-155px 0 0 -155px}
 .orbit-two{width:220px;height:220px;margin:-110px 0 0 -110px}
-.cell{transform:scale(.92)}
+
+/* Núcleo Brailux: mismo volumen visual del núcleo NN, conservando la celda 2×3 */
+.cell{
+  width:107px;
+  height:107px;
+  padding:17px;
+  gap:7px;
+  grid-template-columns:repeat(2,1fr);
+  grid-template-rows:repeat(3,1fr);
+  border:1px solid rgba(101,221,255,.34);
+  border-radius:28px;
+  background:linear-gradient(145deg,rgba(11,33,51,.96),rgba(6,19,32,.98));
+  box-shadow:
+    0 18px 44px rgba(0,0,0,.30),
+    0 0 34px rgba(101,221,255,.10),
+    inset 0 0 24px rgba(101,221,255,.045);
+  transform:rotate(-2deg);
+  position:relative;
+  overflow:hidden
+}
+.cell::before{
+  content:"";
+  position:absolute;
+  inset:7px;
+  border:1px solid rgba(127,156,255,.18);
+  border-radius:22px;
+  pointer-events:none
+}
+.cell span{
+  position:relative;
+  z-index:1;
+  width:auto;
+  height:auto;
+  min-width:0;
+  min-height:0;
+  border-color:rgba(157,194,224,.17);
+  background:rgba(5,15,27,.42);
+  font-size:.72rem;
+  line-height:1
+}
+.cell .on{
+  background:linear-gradient(135deg,var(--cyan),var(--violet));
+  border-color:transparent;
+  box-shadow:0 4px 14px rgba(101,221,255,.16)
+}
 
 /* Etiquetas del anillo interior: permanecen ancladas a la circunferencia durante todo el giro */
 .orbit-two .system-chip{
@@ -199,6 +243,8 @@ body::before{
   .stats div{flex:1 1 30%;padding-right:10px;margin-right:10px}
   .stats span{font-size:.68rem}
   .section{padding:58px 0}
+  .cell{width:96px;height:96px;padding:15px;border-radius:25px}
+  .cell::before{border-radius:19px}
 }
 
 @media(prefers-reduced-motion:reduce){
