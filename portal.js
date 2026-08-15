@@ -1,5 +1,10 @@
 const menuButton = document.querySelector('.menu-button');
 const mainNav = document.querySelector('.main-nav');
+const heroSystem = document.querySelector('.hero-system[aria-label]');
+
+if (heroSystem && !heroSystem.hasAttribute('role')) {
+  heroSystem.setAttribute('role', 'img');
+}
 
 if (menuButton && mainNav) {
   const closeMenu = () => {
