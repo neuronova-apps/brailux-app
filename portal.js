@@ -54,3 +54,9 @@ if (menuButton && mainNav) {
     document.head.appendChild(schema);
   }
 })();
+
+const NEURONOVA_AI_CLIENT_URL = 'https://neuronova-apps.github.io/ai-chat.js';
+
+import(NEURONOVA_AI_CLIENT_URL).catch((error) => {
+  console.error('Brailux · Asistente NeuroNova:', error);
+});
