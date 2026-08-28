@@ -343,18 +343,30 @@ private fun PracticeProgressSection(progress: PracticeProgress) {
             completedSessions = progress.level1CompletedSessions,
             totalExercises = progress.level1TotalExercises,
             firstAttemptCorrect = progress.level1FirstAttemptCorrect,
+            errors = progress.level1Errors,
         )
         PracticeLevelCard(
             title = stringResource(R.string.progress_level_2_title),
             completedSessions = progress.level2CompletedSessions,
             totalExercises = progress.level2TotalExercises,
             firstAttemptCorrect = progress.level2FirstAttemptCorrect,
+            errors = progress.level2Errors,
+            hintsUsed = progress.level2HintsUsed,
         )
         PracticeLevelCard(
             title = stringResource(R.string.progress_level_3_title),
             completedSessions = progress.level3CompletedSessions,
             totalExercises = progress.level3TotalExercises,
             firstAttemptCorrect = progress.level3FirstAttemptCorrect,
+            errors = progress.level3Errors,
+        )
+        PracticeLevelCard(
+            title = stringResource(R.string.progress_level_4_title),
+            completedSessions = progress.customCompletedSessions,
+            totalExercises = progress.customTotalExercises,
+            firstAttemptCorrect = progress.customFirstAttemptCorrect,
+            errors = progress.customErrors,
+            hintsUsed = progress.customHintsUsed,
         )
     }
 }
@@ -365,6 +377,8 @@ private fun PracticeLevelCard(
     completedSessions: Int,
     totalExercises: Int,
     firstAttemptCorrect: Int,
+    errors: Int? = null,
+    hintsUsed: Int? = null,
 ) {
     val accuracy = accuracyPercentage(firstAttemptCorrect, totalExercises)
     val accuracyText = stringResource(R.string.progress_percentage_value, accuracy)
@@ -394,6 +408,18 @@ private fun PracticeLevelCard(
             label = stringResource(R.string.progress_first_attempt_label),
             value = firstAttemptCorrect.coerceIn(0, totalExercises.coerceAtLeast(0)).toString(),
         )
+        if (errors != null) {
+            ProgressValue(
+                label = stringResource(R.string.progress_errors_label),
+                value = errors.coerceAtLeast(0).toString(),
+            )
+        }
+        if (hintsUsed != null) {
+            ProgressValue(
+                label = stringResource(R.string.progress_hints_used_label),
+                value = hintsUsed.coerceAtLeast(0).toString(),
+            )
+        }
         ProgressValue(
             label = stringResource(R.string.progress_accuracy_label),
             value = accuracyText,
@@ -629,11 +655,8 @@ private fun formattedPracticeDate(date: PracticeDate?): String {
     )
 }
 
-internal fun accuracyPercentage(firstAttemptCorrect: Int, totalExercises: Int): Int {
-    if (totalExercises <= 0) return 0
-    val safeCorrectAnswers = firstAttemptCorrect.coerceIn(0, totalExercises)
-    return (safeCorrectAnswers.toLong() * 100 / totalExercises).toInt()
-}
+internal fun accuracyPercentage(firstAttemptCorrect: Int, totalExercises: Int): Int =
+    com.brailuxaprende.data.practice.calculateAccuracyPercentage(firstAttemptCorrect, totalExercises)
 
 @StringRes
 private fun DailyMiniAchievement.titleResource(): Int = when (this) {

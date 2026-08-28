@@ -175,6 +175,57 @@ class CustomPracticeTest {
         assertEquals(10, state.summary().exercisesCompleted)
     }
 
+    @Test
+    fun changingModeBeforeStartingNewSessionUsesNewMode() {
+        val signToCharConfig = CustomPracticeConfiguration(mode = PracticeMode.SignToCharacter)
+        val charToSignConfig = CustomPracticeConfiguration(mode = PracticeMode.CharacterToSign)
+        val mixedConfig = CustomPracticeConfiguration(mode = PracticeMode.Mixed)
+
+        val signSession = PracticeSessionGenerator.generateCustom(signToCharConfig, Random(1))
+        assertEquals(PracticeMode.SignToCharacter, signSession.mode)
+        assertTrue(signSession.exercises.all { it.type == PracticeExerciseType.SignToCharacter })
+
+        val charSession = PracticeSessionGenerator.generateCustom(charToSignConfig, Random(2))
+        assertEquals(PracticeMode.CharacterToSign, charSession.mode)
+        assertTrue(charSession.exercises.all { it.type == PracticeExerciseType.CharacterToSign })
+
+        val mixedSession = PracticeSessionGenerator.generateCustom(mixedConfig, Random(3))
+        assertEquals(PracticeMode.Mixed, mixedSession.mode)
+        assertEquals(PracticeExerciseType.entries.toSet(), mixedSession.exercises.map { it.type }.toSet())
+    }
+
+    @Test
+    fun inProgressSessionSnapshotWithMatchingConfigurationIsPreserved() {
+        val configuration = CustomPracticeConfiguration(mode = PracticeMode.CharacterToSign)
+        val session = PracticeSessionGenerator.generateCustom(configuration, Random(4))
+        var state = PracticeSessionState(session)
+
+        // Advance two exercises
+        repeat(2) {
+            val target = state.currentExercise.target.printedCharacter
+            state = state.selectAnswer(target).checkAnswer().nextExercise()
+        }
+
+        val snapshot = PracticeSessionSnapshot(state = state)
+        assertEquals(2, snapshot.state.currentExerciseIndex)
+        assertEquals(PracticeMode.CharacterToSign, snapshot.state.session.mode)
+        assertEquals(configuration, snapshot.state.session.customConfiguration)
+        assertFalse(snapshot.state.isCompleted)
+        assertEquals(2, snapshot.state.firstAttemptCorrect)
+    }
+
+    @Test
+    fun snapshotWithDifferentConfigurationIsIdentifiedAsIncompatible() {
+        val configA = CustomPracticeConfiguration(mode = PracticeMode.SignToCharacter)
+        val configB = CustomPracticeConfiguration(mode = PracticeMode.CharacterToSign)
+
+        val sessionA = PracticeSessionGenerator.generateCustom(configA, Random(5))
+        val snapshotA = PracticeSessionSnapshot(state = PracticeSessionState(sessionA))
+
+        assertEquals(configA, snapshotA.state.session.customConfiguration)
+        org.junit.Assert.assertNotEquals(configB, snapshotA.state.session.customConfiguration)
+    }
+
     private fun customSession(mode: PracticeMode): PracticeSession =
         PracticeSessionGenerator.generateCustom(
             CustomPracticeConfiguration(mode = mode),

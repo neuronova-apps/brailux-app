@@ -52,6 +52,7 @@ import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeLevel
+import com.brailuxaprende.practice.PracticeSessionPhase
 import com.brailuxaprende.practice.PracticeSessionSnapshot
 import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.learning.LearningLesson
@@ -500,14 +501,32 @@ private fun BrailuxNavHost(
             PracticeScreen(
                 onStartLevel1 = { mode ->
                     selectedPracticeModeName = mode.name
+                    if (practiceSessions.snapshots[PracticeLevel.BrailleExplorer]?.let {
+                            it.phase == PracticeSessionPhase.Credited ||
+                                it.state.session.mode != mode
+                        } == true) {
+                        onPracticeSessionCleared(PracticeLevel.BrailleExplorer)
+                    }
                     navController.navigate(BrailuxRoutes.BRAILLE_EXPLORER)
                 },
                 onStartLevel2 = { mode ->
                     selectedPracticeModeName = mode.name
+                    if (practiceSessions.snapshots[PracticeLevel.BrailleRecognizer]?.let {
+                            it.phase == PracticeSessionPhase.Credited ||
+                                it.state.session.mode != mode
+                        } == true) {
+                        onPracticeSessionCleared(PracticeLevel.BrailleRecognizer)
+                    }
                     navController.navigate(BrailuxRoutes.BRAILLE_RECOGNIZER)
                 },
                 onStartLevel3 = { mode ->
                     selectedPracticeModeName = mode.name
+                    if (practiceSessions.snapshots[PracticeLevel.BrailleChallenge]?.let {
+                            it.phase == PracticeSessionPhase.Credited ||
+                                it.state.session.mode != mode
+                        } == true) {
+                        onPracticeSessionCleared(PracticeLevel.BrailleChallenge)
+                    }
                     navController.navigate(BrailuxRoutes.BRAILLE_CHALLENGE)
                 },
                 onStartLevel4 = {
@@ -661,6 +680,12 @@ private fun BrailuxNavHost(
                 onStartPractice = { configuration ->
                     activeCustomConfiguration = configuration
                     onCustomPracticeConfigurationUsed(configuration)
+                    if (practiceSessions.snapshots[PracticeLevel.Custom]?.let {
+                            it.phase == PracticeSessionPhase.Credited ||
+                                it.state.session.customConfiguration != configuration
+                        } == true) {
+                        onPracticeSessionCleared(PracticeLevel.Custom)
+                    }
                     navController.navigate(BrailuxRoutes.CUSTOM_PRACTICE)
                 },
                 onBack = ::goBack,

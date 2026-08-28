@@ -45,6 +45,9 @@ class ProgressNavigationTest {
                         level3CompletedSessions = 1,
                         level3TotalExercises = 20,
                         level3FirstAttemptCorrect = 18,
+                        customCompletedSessions = 1,
+                        customTotalExercises = 15,
+                        customFirstAttemptCorrect = 12,
                     ),
                     learningProgress = LearningProgress(
                         completedLessons = setOf(
@@ -127,6 +130,9 @@ class ProgressNavigationTest {
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.progress_level_3_title))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.progress_level_4_title))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.progress_learning_title))

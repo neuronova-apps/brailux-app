@@ -174,9 +174,8 @@ class MainActivity : ComponentActivity() {
                     },
                     onCustomPracticeConfigurationUsed = customPracticePreferencesState::save,
                     onCustomSessionCompleted = { summary, onRecorded ->
-                        engagementProgressState.recordSession(
+                        practiceProgressState.recordCustomSession(
                             summary = summary,
-                            kind = PracticeSessionKind.Custom,
                             onRecorded = onRecorded,
                         )
                     },

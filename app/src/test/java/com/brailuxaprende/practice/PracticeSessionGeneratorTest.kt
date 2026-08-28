@@ -7,6 +7,78 @@ import org.junit.Test
 
 class PracticeSessionGeneratorTest {
     @Test
+    fun level1SignToCharacterContainsOnlySignToCharacter() {
+        val session = PracticeSessionGenerator.generate(PracticeMode.SignToCharacter, Random(101))
+        assertEquals(PracticeMode.SignToCharacter, session.mode)
+        assertEquals(10, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.SignToCharacter })
+    }
+
+    @Test
+    fun level1CharacterToSignContainsOnlyCharacterToSign() {
+        val session = PracticeSessionGenerator.generate(PracticeMode.CharacterToSign, Random(102))
+        assertEquals(PracticeMode.CharacterToSign, session.mode)
+        assertEquals(10, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.CharacterToSign })
+    }
+
+    @Test
+    fun level1MixedContainsBothExerciseTypes() {
+        val session = PracticeSessionGenerator.generate(PracticeMode.Mixed, Random(103))
+        assertEquals(PracticeMode.Mixed, session.mode)
+        assertEquals(10, session.exercises.size)
+        assertEquals(PracticeExerciseType.entries.toSet(), session.exercises.map { it.type }.toSet())
+    }
+
+    @Test
+    fun level2SignToCharacterContainsOnlySignToCharacter() {
+        val session = PracticeSessionGenerator.generateLevel2(PracticeMode.SignToCharacter, Random(201))
+        assertEquals(PracticeMode.SignToCharacter, session.mode)
+        assertEquals(15, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.SignToCharacter })
+    }
+
+    @Test
+    fun level2CharacterToSignContainsOnlyCharacterToSign() {
+        val session = PracticeSessionGenerator.generateLevel2(PracticeMode.CharacterToSign, Random(202))
+        assertEquals(PracticeMode.CharacterToSign, session.mode)
+        assertEquals(15, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.CharacterToSign })
+    }
+
+    @Test
+    fun level2MixedContainsBothExerciseTypes() {
+        val session = PracticeSessionGenerator.generateLevel2(PracticeMode.Mixed, Random(203))
+        assertEquals(PracticeMode.Mixed, session.mode)
+        assertEquals(15, session.exercises.size)
+        assertEquals(PracticeExerciseType.entries.toSet(), session.exercises.map { it.type }.toSet())
+    }
+
+    @Test
+    fun level3SignToCharacterContainsOnlySignToCharacter() {
+        val session = PracticeSessionGenerator.generateLevel3(PracticeMode.SignToCharacter, Random(301))
+        assertEquals(PracticeMode.SignToCharacter, session.mode)
+        assertEquals(20, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.SignToCharacter })
+    }
+
+    @Test
+    fun level3CharacterToSignContainsOnlyCharacterToSign() {
+        val session = PracticeSessionGenerator.generateLevel3(PracticeMode.CharacterToSign, Random(302))
+        assertEquals(PracticeMode.CharacterToSign, session.mode)
+        assertEquals(20, session.exercises.size)
+        assertTrue(session.exercises.all { it.type == PracticeExerciseType.CharacterToSign })
+    }
+
+    @Test
+    fun level3MixedContainsBothExerciseTypes() {
+        val session = PracticeSessionGenerator.generateLevel3(PracticeMode.Mixed, Random(303))
+        assertEquals(PracticeMode.Mixed, session.mode)
+        assertEquals(20, session.exercises.size)
+        assertEquals(PracticeExerciseType.entries.toSet(), session.exercises.map { it.type }.toSet())
+    }
+
+    @Test
     fun signToCharacterSessionContainsOnlyTheSelectedType() {
         val sessions = sessionsForAllLevels(PracticeMode.SignToCharacter)
 

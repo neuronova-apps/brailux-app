@@ -29,6 +29,8 @@ import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 
 private val PointTouchTargetSize = 56.dp
 private val PointVisualSize = 42.dp
+private val CompactPointTouchTargetSize = 36.dp
+private val CompactPointVisualSize = 36.dp
 
 @Composable
 fun BrailleCellView(
@@ -38,6 +40,7 @@ fun BrailleCellView(
     onPointClick: (Int) -> Unit = {},
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    isCompact: Boolean = false,
 ) {
     val cellSemantics = if (contentDescription != null) {
         Modifier.semantics {
@@ -47,24 +50,32 @@ fun BrailleCellView(
         Modifier
     }
 
+    val horizontalPadding = if (isCompact) 12.dp else 18.dp
+    val verticalPadding = if (isCompact) 8.dp else 14.dp
+    val rowSpacing = if (isCompact) 7.dp else 8.dp
+    val colSpacing = if (isCompact) 12.dp else 18.dp
+    val shape = if (isCompact) MaterialTheme.shapes.medium else MaterialTheme.shapes.large
+    val borderWidth = if (isCompact) 1.5.dp else 2.dp
+
     Surface(
         modifier = modifier.then(cellSemantics),
-        shape = MaterialTheme.shapes.large,
+        shape = shape,
         color = MaterialTheme.colorScheme.surfaceVariant,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.outline),
+        border = BorderStroke(borderWidth, MaterialTheme.colorScheme.outline),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = horizontalPadding, vertical = verticalPadding),
+            verticalArrangement = Arrangement.spacedBy(rowSpacing),
         ) {
             listOf(1 to 4, 2 to 5, 3 to 6).forEach { (leftPoint, rightPoint) ->
-                Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(colSpacing)) {
                     BraillePoint(
                         point = leftPoint,
                         active = cell.isPointActive(leftPoint),
                         interactive = interactive,
                         showPointNumber = showPointNumbers,
                         onClick = { onPointClick(leftPoint) },
+                        isCompact = isCompact,
                     )
                     BraillePoint(
                         point = rightPoint,
@@ -72,6 +83,7 @@ fun BrailleCellView(
                         interactive = interactive,
                         showPointNumber = showPointNumbers,
                         onClick = { onPointClick(rightPoint) },
+                        isCompact = isCompact,
                     )
                 }
             }
@@ -86,6 +98,7 @@ private fun BraillePoint(
     interactive: Boolean,
     showPointNumber: Boolean,
     onClick: () -> Unit,
+    isCompact: Boolean = false,
 ) {
     val state = stringResource(
         if (active) R.string.braille_point_active else R.string.braille_point_inactive,
@@ -102,9 +115,22 @@ private fun BraillePoint(
         Modifier
     }
 
+    val touchTargetSize = if (isCompact) CompactPointTouchTargetSize else PointTouchTargetSize
+    val visualSize = if (isCompact) CompactPointVisualSize else PointVisualSize
+    val borderWidth = if (isCompact) {
+        if (active) 2.dp else 1.5.dp
+    } else {
+        if (active) 3.dp else 2.dp
+    }
+    val textStyle = if (isCompact) {
+        MaterialTheme.typography.labelMedium
+    } else {
+        MaterialTheme.typography.bodyLarge
+    }
+
     Box(
         modifier = Modifier
-            .size(PointTouchTargetSize)
+            .size(touchTargetSize)
             .then(interactionModifier)
             .semantics {
                 contentDescription = pointDescription
@@ -112,7 +138,7 @@ private fun BraillePoint(
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            modifier = Modifier.size(PointVisualSize),
+            modifier = Modifier.size(visualSize),
             shape = CircleShape,
             color = if (active) {
                 MaterialTheme.colorScheme.primary
@@ -125,14 +151,14 @@ private fun BraillePoint(
                 MaterialTheme.colorScheme.onSurface
             },
             border = BorderStroke(
-                width = if (active) 3.dp else 2.dp,
+                width = borderWidth,
                 color = if (active) {
                     MaterialTheme.colorScheme.onPrimary
                 } else {
                     MaterialTheme.colorScheme.outline
                 },
             ),
-            shadowElevation = if (active) 4.dp else 0.dp,
+            shadowElevation = if (active) (if (isCompact) 2.dp else 4.dp) else 0.dp,
         ) {
             Box(contentAlignment = Alignment.Center) {
                 Text(
@@ -141,8 +167,8 @@ private fun BraillePoint(
                         active -> "●"
                         else -> ""
                     },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                    style = textStyle,
+                    fontWeight = FontWeight.Bold,
                 )
             }
         }
@@ -181,6 +207,17 @@ private fun InteractiveBrailleCellPreview() {
             cell = BrailleCell.fromPoints(setOf(1, 2, 4, 6)),
             interactive = true,
             contentDescription = "Celda Braille interactiva",
+        )
+    }
+}
+
+@Preview(name = "Celda compacta", showBackground = true)
+@Composable
+private fun CompactBrailleCellPreview() {
+    BrailuxAprendeTheme {
+        BrailleCellView(
+            cell = requireNotNull(BrailleRepository.findVowel('A')).cell,
+            isCompact = true,
         )
     }
 }

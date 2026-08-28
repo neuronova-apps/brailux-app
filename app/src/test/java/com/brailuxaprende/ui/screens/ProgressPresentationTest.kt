@@ -56,4 +56,14 @@ class ProgressPresentationTest {
         assertEquals(com.brailuxaprende.R.string.progress_tab_statistics, ProgressTab.Statistics.labelResource)
         assertEquals(com.brailuxaprende.R.string.progress_tab_achievements, ProgressTab.Achievements.labelResource)
     }
+
+    @Test
+    fun `practice level and metric string resources exist and match expectations`() {
+        assertEquals(com.brailuxaprende.R.string.progress_level_1_title, com.brailuxaprende.R.string.progress_level_1_title)
+        assertEquals(com.brailuxaprende.R.string.progress_level_2_title, com.brailuxaprende.R.string.progress_level_2_title)
+        assertEquals(com.brailuxaprende.R.string.progress_level_3_title, com.brailuxaprende.R.string.progress_level_3_title)
+        assertEquals(com.brailuxaprende.R.string.progress_level_4_title, com.brailuxaprende.R.string.progress_level_4_title)
+        assertEquals(com.brailuxaprende.R.string.progress_errors_label, com.brailuxaprende.R.string.progress_errors_label)
+        assertEquals(com.brailuxaprende.R.string.progress_hints_used_label, com.brailuxaprende.R.string.progress_hints_used_label)
+    }
 }

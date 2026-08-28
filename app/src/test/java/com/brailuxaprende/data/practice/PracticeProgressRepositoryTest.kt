@@ -3,6 +3,9 @@ package com.brailuxaprende.data.practice
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeSessionSummary
@@ -59,6 +62,7 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.level1CompletedSessions)
         assertEquals(0, progress.level1TotalExercises)
         assertEquals(0, progress.level1FirstAttemptCorrect)
+        assertEquals(0, progress.level1Errors)
         assertEquals(0, progress.level1AccuracyPercentage)
         assertNull(progress.level1LastPracticeDate)
         assertEquals(0, progress.level2CompletedSessions)
@@ -66,24 +70,35 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.level2FirstAttemptCorrect)
         assertEquals(0, progress.level2Errors)
         assertEquals(0, progress.level2HintsUsed)
+        assertEquals(0, progress.level2AccuracyPercentage)
         assertNull(progress.level2LastPracticeDate)
         assertEquals(0, progress.level3CompletedSessions)
         assertEquals(0, progress.level3TotalExercises)
         assertEquals(0, progress.level3FirstAttemptCorrect)
         assertEquals(0, progress.level3Errors)
+        assertEquals(0, progress.level3AccuracyPercentage)
         assertNull(progress.level3LastPracticeDate)
+        assertEquals(0, progress.customCompletedSessions)
+        assertEquals(0, progress.customTotalExercises)
+        assertEquals(0, progress.customFirstAttemptCorrect)
+        assertEquals(0, progress.customErrors)
+        assertEquals(0, progress.customHintsUsed)
+        assertEquals(0, progress.customAccuracyPercentage)
+        assertNull(progress.customLastPracticeDate)
     }
 
     @Test
     fun level3ProgressPersistsIndependentlyFromPreviousLevels() = runBlocking {
         repository.recordLevel3Session(20, 16, 4, "2026-08-06")
-        repository.recordLevel1Session(10, 8, "2026-08-07")
+        repository.recordLevel1Session(10, 8, 2, "2026-08-07")
         repository.recordLevel2Session(15, 12, 3, 2, "2026-08-08")
 
         val progress = reopenRepository().progress.first()
 
         assertEquals(1, progress.level1CompletedSessions)
         assertEquals(10, progress.level1TotalExercises)
+        assertEquals(8, progress.level1FirstAttemptCorrect)
+        assertEquals(2, progress.level1Errors)
         assertEquals(1, progress.level2CompletedSessions)
         assertEquals(15, progress.level2TotalExercises)
         assertEquals(1, progress.level3CompletedSessions)
@@ -324,6 +339,7 @@ class PracticeProgressRepositoryTest {
             assertEquals(1, progress.level1CompletedSessions)
             assertEquals(10, progress.level1TotalExercises)
             assertEquals(8, progress.level1FirstAttemptCorrect)
+            assertEquals(2, progress.level1Errors)
             assertEquals(80, progress.level1AccuracyPercentage)
             assertEquals("2026-08-09", progress.level1LastPracticeDate)
             val engagement = EngagementProgressRepository(dataStore).progress.first()
@@ -333,6 +349,206 @@ class PracticeProgressRepositoryTest {
                 engagement.miniAchievementType,
             )
             assertTrue(engagement.miniAchievementCompleted)
+        } finally {
+            collector.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun level4SessionRecordsCompletedSessionAndCounters() = runBlocking {
+        val result = repository.recordCustomSession(
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 12,
+            errors = 3,
+            hintsUsed = 2,
+            practiceDate = "2026-08-10",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.customCompletedSessions)
+        assertEquals(15, progress.customTotalExercises)
+        assertEquals(12, progress.customFirstAttemptCorrect)
+        assertEquals(3, progress.customErrors)
+        assertEquals(2, progress.customHintsUsed)
+        assertEquals(80, progress.customAccuracyPercentage)
+        assertEquals("2026-08-10", progress.customLastPracticeDate)
+        assertEquals(result.practiceProgress, progress)
+    }
+
+    @Test
+    fun level4ProgressAccumulatesAcrossMultipleSessions() = runBlocking {
+        repository.recordCustomSession(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 8,
+            errors = 2,
+            hintsUsed = 1,
+            practiceDate = "2026-08-08",
+        )
+        repository.recordCustomSession(
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 12,
+            errors = 3,
+            hintsUsed = 2,
+            practiceDate = "2026-08-09",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(2, progress.customCompletedSessions)
+        assertEquals(25, progress.customTotalExercises)
+        assertEquals(20, progress.customFirstAttemptCorrect)
+        assertEquals(5, progress.customErrors)
+        assertEquals(3, progress.customHintsUsed)
+        assertEquals(80, progress.customAccuracyPercentage)
+        assertEquals("2026-08-09", progress.customLastPracticeDate)
+    }
+
+    @Test
+    fun level4AccuracyPercentageCalculatesCorrectly() {
+        val progress = PracticeProgress(
+            customCompletedSessions = 2,
+            customTotalExercises = 20,
+            customFirstAttemptCorrect = 15,
+            customErrors = 5,
+            customHintsUsed = 3,
+            customLastPracticeDate = "2026-08-09",
+        )
+
+        assertEquals(75, progress.customAccuracyPercentage)
+
+        val emptyProgress = PracticeProgress()
+        assertEquals(0, emptyProgress.customAccuracyPercentage)
+    }
+
+    @Test
+    fun level4SessionProtectsAgainstDuplicatesViaSessionId() = runBlocking {
+        val firstRecord = repository.recordCustomSession(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 8,
+            errors = 2,
+            hintsUsed = 1,
+            practiceDate = "2026-08-09",
+            sessionId = "custom-stable-session",
+        )
+
+        val reopened = reopenRepository()
+        val secondRecord = reopened.recordCustomSession(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 8,
+            errors = 2,
+            hintsUsed = 1,
+            practiceDate = "2026-08-09",
+            sessionId = "custom-stable-session",
+        )
+
+        val progress = reopened.progress.first()
+        assertEquals(1, progress.customCompletedSessions)
+        assertEquals(10, progress.customTotalExercises)
+        assertEquals(8, progress.customFirstAttemptCorrect)
+        assertEquals(2, progress.customErrors)
+        assertEquals(1, progress.customHintsUsed)
+        assertEquals(firstRecord.engagementUpdate.reward, secondRecord.engagementUpdate.reward)
+    }
+
+    @Test
+    fun legacyDataWithoutNewKeysLoadsDefaultZeros() = runBlocking {
+        dataStore.edit { preferences ->
+            preferences[intPreferencesKey(Level1CompletedSessionsKeyName)] = 3
+            preferences[intPreferencesKey(Level1TotalExercisesKeyName)] = 30
+            preferences[intPreferencesKey(Level1FirstAttemptCorrectKeyName)] = 25
+            preferences[stringPreferencesKey(Level1LastPracticeDateKeyName)] = "2026-08-01"
+            preferences[intPreferencesKey(Level2CompletedSessionsKeyName)] = 2
+            preferences[intPreferencesKey(Level2TotalExercisesKeyName)] = 30
+            preferences[intPreferencesKey(Level2FirstAttemptCorrectKeyName)] = 20
+            preferences[intPreferencesKey(Level2ErrorsKeyName)] = 10
+            preferences[intPreferencesKey(Level2HintsUsedKeyName)] = 4
+            preferences[stringPreferencesKey(Level2LastPracticeDateKeyName)] = "2026-08-02"
+        }
+
+        val progress = repository.progress.first()
+
+        assertEquals(3, progress.level1CompletedSessions)
+        assertEquals(30, progress.level1TotalExercises)
+        assertEquals(25, progress.level1FirstAttemptCorrect)
+        assertEquals(0, progress.level1Errors)
+        assertEquals("2026-08-01", progress.level1LastPracticeDate)
+        assertEquals(0, progress.customCompletedSessions)
+        assertEquals(0, progress.customTotalExercises)
+        assertEquals(0, progress.customFirstAttemptCorrect)
+        assertEquals(0, progress.customErrors)
+        assertEquals(0, progress.customHintsUsed)
+        assertEquals(0, progress.customAccuracyPercentage)
+        assertNull(progress.customLastPracticeDate)
+    }
+
+    @Test
+    fun level1RecordsErrorsAndPersistsIndependently() = runBlocking {
+        repository.recordLevel1Session(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 7,
+            errors = 3,
+            practiceDate = "2026-08-08",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.level1CompletedSessions)
+        assertEquals(10, progress.level1TotalExercises)
+        assertEquals(7, progress.level1FirstAttemptCorrect)
+        assertEquals(3, progress.level1Errors)
+        assertEquals(70, progress.level1AccuracyPercentage)
+        assertEquals("2026-08-08", progress.level1LastPracticeDate)
+    }
+
+    @Test
+    fun practiceProgressStatePublishesCustomSessionToObservedFlow() = runBlocking {
+        val state = PracticeProgressState(
+            repository = repository,
+            scope = dataStoreScope,
+            clock = { PracticeDate(2026, 8, 9) },
+        )
+        val updates = Channel<PracticeProgress>(capacity = Channel.UNLIMITED)
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+            state.progress.collect { progress -> updates.send(progress) }
+        }
+        val rewardAtCallback = CompletableDeferred<EngagementReward?>()
+
+        try {
+            assertEquals(0, withTimeout(5_000L) { updates.receive() }.customCompletedSessions)
+
+            state.recordCustomSession(
+                summary = PracticeSessionSummary(
+                    exercisesCompleted = 15,
+                    firstAttemptCorrect = 12,
+                    errors = 3,
+                    hintsUsed = 1,
+                    accuracyPercentage = 80,
+                    practicedLetters = ('A'..'O').toList(),
+                    longestFirstAttemptCorrectStreak = 4,
+                ),
+                onRecorded = { reward ->
+                    rewardAtCallback.complete(reward)
+                },
+            )
+
+            val reward = requireNotNull(withTimeout(5_000L) { rewardAtCallback.await() })
+            assertEquals(50, reward.xpEarned)
+            val progress = withTimeout(5_000L) {
+                var observed: PracticeProgress
+                do {
+                    observed = updates.receive()
+                } while (observed.customCompletedSessions != 1)
+                observed
+            }
+
+            assertEquals(1, progress.customCompletedSessions)
+            assertEquals(15, progress.customTotalExercises)
+            assertEquals(12, progress.customFirstAttemptCorrect)
+            assertEquals(3, progress.customErrors)
+            assertEquals(1, progress.customHintsUsed)
+            assertEquals(80, progress.customAccuracyPercentage)
+            assertEquals("2026-08-09", progress.customLastPracticeDate)
         } finally {
             collector.cancelAndJoin()
         }

@@ -247,11 +247,14 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_level_1_title">Explorador Braille</string>
     <string name="progress_level_2_title">Reconocedor Braille</string>
     <string name="progress_level_3_title">Desafío Braille</string>
+    <string name="progress_level_4_title">Práctica personalizada</string>
     <string name="progress_no_level_1_practice">Aún no has completado una sesión de Explorador Braille.</string>
     <string name="progress_start_practice">Comenzar a practicar</string>
     <string name="progress_sessions_label">Sesiones completadas</string>
     <string name="progress_exercises_label">Ejercicios realizados</string>
     <string name="progress_first_attempt_label">Aciertos al primer intento</string>
+    <string name="progress_errors_label">Errores</string>
+    <string name="progress_hints_used_label">Pistas usadas</string>
     <string name="progress_accuracy_label">Precisión acumulada</string>
     <string name="progress_level_accuracy_accessibility">Precisión %1$s, %2$d por ciento.</string>
     <string name="progress_last_practice_label">Última práctica</string>

@@ -121,10 +121,9 @@ fun BrailleExplorerScreen(
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleExplorer,
         sessionFactory = {
-            PracticeSessionGenerator.generate(
-                storedSnapshot?.state?.session?.mode ?: mode,
-            )
+            PracticeSessionGenerator.generate(mode)
         },
+        mode = mode,
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         storedSnapshot = storedSnapshot,
@@ -156,10 +155,9 @@ fun BrailleRecognizerScreen(
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleRecognizer,
         sessionFactory = {
-            PracticeSessionGenerator.generateLevel2(
-                storedSnapshot?.state?.session?.mode ?: mode,
-            )
+            PracticeSessionGenerator.generateLevel2(mode)
         },
+        mode = mode,
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         storedSnapshot = storedSnapshot,
@@ -191,10 +189,9 @@ fun BrailleChallengeScreen(
     BraillePracticeLevelScreen(
         level = PracticeLevel.BrailleChallenge,
         sessionFactory = {
-            PracticeSessionGenerator.generateLevel3(
-                storedSnapshot?.state?.session?.mode ?: mode,
-            )
+            PracticeSessionGenerator.generateLevel3(mode)
         },
+        mode = mode,
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
         storedSnapshot = storedSnapshot,
@@ -227,9 +224,7 @@ fun CustomBraillePracticeScreen(
     BraillePracticeLevelScreen(
         level = PracticeLevel.Custom,
         sessionFactory = {
-            PracticeSessionGenerator.generateCustom(
-                storedSnapshot?.state?.session?.customConfiguration ?: configuration,
-            )
+            PracticeSessionGenerator.generateCustom(configuration)
         },
         onSessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToPractice,
@@ -256,6 +251,7 @@ private fun BraillePracticeLevelScreen(
         (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit
     )? = null,
     onBackToPractice: () -> Unit,
+    mode: PracticeMode? = null,
     customConfiguration: CustomPracticeConfiguration? = null,
     onChangeConfiguration: (() -> Unit)? = null,
     storedSnapshot: PracticeSessionSnapshot?,
@@ -269,8 +265,13 @@ private fun BraillePracticeLevelScreen(
     onSnapshotCleared: (PracticeLevel) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(sessionsLoaded, level, storedSnapshot?.sessionId) {
-        if (sessionsLoaded && storedSnapshot == null) {
+    val isSnapshotCompatible = storedSnapshot != null &&
+        storedSnapshot.level == level &&
+        (mode == null || storedSnapshot.state.session.mode == mode) &&
+        (customConfiguration == null || storedSnapshot.state.session.customConfiguration == customConfiguration)
+
+    LaunchedEffect(sessionsLoaded, level, mode, customConfiguration, storedSnapshot?.sessionId) {
+        if (sessionsLoaded && !isSnapshotCompatible) {
             onSnapshotChanged(
                 PracticeSessionSnapshot(
                     state = PracticeSessionState(sessionFactory()),
@@ -279,7 +280,11 @@ private fun BraillePracticeLevelScreen(
         }
     }
 
-    val snapshot = storedSnapshot?.takeIf { it.level == level }
+    val snapshot = storedSnapshot?.takeIf {
+        it.level == level &&
+            (mode == null || it.state.session.mode == mode) &&
+            (customConfiguration == null || it.state.session.customConfiguration == customConfiguration)
+    }
     if (!sessionsLoaded || snapshot == null) return
 
     LaunchedEffect(snapshot.sessionId, snapshot.phase) {
@@ -498,7 +503,7 @@ private fun BraillePracticeExercise(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             BrailuxSectionCard(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -508,37 +513,80 @@ private fun BraillePracticeExercise(
                     exercise = exercise,
                     showPointNumbers = state.showPointNumbers,
                 )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 18.dp)
-                        .selectableGroup(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    exercise.options.forEach { option ->
-                        val answerResult = when {
-                            state.selectedCharacter != option.printedCharacter -> null
-                            state.validation == PracticeValidationState.Correct -> AnswerResult.Correct
-                            state.validation == PracticeValidationState.Incorrect -> AnswerResult.Incorrect
-                            else -> null
+                if (exercise.type == PracticeExerciseType.SignToCharacter) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                            .selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(5.dp),
+                    ) {
+                        exercise.options.forEach { option ->
+                            val answerResult = when {
+                                state.selectedCharacter != option.printedCharacter -> null
+                                state.validation == PracticeValidationState.Correct -> AnswerResult.Correct
+                                state.validation == PracticeValidationState.Incorrect -> AnswerResult.Incorrect
+                                else -> null
+                            }
+                            PracticeAnswerOption(
+                                option = option,
+                                type = exercise.type,
+                                selected = state.selectedCharacter == option.printedCharacter,
+                                result = answerResult,
+                                showPointNumbers = state.showPointNumbers,
+                                enabled = state.validation != PracticeValidationState.Correct,
+                                onSelect = {
+                                    onStateChange(state.selectAnswer(option.printedCharacter))
+                                },
+                                isCompact = false,
+                            )
                         }
-                        PracticeAnswerOption(
-                            option = option,
-                            type = exercise.type,
-                            selected = state.selectedCharacter == option.printedCharacter,
-                            result = answerResult,
-                            showPointNumbers = state.showPointNumbers,
-                            enabled = state.validation != PracticeValidationState.Correct,
-                            onSelect = {
-                                onStateChange(state.selectAnswer(option.printedCharacter))
-                            },
-                        )
+                    }
+                } else {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 12.dp)
+                            .selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        exercise.options.chunked(2).forEach { rowOptions ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                rowOptions.forEach { option ->
+                                    val answerResult = when {
+                                        state.selectedCharacter != option.printedCharacter -> null
+                                        state.validation == PracticeValidationState.Correct -> AnswerResult.Correct
+                                        state.validation == PracticeValidationState.Incorrect -> AnswerResult.Incorrect
+                                        else -> null
+                                    }
+                                    PracticeAnswerOption(
+                                        option = option,
+                                        type = exercise.type,
+                                        selected = state.selectedCharacter == option.printedCharacter,
+                                        result = answerResult,
+                                        showPointNumbers = state.showPointNumbers,
+                                        enabled = state.validation != PracticeValidationState.Correct,
+                                        onSelect = {
+                                            onStateChange(state.selectAnswer(option.printedCharacter))
+                                        },
+                                        modifier = Modifier.weight(1f),
+                                        isCompact = true,
+                                    )
+                                }
+                                if (rowOptions.size == 1) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
+                        }
                     }
                 }
             }
 
             if (state.visibleHints.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 Column(
                     modifier = Modifier.widthIn(max = 560.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -554,7 +602,7 @@ private fun BraillePracticeExercise(
             }
 
             if (state.validation != PracticeValidationState.AwaitingAnswer) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 BrailuxFeedbackCard(
                     message = if (state.validation == PracticeValidationState.Correct) {
                         stringResource(
@@ -574,7 +622,7 @@ private fun BraillePracticeExercise(
             }
 
             if (completionFailed) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(10.dp))
                 BrailuxFeedbackCard(
                     message = stringResource(R.string.practice_progress_save_error),
                     type = BrailuxFeedbackType.Error,
@@ -584,7 +632,7 @@ private fun BraillePracticeExercise(
             }
 
             if (state.session.hintsEnabled) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 BrailuxSecondaryButton(
                     text = stringResource(R.string.practice_show_hint),
                     onClick = { onStateChange(state.showHint()) },
@@ -594,7 +642,7 @@ private fun BraillePracticeExercise(
                         .widthIn(max = 560.dp),
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             if (state.validation == PracticeValidationState.Correct) {
                 BrailuxPrimaryButton(
                     text = stringResource(R.string.practice_next_exercise),
@@ -614,7 +662,7 @@ private fun BraillePracticeExercise(
                         .widthIn(max = 560.dp),
                 )
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -655,7 +703,7 @@ private fun ColumnScope.ExercisePrompt(
             text = exercise.target.printedCharacter.toString(),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 14.dp),
+                .padding(top = 8.dp),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
@@ -672,6 +720,8 @@ private fun PracticeAnswerOption(
     showPointNumbers: Boolean,
     enabled: Boolean,
     onSelect: () -> Unit,
+    modifier: Modifier = Modifier,
+    isCompact: Boolean = false,
 ) {
     val statusColors = BrailuxTheme.statusColors
     val stateText = when (result) {
@@ -710,10 +760,14 @@ private fun PracticeAnswerOption(
         null -> if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
     }
 
+    val horizontalPadding = if (isCompact) 8.dp else 14.dp
+    val verticalPadding = if (isCompact) 8.dp else 5.dp
+    val minTouchTarget = if (isCompact) 48.dp else 56.dp
+
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
+            .heightIn(min = minTouchTarget)
             .selectable(
                 selected = selected,
                 enabled = enabled,
@@ -730,8 +784,11 @@ private fun PracticeAnswerOption(
         border = BorderStroke(if (selected) 3.dp else 1.dp, borderColor),
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = horizontalPadding, vertical = verticalPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             if (type == PracticeExerciseType.SignToCharacter) {
                 Text(
@@ -744,13 +801,14 @@ private fun PracticeAnswerOption(
                     cell = option.cell,
                     showPointNumbers = showPointNumbers,
                     modifier = Modifier.clearAndSetSemantics { },
+                    isCompact = isCompact,
                 )
             }
             if (result != null) {
                 Text(
                     text = stateText,
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.padding(top = if (isCompact) 4.dp else 6.dp),
+                    style = if (isCompact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                 )
             }

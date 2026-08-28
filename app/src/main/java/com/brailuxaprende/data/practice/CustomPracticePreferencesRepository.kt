@@ -52,7 +52,7 @@ class CustomPracticePreferencesRepository(
 }
 
 private fun Preferences.toCustomPracticeConfiguration(): CustomPracticeConfiguration {
-    val additionalGroups = (valueNamed(CustomContentGroupsKeyName) as? String)
+    val additionalGroups = (this[stringPreferencesKey(CustomContentGroupsKeyName)])
         .orEmpty()
         .split(',')
         .mapNotNull { storedName ->
@@ -60,18 +60,15 @@ private fun Preferences.toCustomPracticeConfiguration(): CustomPracticeConfigura
         }
         .filter { it != PracticeContentGroup.SpanishAlphabet && it.isAvailable }
         .toSet()
-    val modeName = valueNamed(CustomModeKeyName) as? String
+    val modeName = this[stringPreferencesKey(CustomModeKeyName)]
     return CustomPracticeConfiguration(
         additionalContentGroups = additionalGroups,
         exerciseCount = CustomExerciseCount.fromValue(
-            valueNamed(CustomExerciseCountKeyName) as? Int ?: CustomExerciseCount.Ten.value,
+            this[intPreferencesKey(CustomExerciseCountKeyName)] ?: CustomExerciseCount.Ten.value,
         ),
         mode = PracticeMode.entries.firstOrNull { it.name == modeName }
             ?: PracticeMode.SignToCharacter,
-        hintsEnabled = valueNamed(CustomHintsEnabledKeyName) as? Boolean ?: true,
-        showPointNumbers = valueNamed(CustomPointNumbersVisibleKeyName) as? Boolean ?: true,
+        hintsEnabled = this[booleanPreferencesKey(CustomHintsEnabledKeyName)] ?: true,
+        showPointNumbers = this[booleanPreferencesKey(CustomPointNumbersVisibleKeyName)] ?: true,
     )
 }
-
-private fun Preferences.valueNamed(name: String): Any? =
-    asMap().entries.firstOrNull { (key, _) -> key.name == name }?.value

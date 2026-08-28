@@ -219,6 +219,45 @@ class PracticeSessionSnapshotCodecTest {
         assertNull(PracticeSessionSnapshotCodec.decode(unsupportedVersion))
     }
 
+    @Test
+    fun level1SnapshotPreservesModeAndIdentifiesIncompatibleMode() {
+        val characterToSignState = PracticeSessionState(
+            PracticeSessionGenerator.generate(PracticeMode.CharacterToSign, Random(31)),
+        )
+        val snapshot = roundTrip(PracticeSessionSnapshot(state = characterToSignState))
+
+        assertEquals(PracticeLevel.BrailleExplorer, snapshot.level)
+        assertEquals(PracticeMode.CharacterToSign, snapshot.state.session.mode)
+        assertTrue(snapshot.state.session.exercises.all { it.type == PracticeExerciseType.CharacterToSign })
+        assertNotEquals(PracticeMode.SignToCharacter, snapshot.state.session.mode)
+    }
+
+    @Test
+    fun level2SnapshotPreservesModeAndIdentifiesIncompatibleMode() {
+        val mixedState = PracticeSessionState(
+            PracticeSessionGenerator.generateLevel2(PracticeMode.Mixed, Random(32)),
+        )
+        val snapshot = roundTrip(PracticeSessionSnapshot(state = mixedState))
+
+        assertEquals(PracticeLevel.BrailleRecognizer, snapshot.level)
+        assertEquals(PracticeMode.Mixed, snapshot.state.session.mode)
+        assertEquals(PracticeExerciseType.entries.toSet(), snapshot.state.session.exercises.map { it.type }.toSet())
+        assertNotEquals(PracticeMode.SignToCharacter, snapshot.state.session.mode)
+    }
+
+    @Test
+    fun level3SnapshotPreservesModeAndIdentifiesIncompatibleMode() {
+        val signToCharState = PracticeSessionState(
+            PracticeSessionGenerator.generateLevel3(PracticeMode.SignToCharacter, Random(33)),
+        )
+        val snapshot = roundTrip(PracticeSessionSnapshot(state = signToCharState))
+
+        assertEquals(PracticeLevel.BrailleChallenge, snapshot.level)
+        assertEquals(PracticeMode.SignToCharacter, snapshot.state.session.mode)
+        assertTrue(snapshot.state.session.exercises.all { it.type == PracticeExerciseType.SignToCharacter })
+        assertNotEquals(PracticeMode.CharacterToSign, snapshot.state.session.mode)
+    }
+
     private fun assertActiveRoundTrip(state: PracticeSessionState) {
         val restored = roundTrip(PracticeSessionSnapshot(state = state))
         assertEquals(state, restored.state)

@@ -67,6 +67,15 @@ class CustomPracticePreferencesRepositoryTest {
         assertEquals(emptySet<Any>(), restored.additionalContentGroups)
     }
 
+    @Test
+    fun persistsAndRestoresEachPracticeMode() = runBlocking {
+        PracticeMode.entries.forEach { mode ->
+            repository.save(CustomPracticeConfiguration(mode = mode))
+            val restored = reopenRepository().configuration.first()
+            assertEquals(mode, restored.mode)
+        }
+    }
+
     private fun createRepository() {
         dataStoreScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         val dataStore: DataStore<Preferences> = PreferenceDataStoreFactory.create(
