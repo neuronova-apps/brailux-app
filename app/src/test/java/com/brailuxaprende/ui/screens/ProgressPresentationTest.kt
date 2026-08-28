@@ -38,4 +38,22 @@ class ProgressPresentationTest {
             ),
         )
     }
+
+    @Test
+    fun `progress tabs are defined in expected order with Summary as default`() {
+        val expectedTabs = listOf(
+            ProgressTab.Summary,
+            ProgressTab.Statistics,
+            ProgressTab.Achievements,
+        )
+        assertEquals(expectedTabs, ProgressTab.entries)
+        assertEquals(ProgressTab.Summary, ProgressTab.entries.first())
+    }
+
+    @Test
+    fun `progress tabs map to expected string resources`() {
+        assertEquals(com.brailuxaprende.R.string.progress_tab_summary, ProgressTab.Summary.labelResource)
+        assertEquals(com.brailuxaprende.R.string.progress_tab_statistics, ProgressTab.Statistics.labelResource)
+        assertEquals(com.brailuxaprende.R.string.progress_tab_achievements, ProgressTab.Achievements.labelResource)
+    }
 }
