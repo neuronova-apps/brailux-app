@@ -35,6 +35,15 @@ class BrailuxNavigationTest {
     fun `settings and about do not select home`() {
         assertNull(selectedMainDestination(BrailuxRoutes.SETTINGS))
         assertNull(selectedMainDestination(BrailuxRoutes.ABOUT))
+        assertNull(selectedMainDestination(BrailuxRoutes.ASSISTANT))
+    }
+
+    @Test
+    fun `secondary settings and about screens hide the bottom navigation`() {
+        assertTrue(shouldShowBottomBar(BrailuxRoutes.HOME))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.SETTINGS))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.ABOUT))
+        assertFalse(shouldShowBottomBar(null))
     }
 
     @Test

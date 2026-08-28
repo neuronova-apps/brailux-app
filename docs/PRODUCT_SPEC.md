@@ -36,7 +36,7 @@ La primera version esta pensada para estudiantes, familias, docentes y personas 
 - Mi progreso es el centro unico de constancia, XP, metas, mini logros, estadisticas de Practica, avance de Aprende y logros permanentes.
 - Acerca de presenta a Brailux Aprende como parte de NeuroNova Apps, matriz de aplicaciones educativas y accesibles, y acredita a Gabriel Berrospi como desarrollador.
 
-El sitio de NeuroNova Apps es `https://neuronova-apps.github.io/`, el sitio especifico de Brailux Aprende es `https://neuronova-apps.github.io/brailux-apps/` y su politica de privacidad es `https://neuronova-apps.github.io/brailux-apps/privacy/`.
+El sitio de NeuroNova Apps es `https://neuronova-apps.github.io/`, el sitio especifico de Brailux es `https://neuronova-apps.github.io/brailux-app/` y su politica de privacidad es `https://neuronova-apps.github.io/brailux-app/privacy/`.
 
 ## Generacion actual de XP
 

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "395715538994",
+    "project_id": "brailux",
+    "storage_bucket": "brailux.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395715538994:android:e0b162f7b23a00955e4c2b",
+        "android_client_info": {
+          "package_name": "com.brailuxaprende"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyQ9sgHBsgY0u-qTMpAz_aoUyOKTqpeNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

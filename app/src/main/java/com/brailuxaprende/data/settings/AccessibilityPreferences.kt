@@ -5,8 +5,9 @@ data class AccessibilityPreferences(
     val vibrationEnabled: Boolean = true,
     val highContrastEnabled: Boolean = false,
     val textSize: TextSizePreference = TextSizePreference.Normal,
-    val appearance: AppearancePreference = AppearancePreference.System,
+    val appearance: AppearancePreference = AppearancePreference.Light,
     val seasonalThemesEnabled: Boolean = true,
+    val selectedBackgroundId: String = BrailuxBackgroundCatalog.DEFAULT_ID,
 )
 
 enum class AppearancePreference(internal val storedValue: String) {
@@ -17,7 +18,7 @@ enum class AppearancePreference(internal val storedValue: String) {
 
     companion object {
         fun fromStoredValue(value: String?): AppearancePreference =
-            entries.firstOrNull { it.storedValue == value } ?: System
+            entries.firstOrNull { it.storedValue == value } ?: Light
     }
 }
 

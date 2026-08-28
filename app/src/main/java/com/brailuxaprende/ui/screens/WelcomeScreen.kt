@@ -1,6 +1,6 @@
 package com.brailuxaprende.ui.screens
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,22 +11,21 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.brailuxaprende.R
 import com.brailuxaprende.ui.components.BrailuxPrimaryButton
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
@@ -43,18 +42,23 @@ fun WelcomeScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 36.dp),
+                .padding(horizontal = 24.dp, vertical = 28.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
-            WelcomeBrailleMark()
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.weight(1.35f))
+            Image(
+                painter = painterResource(R.drawable.brailux_logo),
+                contentDescription = stringResource(R.string.brailux_logo_description),
+                modifier = Modifier.size(112.dp),
+            )
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = stringResource(R.string.app_name),
+                text = stringResource(R.string.welcome_brand_name),
                 modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.displaySmall,
                 color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Black,
+                letterSpacing = 2.sp,
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(12.dp))
@@ -65,7 +69,17 @@ fun WelcomeScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
             )
-            Spacer(modifier = Modifier.height(36.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.widthIn(max = 360.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                WelcomeTag(text = stringResource(R.string.welcome_tag_learn))
+                WelcomeTag(text = stringResource(R.string.welcome_tag_practice))
+                WelcomeTag(text = stringResource(R.string.welcome_tag_braille))
+            }
+            Spacer(modifier = Modifier.weight(1.1f))
             BrailuxPrimaryButton(
                 text = stringResource(R.string.welcome_start),
                 onClick = onStart,
@@ -73,35 +87,30 @@ fun WelcomeScreen(
                     .fillMaxWidth()
                     .widthIn(max = 360.dp),
             )
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = stringResource(R.string.welcome_footer),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
 
 @Composable
-private fun WelcomeBrailleMark() {
+private fun WelcomeTag(text: String) {
     Surface(
-        modifier = Modifier.clearAndSetSemantics { },
-        shape = MaterialTheme.shapes.extraLarge,
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.primaryContainer,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 26.dp, vertical = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            repeat(3) {
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    repeat(2) {
-                        Surface(
-                            modifier = Modifier.size(24.dp),
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary,
-                            border = BorderStroke(2.dp, MaterialTheme.colorScheme.onPrimary),
-                        ) {}
-                    }
-                }
-            }
-        }
+        Text(
+            text = text,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+        )
     }
 }
 

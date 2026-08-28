@@ -137,10 +137,11 @@ internal fun resolveThemeVariant(
 
 @Composable
 fun BrailuxAprendeTheme(
-    appearance: AppearancePreference = AppearancePreference.System,
+    appearance: AppearancePreference = AppearancePreference.Light,
     highContrast: Boolean = false,
     textSize: TextSizePreference = TextSizePreference.Normal,
     seasonalAccent: SeasonalAccent? = null,
+    customBackgroundVisible: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val themeVariant = resolveThemeVariant(
@@ -153,10 +154,15 @@ fun BrailuxAprendeTheme(
         BrailuxThemeVariant.Dark -> DarkColorScheme
         BrailuxThemeVariant.HighContrast -> HighContrastColorScheme
     }
-    val colorScheme = if (themeVariant == BrailuxThemeVariant.HighContrast) {
+    val themedColorScheme = if (themeVariant == BrailuxThemeVariant.HighContrast) {
         baseColorScheme
     } else {
         baseColorScheme.withSeasonalAccent(seasonalAccent, themeVariant == BrailuxThemeVariant.Dark)
+    }
+    val colorScheme = if (customBackgroundVisible && !highContrast) {
+        themedColorScheme.copy(background = Color.Transparent)
+    } else {
+        themedColorScheme
     }
     val currentDensity = LocalDensity.current
     val scaledDensity = Density(

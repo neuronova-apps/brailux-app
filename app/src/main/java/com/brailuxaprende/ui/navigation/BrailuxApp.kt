@@ -3,6 +3,7 @@ package com.brailuxaprende.ui.navigation
 import androidx.annotation.StringRes
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -22,6 +23,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -40,6 +43,7 @@ import com.brailuxaprende.data.practice.StoredPracticeSessions
 import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
+import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeMode
@@ -53,6 +57,8 @@ import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
 import com.brailuxaprende.ui.screens.AboutScreen
+import com.brailuxaprende.ui.screens.AssistantScreen
+import com.brailuxaprende.ui.screens.AssistantUiState
 import com.brailuxaprende.ui.screens.BrailleLessonScreen
 import com.brailuxaprende.ui.screens.BrailleChallengeScreen
 import com.brailuxaprende.ui.screens.BrailleExplorerScreen
@@ -81,6 +87,7 @@ object BrailuxRoutes {
     const val PROGRESS = "mi_progreso"
     const val SETTINGS = "configuracion"
     const val ABOUT = "acerca_de"
+    const val ASSISTANT = "asistente_brailux"
     const val SIX_DOTS_LESSON = "leccion_seis_puntos"
     const val VOWELS_LESSON = "leccion_vocales"
     const val LETTERS_A_TO_J_LESSON = "leccion_letras_a_j"
@@ -109,6 +116,8 @@ private val bottomDestinations = listOf(
 
 private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.WELCOME,
+    BrailuxRoutes.SETTINGS,
+    BrailuxRoutes.ABOUT,
     BrailuxRoutes.SIX_DOTS_LESSON,
     BrailuxRoutes.VOWELS_LESSON,
     BrailuxRoutes.LETTERS_A_TO_J_LESSON,
@@ -120,11 +129,15 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
     BrailuxRoutes.CUSTOM_PRACTICE,
     BrailuxRoutes.DAILY_PRACTICE,
+    BrailuxRoutes.ASSISTANT,
 )
 
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
+    assistantState: AssistantUiState = AssistantUiState(),
+    onAssistantInputChange: (String) -> Unit = {},
+    onAssistantSend: () -> Unit = {},
     learningProgress: LearningProgress = LearningProgress(),
     practiceProgress: PracticeProgress = PracticeProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
@@ -140,6 +153,8 @@ fun BrailuxApp(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    isPremiumUnlocked: Boolean = false,
+    onBackgroundChange: (String) -> Unit = {},
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit =
@@ -169,21 +184,43 @@ fun BrailuxApp(
     val currentDestination = backStackEntry?.destination
     val currentRoute = currentDestination?.route
     val selectedMainRoute = selectedMainDestination(currentRoute)
+    val activeBackgroundResource = BrailuxBackgroundCatalog.activeDrawableResource(
+        selectedId = preferences.selectedBackgroundId,
+        isPremiumUnlocked = isPremiumUnlocked,
+        highContrastEnabled = preferences.highContrastEnabled,
+    )
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (currentRoute != null && currentRoute !in routesWithoutBottomBar) {
-                BrailuxBottomBar(
-                    selectedRoute = selectedMainRoute,
-                    onNavigate = { route -> navController.navigateToMainDestination(route) },
-                )
-            }
-        },
-    ) { innerPadding ->
-        BrailuxNavHost(
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (activeBackgroundResource != null) {
+            Image(
+                painter = painterResource(activeBackgroundResource),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            containerColor = if (activeBackgroundResource == null) {
+                MaterialTheme.colorScheme.background
+            } else {
+                Color.Transparent
+            },
+            bottomBar = {
+                if (shouldShowBottomBar(currentRoute)) {
+                    BrailuxBottomBar(
+                        selectedRoute = selectedMainRoute,
+                        onNavigate = { route -> navController.navigateToMainDestination(route) },
+                    )
+                }
+            },
+        ) { innerPadding ->
+            BrailuxNavHost(
             navController = navController,
             preferences = preferences,
+            assistantState = assistantState,
+            onAssistantInputChange = onAssistantInputChange,
+            onAssistantSend = onAssistantSend,
             learningProgress = learningProgress,
             practiceProgress = practiceProgress,
             engagementProgress = engagementProgress,
@@ -196,6 +233,8 @@ fun BrailuxApp(
             onTextSizeChange = onTextSizeChange,
             onAppearanceChange = onAppearanceChange,
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
+            isPremiumUnlocked = isPremiumUnlocked,
+            onBackgroundChange = onBackgroundChange,
             onLearningLessonCompleted = onLearningLessonCompleted,
             onLevel1SessionCompleted = onLevel1SessionCompleted,
             onLevel2SessionCompleted = onLevel2SessionCompleted,
@@ -209,7 +248,8 @@ fun BrailuxApp(
             onPracticeSessionCreditResolved = onPracticeSessionCreditResolved,
             onPracticeSessionCleared = onPracticeSessionCleared,
             modifier = Modifier.padding(innerPadding),
-        )
+            )
+        }
     }
 }
 
@@ -217,7 +257,7 @@ fun BrailuxApp(
 private fun BrailuxBottomBar(
     selectedRoute: String?,
     onNavigate: (String) -> Unit,
-) {|
+) {
     NavigationBar {
         bottomDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
@@ -290,6 +330,9 @@ private fun BrailuxBottomBar(
 private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
+    assistantState: AssistantUiState,
+    onAssistantInputChange: (String) -> Unit,
+    onAssistantSend: () -> Unit,
     learningProgress: LearningProgress,
     practiceProgress: PracticeProgress,
     engagementProgress: EngagementProgress,
@@ -302,6 +345,8 @@ private fun BrailuxNavHost(
     onTextSizeChange: (TextSizePreference) -> Unit,
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
+    isPremiumUnlocked: Boolean,
+    onBackgroundChange: (String) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
@@ -440,8 +485,8 @@ private fun BrailuxNavHost(
                 },
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
+                onAssistant = { navController.navigate(BrailuxRoutes.ASSISTANT) },
                 onSettings = { navController.navigate(BrailuxRoutes.SETTINGS) },
-                onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
             )
         }
         composable(BrailuxRoutes.LEARN) {
@@ -496,11 +541,22 @@ private fun BrailuxNavHost(
                 onTextSizeChange = onTextSizeChange,
                 onAppearanceChange = onAppearanceChange,
                 onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
+                isPremiumUnlocked = isPremiumUnlocked,
+                onBackgroundChange = onBackgroundChange,
+                onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
                 onBack = ::goBack,
             )
         }
         composable(BrailuxRoutes.ABOUT) {
             AboutScreen(onBack = ::goBack)
+        }
+        composable(BrailuxRoutes.ASSISTANT) {
+            AssistantScreen(
+                state = assistantState,
+                onInputChange = onAssistantInputChange,
+                onSend = onAssistantSend,
+                onBack = ::goBack,
+            )
         }
         composable(BrailuxRoutes.SIX_DOTS_LESSON) {
             BrailleLessonScreen(
@@ -661,6 +717,9 @@ internal fun selectedMainDestination(currentRoute: String?): String? =
     currentRoute?.takeIf { route -> bottomDestinations.any { it.route == route } }
 
 internal fun bottomDestinationRoutes(): List<String> = bottomDestinations.map { it.route }
+
+internal fun shouldShowBottomBar(route: String?): Boolean =
+    route != null && route !in routesWithoutBottomBar
 
 internal fun shouldPreserveMainDestinationState(route: String): Boolean =
     route != BrailuxRoutes.HOME

@@ -49,8 +49,16 @@ class AccessibilityPreferencesRepositoryTest {
     }
 
     @Test
-    fun appearanceDefaultsToFollowSystem() = runBlocking {
-        assertEquals(AppearancePreference.System, repository.preferences.first().appearance)
+    fun appearanceDefaultsToLight() = runBlocking {
+        assertEquals(AppearancePreference.Light, repository.preferences.first().appearance)
+    }
+
+    @Test
+    fun backgroundDefaultsToDefault() = runBlocking {
+        assertEquals(
+            BrailuxBackgroundCatalog.DEFAULT_ID,
+            repository.preferences.first().selectedBackgroundId,
+        )
     }
 
     @Test
@@ -128,6 +136,33 @@ class AccessibilityPreferencesRepositoryTest {
     }
 
     @Test
+    fun backgroundSelectionIsPersisted() = runBlocking {
+        repository.setSelectedBackgroundId(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID)
+
+        val reopenedRepository = reopenRepository()
+
+        assertEquals(
+            BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID,
+            reopenedRepository.preferences.first().selectedBackgroundId,
+        )
+    }
+
+    @Test
+    fun highContrastDoesNotDeleteBackgroundSelection() = runBlocking {
+        repository.setSelectedBackgroundId(BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID)
+        repository.setHighContrastEnabled(true)
+
+        val reopenedRepository = reopenRepository()
+        val preferences = reopenedRepository.preferences.first()
+
+        assertTrue(preferences.highContrastEnabled)
+        assertEquals(
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+            preferences.selectedBackgroundId,
+        )
+    }
+
+    @Test
     fun unrecognizedValuesUseSafeDefaults() = runBlocking {
         dataStore.edit { preferences ->
             preferences[stringPreferencesKey(SoundEnabledKeyName)] = "unknown"
@@ -136,6 +171,7 @@ class AccessibilityPreferencesRepositoryTest {
             preferences[stringPreferencesKey(TextSizeKeyName)] = "enormous"
             preferences[stringPreferencesKey(AppearanceKeyName)] = "automatic-ish"
             preferences[stringPreferencesKey(SeasonalThemesEnabledKeyName)] = "unknown"
+            preferences[stringPreferencesKey(SelectedBackgroundIdKeyName)] = "missing_background"
         }
 
         val preferences = repository.preferences.first()
@@ -144,8 +180,9 @@ class AccessibilityPreferencesRepositoryTest {
         assertTrue(preferences.vibrationEnabled)
         assertFalse(preferences.highContrastEnabled)
         assertEquals(TextSizePreference.Normal, preferences.textSize)
-        assertEquals(AppearancePreference.System, preferences.appearance)
+        assertEquals(AppearancePreference.Light, preferences.appearance)
         assertTrue(preferences.seasonalThemesEnabled)
+        assertEquals(BrailuxBackgroundCatalog.DEFAULT_ID, preferences.selectedBackgroundId)
     }
 
     private fun createRepository() {

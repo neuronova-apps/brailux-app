@@ -1,10 +1,17 @@
 package com.brailuxaprende.ui.theme
 
+import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class AppearanceThemeResolverTest {
+    @Test
+    fun defaultPreferenceUsesLightAppearance() {
+        assertEquals(AppearancePreference.Light, AccessibilityPreferences().appearance)
+        assertEquals(AppearancePreference.Light, AppearancePreference.fromStoredValue(null))
+    }
+
     @Test
     fun followSystemUsesTheCurrentSystemAppearance() {
         assertEquals(

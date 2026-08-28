@@ -71,7 +71,7 @@
 - Objetivo: preparar la aplicacion para distribucion inicial.
 - Resultado verificable: build de lanzamiento revisada, textos principales completos, iconografia y metadatos listos para revision.
 - Condicion para avanzar: no hay funciones remotas obligatorias, anuncios, compras ni cuentas pendientes para la primera version.
-- Identidad definida: Brailux Aprende forma parte de NeuroNova Apps, desarrollada por Gabriel Berrospi. Los sitios oficiales son `https://neuronova-apps.github.io/brailux-apps/` y `https://neuronova-apps.github.io/`; la politica de privacidad oficial es `https://neuronova-apps.github.io/brailux-apps/privacy/`.
+- Identidad definida: Brailux forma parte de NeuroNova Apps, desarrollada por Gabriel Berrospi. Los sitios oficiales son `https://neuronova-apps.github.io/brailux-app/` y `https://neuronova-apps.github.io/`; la politica de privacidad oficial es `https://neuronova-apps.github.io/brailux-app/privacy/`.
 
 ## 12. Constancia, practica diaria y logros
 

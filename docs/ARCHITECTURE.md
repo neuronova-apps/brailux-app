@@ -36,7 +36,7 @@ La navegacion principal se implementara con Navigation Compose cuando el proyect
 
 ## Identidad institucional
 
-`InstitutionalIdentity` es la fuente unica para el nombre de NeuroNova Apps, el sitio de la matriz, el sitio de Brailux Aprende, la politica de privacidad oficial y el credito de Gabriel Berrospi. La URL de privacidad es `https://neuronova-apps.github.io/brailux-apps/privacy/`.
+`InstitutionalIdentity` es la fuente unica para el nombre de NeuroNova Apps, el sitio de la matriz, el sitio de Brailux, la politica de privacidad oficial y el credito de Gabriel Berrospi. La URL de privacidad es `https://neuronova-apps.github.io/brailux-app/privacy/`.
 
 ## Persistencia
 

@@ -14,10 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,7 +48,6 @@ import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.ui.components.BrailuxMenuCard
-import com.brailuxaprende.ui.components.BrailuxSecondaryButton
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 import com.brailuxaprende.ui.components.SeasonalBanner
 import com.brailuxaprende.ui.theme.BrailuxPreviewTheme
@@ -59,8 +60,8 @@ fun HomeScreen(
     onStartDailyPractice: () -> Unit = {},
     onLearn: () -> Unit,
     onPractice: () -> Unit,
+    onAssistant: () -> Unit = {},
     onSettings: () -> Unit,
-    onAbout: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val screenTitle = stringResource(R.string.home_title)
@@ -77,10 +78,11 @@ fun HomeScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Image(
-                painter = painterResource(R.drawable.ic_brailux_identity),
-                contentDescription = null,
-                modifier = Modifier.size(84.dp),
+            HomeHeader(
+                onOpenSettings = onSettings,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
             )
             if (seasonalEvent != null) {
                 var showSeasonalBanner by rememberSaveable(seasonalEvent.id) {
@@ -97,7 +99,7 @@ fun HomeScreen(
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(22.dp))
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -114,38 +116,74 @@ fun HomeScreen(
                     iconResource = R.drawable.ic_practice,
                     onClick = onPractice,
                 )
+                BrailuxMenuCard(
+                    title = stringResource(R.string.assistant_title),
+                    description = stringResource(R.string.home_access_assistant_description),
+                    iconResource = R.drawable.ic_assistant,
+                    onClick = onAssistant,
+                )
                 DailyChallengeCard()
             }
-            Spacer(modifier = Modifier.height(28.dp))
-            Text(
-                text = stringResource(R.string.home_more_options),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .semantics { heading() },
-                style = MaterialTheme.typography.titleMedium,
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun HomeHeader(
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Surface(
+            modifier = Modifier.size(60.dp),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surface,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+            shadowElevation = 2.dp,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.brailux_logo),
+                contentDescription = stringResource(R.string.brailux_logo_description),
+                modifier = Modifier.padding(5.dp),
             )
-            Spacer(modifier = Modifier.height(10.dp))
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+        }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(R.string.home_brand_name),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.primary,
+                fontWeight = FontWeight.Black,
+            )
+            Text(
+                text = stringResource(R.string.home_brand_subtitle),
+                modifier = Modifier.padding(top = 2.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Surface(
+            modifier = Modifier.size(52.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+        ) {
+            IconButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxSize(),
             ) {
-                BrailuxSecondaryButton(
-                    text = stringResource(R.string.home_access_settings),
-                    iconResource = R.drawable.ic_settings,
-                    onClick = onSettings,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                BrailuxSecondaryButton(
-                    text = stringResource(R.string.home_access_about),
-                    iconResource = R.drawable.ic_info,
-                    onClick = onAbout,
-                    modifier = Modifier.fillMaxWidth(),
+                Icon(
+                    painter = painterResource(R.drawable.ic_settings),
+                    contentDescription = stringResource(R.string.home_open_settings),
+                    modifier = Modifier.size(24.dp),
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
@@ -270,7 +308,6 @@ private fun HomeScreenPreview() {
             onLearn = {},
             onPractice = {},
             onSettings = {},
-            onAbout = {},
         )
     }
 }

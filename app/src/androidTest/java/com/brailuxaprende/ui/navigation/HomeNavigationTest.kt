@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -67,16 +68,8 @@ class HomeNavigationTest {
         val challengeTop = composeRule
             .onNodeWithText(context.getString(R.string.home_daily_challenge))
             .fetchSemanticsNode().boundsInRoot.top
-        val settingsTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_access_settings))
-            .fetchSemanticsNode().boundsInRoot.top
-        val aboutTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_access_about))
-            .fetchSemanticsNode().boundsInRoot.top
         assertTrue(practiceTop > dailyTop)
         assertTrue(challengeTop > practiceTop)
-        assertTrue(settingsTop > challengeTop)
-        assertTrue(aboutTop > settingsTop)
 
         composeRule.onNodeWithText(context.getString(R.string.home_daily_practice))
             .performScrollTo()
@@ -99,6 +92,38 @@ class HomeNavigationTest {
         composeRule.onNodeWithText(context.getString(R.string.home_coming_soon))
             .assertIsDisplayed()
             .assertHasNoClickAction()
+        composeRule.onAllNodesWithText(context.getString(R.string.home_more_options))
+            .assertCountEquals(0)
+        composeRule.onAllNodesWithText(context.getString(R.string.home_access_about))
+            .assertCountEquals(0)
+
+        composeRule.onNodeWithContentDescription(
+            context.getString(R.string.home_open_settings),
+        )
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
+        composeRule.onNodeWithText(context.getString(R.string.settings_title))
+            .assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(
+            context.getString(R.string.settings_open_about_accessibility),
+        )
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasClickAction()
+            .performClick()
+        composeRule.onNodeWithText(context.getString(R.string.about_title))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.action_back))
+            .assertIsDisplayed()
+            .performClick()
+        composeRule.onNodeWithText(context.getString(R.string.settings_title))
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.action_back))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
 
         composeRule.onNodeWithText(context.getString(R.string.nav_learn)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.learn_title)).assertIsDisplayed()

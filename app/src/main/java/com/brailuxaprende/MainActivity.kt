@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
+import com.brailuxaprende.ai.BrailuxAiService
 import com.brailuxaprende.data.learn.LearningProgressRepository
 import com.brailuxaprende.data.learn.LearningProgressState
 import com.brailuxaprende.data.practice.PracticeProgressRepository
@@ -23,8 +24,12 @@ import com.brailuxaprende.data.seasonal.AnnualDate
 import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
+import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
+import com.brailuxaprende.data.settings.BrailuxPremiumAccess
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
+import com.brailuxaprende.ui.screens.AssistantViewModel
+import com.brailuxaprende.ui.screens.AssistantViewModelFactory
 import com.brailuxaprende.ui.screens.PracticeSessionViewModel
 import com.brailuxaprende.ui.screens.PracticeSessionViewModelFactory
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
@@ -34,6 +39,9 @@ import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    private val assistantViewModel by viewModels<AssistantViewModel> {
+        AssistantViewModelFactory(BrailuxAiService())
+    }
     private val practiceSessionViewModel by viewModels<PracticeSessionViewModel> {
         PracticeSessionViewModelFactory(
             owner = this,
@@ -96,6 +104,7 @@ class MainActivity : ComponentActivity() {
                 customPracticePreferencesState.configuration.collectAsState()
             val engagementProgress by engagementProgressState.progress.collectAsState()
             val practiceSessions by practiceSessionViewModel.sessions.collectAsState()
+            val assistantUiState by assistantViewModel.uiState.collectAsState()
             val currentPracticeDate = rememberCurrentPracticeDate()
             val currentDate = AnnualDate(
                 month = currentPracticeDate.month,
@@ -105,15 +114,25 @@ class MainActivity : ComponentActivity() {
                 date = currentDate,
                 eventsEnabled = preferences.seasonalThemesEnabled,
             )
+            val premiumState = BrailuxPremiumAccess.currentState
+            val customBackgroundVisible = BrailuxBackgroundCatalog.activeDrawableResource(
+                selectedId = preferences.selectedBackgroundId,
+                isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                highContrastEnabled = preferences.highContrastEnabled,
+            ) != null
 
             BrailuxAprendeTheme(
                 appearance = preferences.appearance,
                 highContrast = preferences.highContrastEnabled,
                 textSize = preferences.textSize,
                 seasonalAccent = seasonalEvent?.accent,
+                customBackgroundVisible = customBackgroundVisible,
             ) {
                 BrailuxApp(
                     preferences = preferences,
+                    assistantState = assistantUiState,
+                    onAssistantInputChange = assistantViewModel::updateInput,
+                    onAssistantSend = assistantViewModel::send,
                     learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,
@@ -127,6 +146,13 @@ class MainActivity : ComponentActivity() {
                     onTextSizeChange = settingsState::setTextSize,
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
+                    isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                    onBackgroundChange = { backgroundId ->
+                        settingsState.requestBackgroundSelection(
+                            backgroundId = backgroundId,
+                            isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                        )
+                    },
                     onLearningLessonCompleted = learningProgressState::markCompleted,
                     onLevel1SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel1Session(

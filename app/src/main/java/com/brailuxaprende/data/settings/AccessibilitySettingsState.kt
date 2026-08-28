@@ -39,4 +39,15 @@ class AccessibilitySettingsState(
     fun setSeasonalThemesEnabled(enabled: Boolean) {
         scope.launch { repository.setSeasonalThemesEnabled(enabled) }
     }
+
+    fun requestBackgroundSelection(backgroundId: String, isPremiumUnlocked: Boolean) {
+        val selectedId = BrailuxBackgroundCatalog.selectionAfterRequest(
+            currentId = preferences.value.selectedBackgroundId,
+            requestedId = backgroundId,
+            isPremiumUnlocked = isPremiumUnlocked,
+        )
+        if (selectedId != preferences.value.selectedBackgroundId) {
+            scope.launch { repository.setSelectedBackgroundId(selectedId) }
+        }
+    }
 }

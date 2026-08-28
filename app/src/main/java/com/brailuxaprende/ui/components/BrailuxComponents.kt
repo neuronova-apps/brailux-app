@@ -109,9 +109,12 @@ fun BrailuxBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val backDescription = stringResource(R.string.action_back_description)
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .semantics { contentDescription = backDescription },
         shape = MaterialTheme.shapes.small,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {

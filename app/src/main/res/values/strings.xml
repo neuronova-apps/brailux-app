@@ -1,5 +1,6 @@
 <resources>
-    <string name="app_name">Brailux Aprende</string>
+    <string name="app_name">Brailux</string>
+    <string name="brailux_logo_description">Logotipo oficial de Brailux</string>
 
     <string name="braille_point_active">activo</string>
     <string name="braille_point_inactive">inactivo</string>
@@ -7,14 +8,23 @@
     <string name="braille_point_click_label">Cambiar el estado del punto %1$d</string>
 
     <string name="welcome_subtitle">Aprende Braille paso a paso</string>
+    <string name="welcome_brand_name">BRAILUX</string>
+    <string name="welcome_tag_learn">Aprende</string>
+    <string name="welcome_tag_practice">Practica</string>
+    <string name="welcome_tag_braille">Braille</string>
     <string name="welcome_start">Comenzar</string>
+    <string name="welcome_footer">NeuroNova</string>
 
     <string name="home_title">Inicio</string>
+    <string name="home_brand_name">BRAILUX</string>
+    <string name="home_brand_subtitle">Aprende Braille\npaso a paso</string>
+    <string name="home_open_settings">Abrir configuración</string>
     <string name="home_welcome_message">Elige una acción para continuar aprendiendo Braille.</string>
     <string name="home_continue_learning">Continuar aprendiendo</string>
     <string name="home_continue_learning_description">Abre las lecciones disponibles de Aprende.</string>
     <string name="home_access_practice">Práctica</string>
     <string name="home_access_practice_description">Elige un nivel o configura tu propia sesión.</string>
+    <string name="home_access_assistant_description">Pregunta y practica Braille con ayuda del asistente educativo.</string>
     <string name="home_daily_practice">Práctica diaria</string>
     <string name="home_daily_practice_description">Aquí encontrarás una actividad breve para reforzar lo aprendido.</string>
     <string name="home_daily_practice_details">5 ejercicios · 3–5 min</string>
@@ -54,7 +64,18 @@
     <string name="nav_selected_mark">✓</string>
 
     <string name="action_back">Volver</string>
+    <string name="action_back_description">Regresar a la pantalla anterior</string>
     <string name="content_coming_later">Próximamente</string>
+
+    <string name="assistant_title">Asistente Brailux</string>
+    <string name="assistant_description">Asistente especializado en el aprendizaje y la práctica del sistema Braille.</string>
+    <string name="assistant_empty_conversation">Escribe una pregunta sobre Braille para comenzar.</string>
+    <string name="assistant_user_label">Tú</string>
+    <string name="assistant_label">Asistente Brailux</string>
+    <string name="assistant_loading">El Asistente Brailux está preparando una respuesta.</string>
+    <string name="assistant_input_label">Tu pregunta</string>
+    <string name="assistant_input_placeholder">Escribe una pregunta sobre Braille</string>
+    <string name="assistant_send">Enviar</string>
 
     <string name="learn_title">Aprende</string>
     <string name="learn_description">Conoce los fundamentos del sistema Braille mediante lecciones guiadas.</string>
@@ -299,9 +320,24 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="settings_title">Configuración</string>
     <string name="settings_description">Personaliza la apariencia, la accesibilidad y la retroalimentación de toda la aplicación.</string>
     <string name="settings_appearance">Apariencia</string>
-    <string name="settings_appearance_system">Seguir sistema</string>
+    <string name="settings_appearance_system">Sistema</string>
     <string name="settings_appearance_light">Claro</string>
     <string name="settings_appearance_dark">Oscuro</string>
+    <string name="settings_wallpaper">Fondo de pantalla</string>
+    <string name="settings_wallpaper_description">Elige el fondo visual de la aplicación.</string>
+    <string name="background_default">Predeterminado</string>
+    <string name="background_celeste_geometrico">Celeste geométrico</string>
+    <string name="background_crema_ondas">Crema con ondas</string>
+    <string name="background_lavanda_niebla">Lavanda niebla</string>
+    <string name="background_salvia_textura">Salvia textura</string>
+    <string name="settings_background_premium">Premium</string>
+    <string name="settings_background_locked">Bloqueado</string>
+    <string name="settings_background_available_with_premium">Disponible con Premium</string>
+    <string name="settings_background_selected">Fondo seleccionado</string>
+    <string name="settings_accessibility">Accesibilidad</string>
+    <string name="settings_interaction">Interacción</string>
+    <string name="settings_personalization">Personalización</string>
+    <string name="settings_information">Información</string>
     <string name="settings_sound">Sonido</string>
     <string name="settings_vibration">Vibración</string>
     <string name="settings_high_contrast">Modo de alto contraste</string>
@@ -317,6 +353,9 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="settings_seasonal_themes_description">Aplica detalles visuales discretos durante fechas especiales.</string>
     <string name="settings_seasonal_themes_enabled">Activados</string>
     <string name="settings_seasonal_themes_disabled">Desactivados</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_about_description">Información de Brailux, privacidad, soporte, licencias y enlaces oficiales.</string>
+    <string name="settings_open_about_accessibility">Abrir Acerca de</string>
 
     <string name="seasonal_banner_label">Tema de temporada</string>
     <string name="seasonal_banner_hide">Ocultar</string>
@@ -340,22 +379,67 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="season_message_new_year">Un nuevo año para seguir aprendiendo paso a paso.</string>
 
     <string name="about_title">Acerca de</string>
-    <string name="about_app_name">Aplicación: Brailux Aprende</string>
-    <string name="about_version">Versión: 1.0</string>
-    <string name="about_purpose">Propósito: enseñar los fundamentos del sistema Braille mediante lecciones, prácticas y juegos accesibles.</string>
-    <string name="about_offline">La aplicación funciona completamente sin conexión.</string>
-    <string name="about_educational_notice">Brailux Aprende es una herramienta educativa y no sustituye la formación especializada.</string>
-    <string name="about_studio_description">Matriz de aplicaciones educativas y accesibles.</string>
-    <string name="about_studio_membership">Brailux Aprende forma parte de %1$s.</string>
-    <string name="about_developer_credit">Desarrollado por %1$s</string>
-    <string name="about_brailux_website">Visitar sitio de Brailux Aprende</string>
-    <string name="about_studio_website">Conocer %1$s</string>
+    <string name="about_app_name">Brailux</string>
+    <string name="about_subtitle">Aprende Braille paso a paso</string>
+    <string name="about_version">Versión %1$s</string>
+    <string name="about_studio_name">NeuroNova Apps</string>
+    <string name="about_section_brailux">Sobre Brailux</string>
+    <string name="about_brailux_description">Brailux es una aplicación educativa de NeuroNova Apps orientada a conocer, comprender y practicar los fundamentos del sistema Braille mediante una experiencia accesible e interactiva.</string>
+    <string name="about_section_purpose">Propósito</string>
+    <string name="about_purpose_description">Brailux funciona como un recurso introductorio y complementario para comprender la celda Braille, la formación de caracteres y algunos principios de lectura y escritura. No sustituye la alfabetización Braille formal, los materiales táctiles ni la enseñanza especializada.</string>
+    <string name="about_section_features">Características</string>
+    <string name="about_list_item">• %1$s</string>
+    <string-array name="about_features">
+        <item>Aprendizaje de la celda Braille de seis puntos.</item>
+        <item>Lecciones guiadas.</item>
+        <item>Reconocimiento de letras y caracteres.</item>
+        <item>Práctica de lectura.</item>
+        <item>Sesiones de práctica configurables.</item>
+        <item>Pistas y ayudas.</item>
+        <item>Práctica diaria.</item>
+        <item>Seguimiento local del progreso.</item>
+        <item>XP, constancia y logros.</item>
+        <item>Funcionamiento sin conexión.</item>
+    </string-array>
+    <string name="about_section_accessibility">Accesibilidad y personalización</string>
+    <string-array name="about_accessibility_features">
+        <item>Compatibilidad con TalkBack.</item>
+        <item>Alto contraste.</item>
+        <item>Tamaños de texto.</item>
+        <item>Modo claro.</item>
+        <item>Modo oscuro.</item>
+        <item>Adaptación al sistema.</item>
+        <item>Sonido configurable.</item>
+        <item>Vibración configurable.</item>
+        <item>Controles con áreas táctiles adecuadas.</item>
+        <item>Estados que no dependen únicamente del color.</item>
+    </string-array>
+    <string name="about_section_privacy">Privacidad y datos</string>
+    <string name="about_privacy_description">El progreso y las preferencias se guardan localmente en el dispositivo. Brailux funciona sin conexión y no requiere una cuenta.</string>
     <string name="about_privacy_policy">Política de privacidad</string>
-    <string name="about_coming_soon">Próximamente</string>
-    <string name="about_open_website">Abrir</string>
-    <string name="about_brailux_website_accessibility">Visitar sitio web de Brailux Aprende.</string>
-    <string name="about_studio_website_accessibility">Conocer %1$s.</string>
-    <string name="about_future_accessibility">%1$s. %2$s.</string>
+    <string name="about_section_terms">Términos y condiciones</string>
+    <string name="about_terms">Consultar términos y condiciones</string>
+    <string name="about_section_licenses">Licencias y atribuciones</string>
+    <string name="about_licenses">Consultar licencias y atribuciones</string>
+    <string name="about_section_support">Soporte</string>
+    <string name="about_contact_support">Contactar con soporte</string>
+    <string name="about_report_issue">Reportar un problema</string>
+    <string name="about_section_neuronova">NeuroNova Apps</string>
+    <string name="about_more_apps">Más aplicaciones de NeuroNova Apps</string>
+    <string name="about_official_website">Sitio oficial</string>
+    <string name="about_section_online">Brailux en línea</string>
+    <string name="about_brailux_website">Sitio de Brailux</string>
+    <string name="about_repository">Repositorio en GitHub</string>
+    <string name="about_repository_accessibility">Abrir el repositorio de Brailux en GitHub</string>
+    <string name="about_external_link_accessibility">Abrir enlace externo: %1$s</string>
+    <string name="about_section_app_information">Información de la aplicación</string>
+    <string name="about_app_info_version">Versión: %1$s</string>
+    <string name="about_app_info_build">Compilación: %1$d</string>
+    <string name="about_app_info_developer">Desarrollador: %1$s</string>
+    <string name="about_section_credits">Créditos</string>
+    <string name="about_developed_by">Desarrollado por %1$s.</string>
+    <string name="about_created_by">Creado por %1$s.</string>
+    <string name="about_copyright">© 2026 NeuroNova Apps. Todos los derechos reservados.</string>
 
     <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>
     <string name="lesson_columns_explanation">La columna izquierda contiene los puntos 1, 2 y 3. La columna derecha contiene los puntos 4, 5 y 6. En ambas columnas la numeración avanza de arriba hacia abajo.</string>

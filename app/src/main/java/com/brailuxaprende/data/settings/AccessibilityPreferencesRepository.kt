@@ -20,6 +20,7 @@ internal const val HighContrastEnabledKeyName = "high_contrast_enabled"
 internal const val TextSizeKeyName = "text_size"
 internal const val AppearanceKeyName = "appearance"
 internal const val SeasonalThemesEnabledKeyName = "seasonal_themes_enabled"
+internal const val SelectedBackgroundIdKeyName = "selected_background_id"
 
 val Context.accessibilityPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = DataStoreName,
@@ -62,6 +63,12 @@ class AccessibilityPreferencesRepository(
         dataStore.edit { preferences -> preferences[SeasonalThemesEnabledKey] = enabled }
     }
 
+    suspend fun setSelectedBackgroundId(backgroundId: String) {
+        dataStore.edit { preferences ->
+            preferences[SelectedBackgroundIdKey] = BrailuxBackgroundCatalog.normalizedId(backgroundId)
+        }
+    }
+
     private companion object {
         val SoundEnabledKey = booleanPreferencesKey(SoundEnabledKeyName)
         val VibrationEnabledKey = booleanPreferencesKey(VibrationEnabledKeyName)
@@ -69,6 +76,7 @@ class AccessibilityPreferencesRepository(
         val TextSizeKey = stringPreferencesKey(TextSizeKeyName)
         val AppearanceKey = stringPreferencesKey(AppearanceKeyName)
         val SeasonalThemesEnabledKey = booleanPreferencesKey(SeasonalThemesEnabledKeyName)
+        val SelectedBackgroundIdKey = stringPreferencesKey(SelectedBackgroundIdKeyName)
     }
 }
 
@@ -80,6 +88,9 @@ private fun Preferences.toAccessibilityPreferences(): AccessibilityPreferences =
         textSize = TextSizePreference.fromStoredValue(valueNamed(TextSizeKeyName) as? String),
         appearance = AppearancePreference.fromStoredValue(valueNamed(AppearanceKeyName) as? String),
         seasonalThemesEnabled = valueNamed(SeasonalThemesEnabledKeyName) as? Boolean ?: true,
+        selectedBackgroundId = BrailuxBackgroundCatalog.normalizedId(
+            valueNamed(SelectedBackgroundIdKeyName) as? String,
+        ),
     )
 
 private fun Preferences.valueNamed(name: String): Any? =
