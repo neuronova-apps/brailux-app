@@ -88,13 +88,13 @@ class ProgressNavigationTest {
 
     private fun assertFunctionalProgressScreen() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        composeRule.onNodeWithText(context.getString(R.string.progress_level_1_title))
-            .performScrollTo()
-            .assertIsDisplayed()
-        assertProgressValue(R.string.progress_sessions_label, "2")
-        assertProgressValue(R.string.progress_exercises_label, "12")
-        assertProgressValue(R.string.progress_first_attempt_label, "9")
-        assertProgressValue(R.string.progress_accuracy_label, "75%")
+
+        // Subtabs should be present
+        composeRule.onNodeWithText(context.getString(R.string.progress_tab_summary)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.progress_tab_statistics)).assertIsDisplayed()
+        composeRule.onNodeWithText(context.getString(R.string.progress_tab_achievements)).assertIsDisplayed()
+
+        // 1. Default Tab: Resumen
         composeRule.onNodeWithContentDescription("XP acumulado, 320 XP")
             .performScrollTo()
             .assertIsDisplayed()
@@ -110,6 +110,19 @@ class ProgressNavigationTest {
         composeRule.onNodeWithText(context.getString(R.string.progress_mini_achievement_title))
             .performScrollTo()
             .assertIsDisplayed()
+
+        // 2. Switch to Estadísticas
+        composeRule.onNodeWithText(context.getString(R.string.progress_tab_statistics))
+            .performScrollTo()
+            .performClick()
+
+        composeRule.onNodeWithText(context.getString(R.string.progress_level_1_title))
+            .performScrollTo()
+            .assertIsDisplayed()
+        assertProgressValue(R.string.progress_sessions_label, "2")
+        assertProgressValue(R.string.progress_exercises_label, "12")
+        assertProgressValue(R.string.progress_first_attempt_label, "9")
+        assertProgressValue(R.string.progress_accuracy_label, "75%")
         composeRule.onNodeWithText(context.getString(R.string.progress_level_2_title))
             .performScrollTo()
             .assertIsDisplayed()
@@ -120,6 +133,15 @@ class ProgressNavigationTest {
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Los seis puntos Braille. Estado: Completada.")
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // 3. Switch to Logros
+        composeRule.onNodeWithText(context.getString(R.string.progress_tab_achievements))
+            .performScrollTo()
+            .performClick()
+
+        composeRule.onNodeWithText(context.getString(R.string.progress_achievements_title))
             .performScrollTo()
             .assertIsDisplayed()
         composeRule.onNodeWithContentDescription(

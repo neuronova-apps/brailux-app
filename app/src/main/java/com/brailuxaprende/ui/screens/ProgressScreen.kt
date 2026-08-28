@@ -4,11 +4,13 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
@@ -19,14 +21,21 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -46,15 +55,26 @@ import com.brailuxaprende.practice.WeeklyPracticeTarget
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 
+enum class ProgressTab(
+    @param:StringRes val labelResource: Int,
+) {
+    Summary(R.string.progress_tab_summary),
+    Statistics(R.string.progress_tab_statistics),
+    Achievements(R.string.progress_tab_achievements),
+}
+
 @Composable
 fun ProgressScreen(
     progress: PracticeProgress,
     learningProgress: LearningProgress = LearningProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
     currentDate: PracticeDate = SystemPracticeClock.today(),
+    initialTab: ProgressTab = ProgressTab.Summary,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var selectedTab by rememberSaveable { mutableStateOf(initialTab) }
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -72,28 +92,101 @@ fun ProgressScreen(
                 onBack = onBack,
             )
             Spacer(modifier = Modifier.height(20.dp))
-            ProgressContentCard {
-                GeneralSummary(engagementProgress, currentDate)
-            }
-            ProgressSpacer()
-            ProgressContentCard {
-                ConsistencySection(engagementProgress, currentDate)
-            }
-            ProgressSpacer()
-            ProgressContentCard {
-                DailyMiniAchievementSection(engagementProgress, currentDate)
-            }
-            ProgressSpacer()
-            PracticeProgressSection(progress)
-            ProgressSpacer()
-            ProgressContentCard {
-                LearningProgressSection(learningProgress)
-            }
-            ProgressSpacer()
-            ProgressContentCard {
-                PermanentAchievementsSection(engagementProgress.unlockedAchievements)
+            ProgressTabSelector(
+                selectedTab = selectedTab,
+                onTabSelected = { selectedTab = it },
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            when (selectedTab) {
+                ProgressTab.Summary -> {
+                    ProgressContentCard {
+                        GeneralSummary(engagementProgress, currentDate)
+                    }
+                    ProgressSpacer()
+                    ProgressContentCard {
+                        ConsistencySection(engagementProgress, currentDate)
+                    }
+                    ProgressSpacer()
+                    ProgressContentCard {
+                        DailyMiniAchievementSection(engagementProgress, currentDate)
+                    }
+                }
+                ProgressTab.Statistics -> {
+                    PracticeProgressSection(progress)
+                    ProgressSpacer()
+                    ProgressContentCard {
+                        LearningProgressSection(learningProgress)
+                    }
+                }
+                ProgressTab.Achievements -> {
+                    ProgressContentCard {
+                        PermanentAchievementsSection(engagementProgress.unlockedAchievements)
+                    }
+                }
             }
             Spacer(modifier = Modifier.height(20.dp))
+        }
+    }
+}
+
+@Composable
+fun ProgressTabSelector(
+    selectedTab: ProgressTab,
+    onTabSelected: (ProgressTab) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 560.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ProgressTab.entries.forEach { tab ->
+            val isSelected = tab == selectedTab
+            val label = stringResource(tab.labelResource)
+            val tabDescription = stringResource(R.string.progress_tab_accessibility, label)
+            Surface(
+                onClick = { onTabSelected(tab) },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .semantics {
+                        this.selected = isSelected
+                        role = Role.Tab
+                        contentDescription = tabDescription
+                    },
+                shape = MaterialTheme.shapes.medium,
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surface
+                },
+                contentColor = if (isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                border = BorderStroke(
+                    width = if (isSelected) 2.dp else 1.dp,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant
+                    },
+                ),
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                }
+            }
         }
     }
 }

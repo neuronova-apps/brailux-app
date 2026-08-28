@@ -213,6 +213,10 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="play_description">Aquí encontrarás juegos educativos para practicar Braille.</string>
     <string name="progress_title">Mi progreso</string>
     <string name="progress_description">Consulta cómo estás avanzando en Aprende y Práctica.</string>
+    <string name="progress_tab_summary">Resumen</string>
+    <string name="progress_tab_statistics">Estadísticas</string>
+    <string name="progress_tab_achievements">Logros</string>
+    <string name="progress_tab_accessibility">Pestaña %1$s</string>
     <string name="progress_summary_title">Resumen general</string>
     <string name="progress_current_streak">Racha actual</string>
     <string name="progress_total_xp">XP acumulado</string>
