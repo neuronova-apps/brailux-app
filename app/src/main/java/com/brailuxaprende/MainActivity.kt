@@ -197,18 +197,21 @@ class MainActivity : ComponentActivity() {
                     onLevel1SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel1Session(
                             summary = summary,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },
                     onLevel2SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel2Session(
                             summary = summary,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },
                     onLevel3SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel3Session(
                             summary = summary,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },
@@ -216,18 +219,22 @@ class MainActivity : ComponentActivity() {
                     onCustomSessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordCustomSession(
                             summary = summary,
+                            customConfiguration = customPracticeConfiguration,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },
                     onDailySessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordDailySession(
                             summary = summary,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },
                     onDailyChallengeSessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordDailyChallengeSession(
                             summary = summary,
+                            learningProgress = learningProgress,
                             onRecorded = onRecorded,
                         )
                     },

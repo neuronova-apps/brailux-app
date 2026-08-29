@@ -6,12 +6,17 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
-import java.io.IOException
+import com.brailuxaprende.data.learn.LearningProgress
+import com.brailuxaprende.practice.CustomPracticeConfiguration
 import com.brailuxaprende.practice.EngagementSession
 import com.brailuxaprende.practice.EngagementUpdate
 import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.PracticeExerciseResult
+import com.brailuxaprende.practice.PracticeLevel
 import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.PracticeSessionKind
+import com.brailuxaprende.practice.PrecisionAchievementEligibility
+import java.io.IOException
 import java.util.UUID
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -135,7 +140,9 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.SignToCharacter,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -145,6 +152,11 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.BrailleExplorer,
+            mode = mode,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val engagementRecord = preferences.recordEngagement(
@@ -156,8 +168,11 @@ class PracticeProgressRepository(
                     errors = errors,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = requireNotNull(PracticeDate.parse(practiceDate)),
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded) {
@@ -210,7 +225,9 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.SignToCharacter,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -221,6 +238,11 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.BrailleRecognizer,
+            mode = mode,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val engagementRecord = preferences.recordEngagement(
@@ -233,8 +255,11 @@ class PracticeProgressRepository(
                     hintsUsed = hintsUsed,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = requireNotNull(PracticeDate.parse(practiceDate)),
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded) {
@@ -271,7 +296,9 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.SignToCharacter,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -281,6 +308,11 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.BrailleChallenge,
+            mode = mode,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val engagementRecord = preferences.recordEngagement(
@@ -292,8 +324,11 @@ class PracticeProgressRepository(
                     errors = errors,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = requireNotNull(PracticeDate.parse(practiceDate)),
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded) {
@@ -329,7 +364,10 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.SignToCharacter,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
+        customConfiguration: CustomPracticeConfiguration? = null,
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -340,6 +378,12 @@ class PracticeProgressRepository(
 
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.Custom,
+            mode = mode,
+            customConfiguration = customConfiguration,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val engagementRecord = preferences.recordEngagement(
@@ -352,8 +396,11 @@ class PracticeProgressRepository(
                     hintsUsed = hintsUsed,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = requireNotNull(PracticeDate.parse(practiceDate)),
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded) {
@@ -390,7 +437,9 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.Mixed,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -401,6 +450,11 @@ class PracticeProgressRepository(
         val parsedDate = requireNotNull(PracticeDate.parse(practiceDate))
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.Daily,
+            mode = mode,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val currentEngagement = preferences.toEngagementProgress()
@@ -415,8 +469,11 @@ class PracticeProgressRepository(
                     errors = errors,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = parsedDate,
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded || wasAlreadyCompletedToday) {
@@ -451,7 +508,9 @@ class PracticeProgressRepository(
         practiceDate: String,
         mode: PracticeMode = PracticeMode.Mixed,
         longestFirstAttemptCorrectStreak: Int = 0,
+        exerciseResults: List<PracticeExerciseResult> = emptyList(),
         sessionId: String = UUID.randomUUID().toString(),
+        learningProgress: LearningProgress = LearningProgress(),
     ): PracticeProgressRecord {
         require(exercisesCompleted > 0)
         require(firstAttemptCorrect in 0..exercisesCompleted)
@@ -462,6 +521,11 @@ class PracticeProgressRepository(
         val parsedDate = requireNotNull(PracticeDate.parse(practiceDate))
         var recordedProgress: PracticeProgress? = null
         var engagementUpdate: EngagementUpdate? = null
+        val isPrecisionEligible = PrecisionAchievementEligibility.isEligible(
+            level = PracticeLevel.DailyChallenge,
+            mode = mode,
+            learningProgress = learningProgress,
+        )
         dataStore.edit { preferences ->
             val currentProgress = preferences.toPracticeProgress()
             val currentEngagement = preferences.toEngagementProgress()
@@ -476,8 +540,11 @@ class PracticeProgressRepository(
                     errors = errors,
                     mode = mode,
                     longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                    exerciseResults = exerciseResults,
+                    isPrecisionEligible = isPrecisionEligible,
                 ),
                 date = parsedDate,
+                learningProgress = learningProgress,
             )
             engagementUpdate = engagementRecord.update
             if (!engagementRecord.isNewlyRecorded || wasAlreadyCompletedToday) {

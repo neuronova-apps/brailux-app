@@ -1069,13 +1069,27 @@ internal fun BraillePracticeSummary(
                             ),
                         )
                     }
-                    if (engagementReward.newlyUnlockedAchievements.isNotEmpty()) {
+                    val activeNewAchievements = engagementReward.newlyUnlockedAchievements.filterNot { it.isLegacy }
+                    if (activeNewAchievements.isNotEmpty()) {
+                        val count = activeNewAchievements.size
                         SummaryLine(
-                            stringResource(
-                                R.string.daily_practice_reward_achievements,
-                                engagementReward.newlyUnlockedAchievements.size,
-                            ),
+                            text = if (count == 1) {
+                                stringResource(
+                                    R.string.reward_new_badge_accessibility,
+                                    stringResource(activeNewAchievements.first().titleResource()),
+                                )
+                            } else {
+                                stringResource(R.string.reward_new_badge_plural, count)
+                            },
+                            fontWeight = FontWeight.SemiBold,
                         )
+                        if (count > 1) {
+                            activeNewAchievements.forEach { achievement ->
+                                SummaryLine(
+                                    text = "• " + stringResource(achievement.titleResource()),
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -1145,13 +1159,14 @@ private fun XpRewardSummary(xpEarned: Int) {
 }
 
 @Composable
-private fun SummaryLine(text: String) {
+private fun SummaryLine(text: String, fontWeight: FontWeight = FontWeight.Normal) {
     Text(
         text = text,
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 6.dp),
         style = MaterialTheme.typography.bodyLarge,
+        fontWeight = fontWeight,
     )
 }
 

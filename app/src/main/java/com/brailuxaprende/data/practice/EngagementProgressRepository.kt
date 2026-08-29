@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
+import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.EngagementEngine
 import com.brailuxaprende.practice.EngagementProgress
@@ -36,10 +37,11 @@ class EngagementProgressRepository(
     suspend fun recordSession(
         session: EngagementSession,
         date: PracticeDate,
+        learningProgress: LearningProgress = LearningProgress(),
     ): EngagementUpdate {
         var record: EngagementRecordResult? = null
         dataStore.edit { preferences ->
-            record = preferences.recordEngagement(session, date)
+            record = preferences.recordEngagement(session, date, learningProgress)
         }
         return checkNotNull(record).update
     }
@@ -53,6 +55,7 @@ internal data class EngagementRecordResult(
 internal fun MutablePreferences.recordEngagement(
     session: EngagementSession,
     date: PracticeDate,
+    learningProgress: LearningProgress = LearningProgress(),
 ): EngagementRecordResult {
     val current = toEngagementProgress()
     if (session.id in this[RecordedSessionIdsKey].orEmpty()) {
@@ -72,7 +75,7 @@ internal fun MutablePreferences.recordEngagement(
         )
     }
 
-    val update = EngagementEngine.recordSession(current, session, date)
+    val update = EngagementEngine.recordSession(current, session, date, learningProgress)
     writeEngagement(update.progress)
     this[RecordedSessionIdsKey] = this[RecordedSessionIdsKey].orEmpty() + session.id
     this[recordedRewardKey(session.id)] = update.reward.toStoredValue()
@@ -106,8 +109,8 @@ private fun String.toEngagementReward(): EngagementReward? {
     val achievements = if (parts[5].isEmpty()) {
         emptySet()
     } else {
-        parts[5].split(',').map { storedName ->
-            PermanentAchievement.entries.firstOrNull { it.name == storedName } ?: return null
+        parts[5].split(',').mapNotNull { storedName ->
+            PermanentAchievement.entries.firstOrNull { it.name == storedName }
         }.toSet()
     }
     return EngagementReward(
@@ -140,6 +143,10 @@ internal fun Preferences.toEngagementProgress(): EngagementProgress {
         dailyPracticeDates = parseDates(this[DailyPracticeDatesKey]),
         dailyChallengeDates = parseDates(this[DailyChallengeDatesKey]),
         dailyChallengeSessions = this[EngagementDailyChallengeSessionsKey] ?: 0,
+        recognizerMixedSessions = this[EngagementRecognizerMixedSessionsKey] ?: 0,
+        challengeMixedSessions = this[EngagementChallengeMixedSessionsKey] ?: 0,
+        currentPrecisionStreak = this[EngagementCurrentPrecisionStreakKey] ?: 0,
+        bestPrecisionStreak = this[EngagementBestPrecisionStreakKey] ?: 0,
         currentMonthKey = this[CurrentMonthKey]?.takeIf(MonthKeyPattern::matches),
         currentMonthExercises = this[CurrentMonthExercisesKey] ?: 0,
         completedMonthGoals = parseNames(this[CompletedMonthGoalsKey])
@@ -147,6 +154,7 @@ internal fun Preferences.toEngagementProgress(): EngagementProgress {
             .toSet(),
         monthlyExerciseCounts = parseMonthlyCounts(this[MonthlyExerciseCountsKey]),
         unlockedAchievements = parseEnumNames<PermanentAchievement>(this[AchievementsKey]),
+        achievementUnlockDates = parseAchievementUnlockDates(this[EngagementAchievementUnlockDatesKey]),
         miniAchievementDate = PracticeDate.parse(this[MiniDateKey]),
         miniAchievementType = parseEnumName<DailyMiniAchievement>(this[MiniTypeKey]),
         miniAchievementProgress = this[MiniProgressKey] ?: 0,
@@ -175,33 +183,25 @@ private fun Preferences.migratedLegacyProgress(): EngagementProgress {
     val sortedDates = knownDates.sorted()
     val streakRuns = consecutiveRuns(sortedDates)
     val streak = streakRuns.lastOrNull() ?: 0
-    val achievements = buildSet {
-        if (totalSessions >= 1) add(PermanentAchievement.FirstStep)
-        if (knownDates.size >= 3) add(PermanentAchievement.Consistency)
-        if (knownDates.groupingBy { it.weekStart }.eachCount().values.any { it >= 5 }) {
-            add(PermanentAchievement.WeekInMotion)
-        }
-        if (level1Sessions >= 5) add(PermanentAchievement.Explorer)
-        if (level2Sessions >= 5) add(PermanentAchievement.Recognizer)
-        if (level3Sessions >= 3) add(PermanentAchievement.Challenger)
-        if (totalExercises >= 100) add(PermanentAchievement.HundredExercises)
-    }
-    val xp = totalExercises * 2L +
-        level1Sessions * 10L +
-        level2Sessions * 15L +
-        level3Sessions * 20L
-
-    return EngagementProgress(
-        totalXp = xp,
-        activityDates = knownDates,
-        lastActivityDate = knownDates.maxOrNull(),
-        currentStreak = streak,
-        bestStreak = streakRuns.maxOrNull() ?: 0,
+    val base = EngagementProgress(
         totalSessions = totalSessions,
         totalExercises = totalExercises,
         level1Sessions = level1Sessions,
         level2Sessions = level2Sessions,
         level3Sessions = level3Sessions,
+        activityDates = knownDates,
+        lastActivityDate = knownDates.maxOrNull(),
+        currentStreak = streak,
+        bestStreak = streakRuns.maxOrNull() ?: 0,
+    )
+    val achievements = EngagementEngine.evaluateAchievements(base)
+    val xp = totalExercises * 2L +
+        level1Sessions * 10L +
+        level2Sessions * 15L +
+        level3Sessions * 20L
+
+    return base.copy(
+        totalXp = xp,
         unlockedAchievements = achievements,
     )
 }
@@ -222,6 +222,14 @@ private fun MutablePreferences.writeEngagement(progress: EngagementProgress) {
     this[DailyPracticeDatesKey] = progress.dailyPracticeDates.toStoredDates()
     this[DailyChallengeDatesKey] = progress.dailyChallengeDates.toStoredDates()
     this[EngagementDailyChallengeSessionsKey] = progress.dailyChallengeSessions
+    this[EngagementRecognizerMixedSessionsKey] = progress.recognizerMixedSessions
+    this[EngagementChallengeMixedSessionsKey] = progress.challengeMixedSessions
+    this[EngagementCurrentPrecisionStreakKey] = progress.currentPrecisionStreak
+    this[EngagementBestPrecisionStreakKey] = progress.bestPrecisionStreak
+    this[EngagementAchievementUnlockDatesKey] = progress.achievementUnlockDates
+        .toSortedMap(compareBy { it.name })
+        .entries
+        .joinToString(";") { (achievement, date) -> "${achievement.name}=${date.isoValue}" }
     progress.currentMonthKey?.let { this[CurrentMonthKey] = it }
     this[CurrentMonthExercisesKey] = progress.currentMonthExercises
     this[CompletedMonthGoalsKey] = progress.completedMonthGoals.sorted().joinToString(",")
@@ -268,6 +276,20 @@ private fun parseMonthlyCounts(value: String?): Map<String, Int> = value
     }
     .toMap()
 
+private fun parseAchievementUnlockDates(value: String?): Map<PermanentAchievement, PracticeDate> = value
+    .orEmpty()
+    .split(';')
+    .mapNotNull { entry ->
+        val parts = entry.split('=', limit = 2)
+        val achievementName = parts.getOrNull(0) ?: return@mapNotNull null
+        val achievement = PermanentAchievement.entries.firstOrNull { it.name == achievementName }
+            ?: return@mapNotNull null
+        val dateString = parts.getOrNull(1) ?: return@mapNotNull null
+        val date = PracticeDate.parse(dateString) ?: return@mapNotNull null
+        achievement to date
+    }
+    .toMap()
+
 private fun consecutiveRuns(dates: List<PracticeDate>): List<Int> {
     if (dates.isEmpty()) return emptyList()
     val runs = mutableListOf<Int>()
@@ -296,7 +318,7 @@ private inline fun <reified T : Enum<T>> parseEnumName(value: String?): T? =
 private inline fun <reified T : Enum<T>> parseEnumNames(value: String?): Set<T> =
     parseNames(value).mapNotNull { name -> enumValues<T>().firstOrNull { it.name == name } }.toSet()
 
-private const val EngagementSchemaVersion = 1
+private const val EngagementSchemaVersion = 2
 private val EngagementSchemaVersionKey = intPreferencesKey("engagement_schema_version")
 private val TotalXpKey = longPreferencesKey("engagement_total_xp")
 private val ActivityDatesKey = stringPreferencesKey("engagement_activity_dates")
@@ -312,6 +334,11 @@ private val EngagementCustomSessionsKey = intPreferencesKey("engagement_custom_s
 private val DailyPracticeDatesKey = stringPreferencesKey("engagement_daily_practice_dates")
 private val DailyChallengeDatesKey = stringPreferencesKey("engagement_daily_challenge_dates")
 private val EngagementDailyChallengeSessionsKey = intPreferencesKey("engagement_daily_challenge_sessions")
+private val EngagementRecognizerMixedSessionsKey = intPreferencesKey("engagement_recognizer_mixed_sessions")
+private val EngagementChallengeMixedSessionsKey = intPreferencesKey("engagement_challenge_mixed_sessions")
+private val EngagementCurrentPrecisionStreakKey = intPreferencesKey("engagement_current_precision_streak")
+private val EngagementBestPrecisionStreakKey = intPreferencesKey("engagement_best_precision_streak")
+private val EngagementAchievementUnlockDatesKey = stringPreferencesKey("engagement_achievement_unlock_dates")
 private val CurrentMonthKey = stringPreferencesKey("engagement_current_month")
 private val CurrentMonthExercisesKey = intPreferencesKey("engagement_current_month_exercises")
 private val CompletedMonthGoalsKey = stringPreferencesKey("engagement_completed_month_goals")

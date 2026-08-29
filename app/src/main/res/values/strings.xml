@@ -400,30 +400,107 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_monthly_goal_completed">Completada</string>
     <string name="progress_monthly_goal_in_progress">En progreso</string>
     <string name="progress_monthly_goal_accessibility">%1$d de %2$d ejercicios completados. Estado: %3$s.</string>
-    <string name="progress_achievements_title">Logros permanentes</string>
-    <string name="progress_achievements_description">Cada logro se obtiene una sola vez y nunca se pierde.</string>
-    <string name="progress_no_achievements">Aún no has obtenido logros. Cada sesión completada cuenta.</string>
-    <string name="progress_achievement_unlocked">Obtenido</string>
-    <string name="progress_achievement_pending">Pendiente</string>
-    <string name="progress_achievement_accessibility">%1$s. %2$s. Estado: %3$s.</string>
     <string name="progress_learning_title">Progreso en Aprende</string>
     <string name="progress_learning_completed_label">Lecciones completadas</string>
     <string name="progress_learning_completed_value">%1$d de %2$d</string>
     <string name="progress_learning_percentage_label">Progreso en lecciones</string>
     <string name="progress_learning_summary_accessibility">Progreso en Aprende: %1$d de %2$d lecciones completadas, %3$d por ciento.</string>
     <string name="progress_learning_accessibility">%1$s. Estado: %2$s.</string>
+    <string name="progress_achievements_title">Logros</string>
+    <string name="progress_achievements_description">Colección de 25 insignias permanentes orientadas a la constancia, la precisión y el dominio del Braille.</string>
+    <string name="progress_achievements_header_summary">%1$d de %2$d conseguidos</string>
+    <string name="progress_achievements_header_summary_accessibility">Logros. %1$d de %2$d insignias conseguidas.</string>
+    <string name="progress_precision_header_summary">Racha actual: %1$d · Mejor racha: %2$d</string>
+    <string name="progress_precision_header_summary_accessibility">Precisión. Racha actual: %1$d respuestas consecutivas. Mejor racha: %2$d respuestas consecutivas.</string>
+    <string name="progress_no_achievements">Aún no has obtenido logros. Cada sesión completada cuenta.</string>
+    <string name="progress_achievement_unlocked">Conseguida</string>
+    <string name="progress_achievement_unlocked_with_date">Conseguida · %1$s</string>
+    <string name="progress_achievement_in_progress">En progreso</string>
+    <string name="progress_achievement_locked">Bloqueada</string>
+    <string name="progress_achievement_pending">Pendiente</string>
+    <string name="progress_achievement_accessibility">%1$s. %2$s. Estado: %3$s.</string>
+    <string name="progress_achievement_progress_accessibility">%1$s. %2$s. Estado: %3$s. Progreso: %4$s.</string>
+
+    <string name="achievements_family_learning_path">Camino de aprendizaje</string>
+    <string name="achievements_family_consistency">Constancia</string>
+    <string name="achievements_family_trajectory">Trayectoria Braille</string>
+    <string name="achievements_family_precision">Precisión</string>
+    <string name="achievements_family_mixed_mastery">Dominio mixto</string>
+    <string name="achievements_family_daily">Reto diario</string>
+
+    <string name="badge_progress_exercises">%1$d / %2$d ejercicios</string>
+    <string name="badge_progress_sessions">%1$d / %2$d sesiones</string>
+    <string name="badge_progress_lessons">%1$d / %2$d lecciones</string>
+    <string name="badge_progress_days">%1$d / %2$d días</string>
+    <string name="badge_progress_consecutive_days">%1$d / %2$d días consecutivos</string>
+    <string name="badge_progress_consecutive_days_with_best">%1$d / %2$d días consecutivos · Mejor racha: %3$d días</string>
+    <string name="badge_progress_precision_streak">Mejor racha: %1$d / %2$d respuestas</string>
+
+    <string name="reward_new_badge_singular">Nueva insignia</string>
+    <string name="reward_new_badge_plural">Nuevas insignias: %1$d</string>
+    <string name="reward_new_badge_accessibility">Insignia desbloqueada: %1$s.</string>
+
+    <!-- Familia A: Camino de aprendizaje -->
     <string name="achievement_first_step_title">Primer paso</string>
-    <string name="achievement_first_step_description">Completa tu primera sesión.</string>
+    <string name="achievement_first_step_description">Completa tu primera sesión de práctica.</string>
+    <string name="achievement_explorer_title">Explorador Braille</string>
+    <string name="achievement_explorer_description">Completa 5 sesiones en Nivel 1.</string>
+    <string name="achievement_recognizer_title">Reconocedor Braille</string>
+    <string name="achievement_recognizer_description">Completa 5 sesiones en Nivel 2.</string>
+    <string name="achievement_challenger_title">Desafiante Braille</string>
+    <string name="achievement_challenger_description">Completa 3 sesiones en Nivel 3.</string>
+    <string name="achievement_full_alphabet_title">Alfabeto completo</string>
+    <string name="achievement_full_alphabet_description">Completa las 5 lecciones del módulo Aprende.</string>
+
+    <!-- Familia B: Constancia -->
     <string name="achievement_consistency_title">Constancia</string>
-    <string name="achievement_consistency_description">Practica 3 días distintos.</string>
-    <string name="achievement_week_in_motion_title">Una semana en marcha</string>
-    <string name="achievement_week_in_motion_description">Practica 5 días distintos dentro de una semana.</string>
-    <string name="achievement_explorer_title">Explorador</string>
-    <string name="achievement_explorer_description">Completa 5 sesiones de Nivel 1.</string>
-    <string name="achievement_recognizer_title">Reconocedor</string>
-    <string name="achievement_recognizer_description">Completa 5 sesiones de Nivel 2.</string>
-    <string name="achievement_challenger_title">Desafiante</string>
-    <string name="achievement_challenger_description">Completa 3 sesiones de Nivel 3.</string>
+    <string name="achievement_consistency_description">Practica en 3 días distintos.</string>
+    <string name="achievement_week_in_motion_title">Semana en movimiento</string>
+    <string name="achievement_week_in_motion_description">Practica en 5 días distintos dentro de una misma semana.</string>
+    <string name="achievement_constant_week_title">Semana constante</string>
+    <string name="achievement_constant_week_description">Alcanza una racha de 7 días consecutivos de práctica.</string>
+    <string name="achievement_two_weeks_title">Dos semanas</string>
+    <string name="achievement_two_weeks_description">Alcanza una racha de 14 días consecutivos de práctica.</string>
+    <string name="achievement_consistency_month_title">Mes de constancia</string>
+    <string name="achievement_consistency_month_description">Alcanza una racha de 30 días consecutivos de práctica.</string>
+    <string name="achievement_superior_consistency_title">Constancia superior</string>
+    <string name="achievement_superior_consistency_description">Alcanza una racha de 60 días consecutivos de práctica.</string>
+
+    <!-- Familia C: Trayectoria Braille -->
+    <string name="achievement_bronze_title">Bronce Braille</string>
+    <string name="achievement_bronze_description">Completa 25 ejercicios acumulados.</string>
+    <string name="achievement_silver_title">Plata Braille</string>
+    <string name="achievement_silver_description">Completa 75 ejercicios acumulados.</string>
+    <string name="achievement_gold_title">Oro Braille</string>
+    <string name="achievement_gold_description">Completa 125 ejercicios acumulados.</string>
+    <string name="achievement_platinum_title">Platino Braille</string>
+    <string name="achievement_platinum_description">Completa 300 ejercicios acumulados.</string>
+    <string name="achievement_diamond_title">Diamante Braille</string>
+    <string name="achievement_diamond_description">Completa 600 ejercicios acumulados.</string>
+    <string name="achievement_braille_supremacy_title">Supremacía Braille</string>
+    <string name="achievement_braille_supremacy_description">Completa 1200 ejercicios acumulados.</string>
+
+    <!-- Familia D: Precisión -->
+    <string name="achievement_braille_focus_title">Enfoque Braille</string>
+    <string name="achievement_braille_focus_description">Consigue 5 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+    <string name="achievement_braille_rhythm_title">Ritmo Braille</string>
+    <string name="achievement_braille_rhythm_description">Consigue 10 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+    <string name="achievement_braille_precision_title">Precisión Braille</string>
+    <string name="achievement_braille_precision_description">Consigue 15 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+    <string name="achievement_sustained_reading_title">Lectura sostenida</string>
+    <string name="achievement_sustained_reading_description">Consigue 30 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+    <string name="achievement_constant_mastery_title">Dominio constante</string>
+    <string name="achievement_constant_mastery_description">Consigue 50 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+    <string name="achievement_superior_precision_title">Precisión superior</string>
+    <string name="achievement_superior_precision_description">Consigue 75 respuestas correctas consecutivas al primer intento y sin pistas en actividades elegibles.</string>
+
+    <!-- Familia E: Dominio mixto -->
+    <string name="achievement_double_meaning_title">Doble sentido</string>
+    <string name="achievement_double_meaning_description">Completa 5 sesiones en Nivel 2 Reconocedor en modo Mixto.</string>
+    <string name="achievement_bidirectional_reading_title">Lectura bidireccional</string>
+    <string name="achievement_bidirectional_reading_description">Completa 15 sesiones acumuladas entre Nivel 2 Mixto y Nivel 3 Mixto.</string>
+
+    <!-- Legacy -->
     <string name="achievement_hundred_exercises_title">100 ejercicios</string>
     <string name="achievement_hundred_exercises_description">Completa 100 ejercicios acumulados.</string>
 
