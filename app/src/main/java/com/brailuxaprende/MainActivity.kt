@@ -192,9 +192,8 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     onDailySessionCompleted = { summary, onRecorded ->
-                        engagementProgressState.recordSession(
+                        practiceProgressState.recordDailySession(
                             summary = summary,
-                            kind = PracticeSessionKind.Daily,
                             onRecorded = onRecorded,
                         )
                     },

@@ -85,6 +85,12 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.customHintsUsed)
         assertEquals(0, progress.customAccuracyPercentage)
         assertNull(progress.customLastPracticeDate)
+        assertEquals(0, progress.dailyCompletedSessions)
+        assertEquals(0, progress.dailyTotalExercises)
+        assertEquals(0, progress.dailyFirstAttemptCorrect)
+        assertEquals(0, progress.dailyErrors)
+        assertEquals(0, progress.dailyAccuracyPercentage)
+        assertNull(progress.dailyLastPracticeDate)
     }
 
     @Test
@@ -549,6 +555,116 @@ class PracticeProgressRepositoryTest {
             assertEquals(1, progress.customHintsUsed)
             assertEquals(80, progress.customAccuracyPercentage)
             assertEquals("2026-08-09", progress.customLastPracticeDate)
+        } finally {
+            collector.cancelAndJoin()
+        }
+    }
+
+    @Test
+    fun dailySessionRecordsCompletedSessionAndCounters() = runBlocking {
+        val result = repository.recordDailySession(
+            exercisesCompleted = 5,
+            firstAttemptCorrect = 4,
+            errors = 1,
+            practiceDate = "2026-08-11",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.dailyCompletedSessions)
+        assertEquals(5, progress.dailyTotalExercises)
+        assertEquals(4, progress.dailyFirstAttemptCorrect)
+        assertEquals(1, progress.dailyErrors)
+        assertEquals(80, progress.dailyAccuracyPercentage)
+        assertEquals("2026-08-11", progress.dailyLastPracticeDate)
+        assertEquals(result.practiceProgress, progress)
+        val expectedXp = if (result.engagementUpdate.reward.miniAchievementCompleted != null) 30 else 20
+        assertEquals(expectedXp, result.engagementUpdate.reward.xpEarned)
+    }
+
+    @Test
+    fun dailySessionProtectsAgainstDuplicatesViaDateAndSessionId() = runBlocking {
+        val firstRecord = repository.recordDailySession(
+            exercisesCompleted = 5,
+            firstAttemptCorrect = 5,
+            errors = 0,
+            practiceDate = "2026-08-11",
+            sessionId = "daily-2026-08-11-first",
+        )
+
+        val reopened = reopenRepository()
+        val replayedRecord = reopened.recordDailySession(
+            exercisesCompleted = 5,
+            firstAttemptCorrect = 5,
+            errors = 0,
+            practiceDate = "2026-08-11",
+            sessionId = "daily-2026-08-11-first",
+        )
+        val repeatedOnSameDay = reopened.recordDailySession(
+            exercisesCompleted = 5,
+            firstAttemptCorrect = 5,
+            errors = 0,
+            practiceDate = "2026-08-11",
+            sessionId = "daily-2026-08-11-second",
+        )
+
+        val progress = reopened.progress.first()
+        assertEquals(1, progress.dailyCompletedSessions)
+        assertEquals(5, progress.dailyTotalExercises)
+        assertEquals(5, progress.dailyFirstAttemptCorrect)
+        assertEquals(0, progress.dailyErrors)
+        assertTrue(firstRecord.engagementUpdate.reward.xpEarned in listOf(20, 30))
+        assertEquals(firstRecord.engagementUpdate.reward, replayedRecord.engagementUpdate.reward)
+        assertEquals(0, repeatedOnSameDay.engagementUpdate.reward.xpEarned)
+    }
+
+    @Test
+    fun practiceProgressStatePublishesDailySessionToObservedFlow() = runBlocking {
+        val state = PracticeProgressState(
+            repository = repository,
+            scope = dataStoreScope,
+            clock = { PracticeDate(2026, 8, 11) },
+        )
+        val updates = Channel<PracticeProgress>(capacity = Channel.UNLIMITED)
+        val collector = launch(start = CoroutineStart.UNDISPATCHED) {
+            state.progress.collect { progress -> updates.send(progress) }
+        }
+        val rewardAtCallback = CompletableDeferred<EngagementReward?>()
+
+        try {
+            assertEquals(0, withTimeout(5_000L) { updates.receive() }.dailyCompletedSessions)
+
+            state.recordDailySession(
+                summary = PracticeSessionSummary(
+                    exercisesCompleted = 5,
+                    firstAttemptCorrect = 4,
+                    errors = 1,
+                    accuracyPercentage = 80,
+                    practicedLetters = ('A'..'E').toList(),
+                    longestFirstAttemptCorrectStreak = 3,
+                ),
+                onRecorded = { reward ->
+                    rewardAtCallback.complete(reward)
+                },
+            )
+
+            val reward = requireNotNull(withTimeout(5_000L) { rewardAtCallback.await() })
+            val expectedXp = if (reward.miniAchievementCompleted != null) 30 else 20
+            assertEquals(expectedXp, reward.xpEarned)
+            val progress = withTimeout(5_000L) {
+                var observed: PracticeProgress
+                do {
+                    observed = updates.receive()
+                } while (observed.dailyCompletedSessions != 1)
+                observed
+            }
+
+            assertEquals(1, progress.dailyCompletedSessions)
+            assertEquals(5, progress.dailyTotalExercises)
+            assertEquals(4, progress.dailyFirstAttemptCorrect)
+            assertEquals(1, progress.dailyErrors)
+            assertEquals(80, progress.dailyAccuracyPercentage)
+            assertEquals("2026-08-11", progress.dailyLastPracticeDate)
         } finally {
             collector.cancelAndJoin()
         }

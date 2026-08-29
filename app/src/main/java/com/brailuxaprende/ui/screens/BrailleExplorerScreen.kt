@@ -36,13 +36,17 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.brailuxaprende.R
 import com.brailuxaprende.braille.BrailleCharacter
+import com.brailuxaprende.data.learn.LearningProgress
+import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.practice.BrailleRow
 import com.brailuxaprende.practice.CustomPracticeConfiguration
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeContentGroup
+import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeExercise
 import com.brailuxaprende.practice.PracticeExerciseType
 import com.brailuxaprende.practice.PracticeHint
@@ -55,7 +59,11 @@ import com.brailuxaprende.practice.PracticeSessionSnapshot
 import com.brailuxaprende.practice.PracticeSessionState
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeValidationState
+import com.brailuxaprende.practice.SystemPracticeClock
+import com.brailuxaprende.practice.dailyPracticeSessionId
+import com.brailuxaprende.practice.newPracticeSessionId
 import com.brailuxaprende.ui.components.BrailleCellView
+import com.brailuxaprende.ui.components.BrailuxBackButton
 import com.brailuxaprende.ui.components.BrailuxFeedbackCard
 import com.brailuxaprende.ui.components.BrailuxFeedbackType
 import com.brailuxaprende.ui.components.BrailuxPrimaryButton
@@ -71,6 +79,9 @@ private enum class AnswerResult {
 
 @Composable
 fun DailyPracticeScreen(
+    date: PracticeDate = SystemPracticeClock.today(),
+    learningProgress: LearningProgress = LearningProgress(),
+    practiceProgress: PracticeProgress = PracticeProgress(),
     onSessionCompleted: (
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
@@ -89,7 +100,14 @@ fun DailyPracticeScreen(
 ) {
     BraillePracticeLevelScreen(
         level = PracticeLevel.Daily,
-        sessionFactory = { PracticeSessionGenerator.generateDaily() },
+        sessionFactory = {
+            PracticeSessionGenerator.generateDaily(
+                date = date,
+                learningProgress = learningProgress,
+                practiceProgress = practiceProgress,
+            )
+        },
+        expectedSessionId = dailyPracticeSessionId(date),
         onDailySessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToHome,
         storedSnapshot = storedSnapshot,
@@ -244,6 +262,7 @@ fun CustomBraillePracticeScreen(
 private fun BraillePracticeLevelScreen(
     level: PracticeLevel,
     sessionFactory: () -> PracticeSession,
+    expectedSessionId: String? = null,
     onSessionCompleted: (
         (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit
     )? = null,
@@ -267,14 +286,18 @@ private fun BraillePracticeLevelScreen(
 ) {
     val isSnapshotCompatible = storedSnapshot != null &&
         storedSnapshot.level == level &&
+        (expectedSessionId == null || storedSnapshot.sessionId == expectedSessionId) &&
         (mode == null || storedSnapshot.state.session.mode == mode) &&
         (customConfiguration == null || storedSnapshot.state.session.customConfiguration == customConfiguration)
 
-    LaunchedEffect(sessionsLoaded, level, mode, customConfiguration, storedSnapshot?.sessionId) {
+    LaunchedEffect(sessionsLoaded, level, mode, customConfiguration, storedSnapshot?.sessionId, expectedSessionId) {
         if (sessionsLoaded && !isSnapshotCompatible) {
             onSnapshotChanged(
                 PracticeSessionSnapshot(
-                    state = PracticeSessionState(sessionFactory()),
+                    state = PracticeSessionState(
+                        session = sessionFactory(),
+                        sessionId = expectedSessionId ?: newPracticeSessionId(),
+                    ),
                 ),
             )
         }
@@ -282,6 +305,7 @@ private fun BraillePracticeLevelScreen(
 
     val snapshot = storedSnapshot?.takeIf {
         it.level == level &&
+            (expectedSessionId == null || it.sessionId == expectedSessionId) &&
             (mode == null || it.state.session.mode == mode) &&
             (customConfiguration == null || it.state.session.customConfiguration == customConfiguration)
     }
@@ -329,7 +353,9 @@ private fun BraillePracticeLevelScreen(
     if (snapshot.phase == PracticeSessionPhase.Credited) {
         BackHandler {
             onBackToPractice()
-            onSnapshotCleared(level)
+            if (level != PracticeLevel.Daily) {
+                onSnapshotCleared(level)
+            }
         }
         BraillePracticeSummary(
             level = level,
@@ -337,7 +363,10 @@ private fun BraillePracticeLevelScreen(
             onPracticeAgain = {
                 onSnapshotChanged(
                     PracticeSessionSnapshot(
-                        state = PracticeSessionState(sessionFactory()),
+                        state = PracticeSessionState(
+                            session = sessionFactory(),
+                            sessionId = expectedSessionId ?: newPracticeSessionId(),
+                        ),
                     ),
                 )
             },
@@ -351,7 +380,9 @@ private fun BraillePracticeLevelScreen(
             engagementReward = snapshot.engagementReward,
             onBackToPractice = {
                 onBackToPractice()
-                onSnapshotCleared(level)
+                if (level != PracticeLevel.Daily) {
+                    onSnapshotCleared(level)
+                }
             },
             modifier = modifier,
         )
@@ -420,22 +451,28 @@ private fun BraillePracticeExercise(
                 .padding(horizontal = 20.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BrailuxScreenHeader(
-                title = stringResource(level.titleResource()),
-                subtitle = stringResource(state.session.mode.titleResource()),
-                onBack = onBack,
-            )
-            if (level == PracticeLevel.BrailleChallenge && state.currentExerciseIndex == 0) {
-                Spacer(modifier = Modifier.height(18.dp))
-                BrailuxSectionCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
-                ) {
-                    Text(
-                        text = stringResource(R.string.practice_level_3_intro),
-                        style = MaterialTheme.typography.bodyLarge,
-                    )
+            if (level == PracticeLevel.Daily) {
+                DailyPracticeHeader(
+                    onBack = onBack,
+                )
+            } else {
+                BrailuxScreenHeader(
+                    title = stringResource(level.titleResource()),
+                    subtitle = stringResource(state.session.mode.titleResource()),
+                    onBack = onBack,
+                )
+                if (level == PracticeLevel.BrailleChallenge && state.currentExerciseIndex == 0) {
+                    Spacer(modifier = Modifier.height(18.dp))
+                    BrailuxSectionCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 560.dp),
+                    ) {
+                        Text(
+                            text = stringResource(R.string.practice_level_3_intro),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(18.dp))
@@ -872,10 +909,14 @@ internal fun BraillePracticeSummary(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            BrailuxScreenHeader(
-                title = stringResource(level.completionTitleResource()),
-                subtitle = stringResource(level.titleResource()),
-            )
+            if (level == PracticeLevel.Daily) {
+                DailyPracticeSummaryHeader()
+            } else {
+                BrailuxScreenHeader(
+                    title = stringResource(level.completionTitleResource()),
+                    subtitle = stringResource(level.titleResource()),
+                )
+            }
             Spacer(modifier = Modifier.height(22.dp))
             BrailuxSectionCard(
                 modifier = Modifier
@@ -884,11 +925,12 @@ internal fun BraillePracticeSummary(
             ) {
                 SummaryLine(
                     stringResource(
-                        if (level != PracticeLevel.BrailleExplorer) {
-                            R.string.practice_summary_exercises_done
-                        } else {
-                            R.string.practice_summary_completed
+                        when {
+                            level == PracticeLevel.Daily -> R.string.daily_practice_summary_completed_fraction
+                            level != PracticeLevel.BrailleExplorer -> R.string.practice_summary_exercises_done
+                            else -> R.string.practice_summary_completed
                         },
+                        summary.exercisesCompleted,
                         summary.exercisesCompleted,
                     ),
                 )
@@ -935,6 +977,17 @@ internal fun BraillePracticeSummary(
                     XpRewardSummary(engagementReward.xpEarned)
                 }
                 if (level == PracticeLevel.Daily && engagementReward != null) {
+                    val streakDays = pluralStringResource(
+                        R.plurals.home_streak_days,
+                        engagementReward.currentStreak,
+                        engagementReward.currentStreak,
+                    )
+                    SummaryLine(
+                        stringResource(
+                            R.string.daily_practice_reward_streak,
+                            streakDays,
+                        ),
+                    )
                     SummaryLine(
                         stringResource(
                             if (engagementReward.addedPracticeDay) {
@@ -970,37 +1023,41 @@ internal fun BraillePracticeSummary(
                 }
             }
             Spacer(modifier = Modifier.height(18.dp))
-            BrailuxPrimaryButton(
-                text = stringResource(R.string.practice_again),
-                onClick = onPracticeAgain,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            )
-            if (onChangeConfiguration != null) {
+            if (level == PracticeLevel.Daily) {
+                BrailuxPrimaryButton(
+                    text = stringResource(R.string.daily_practice_back_to_home),
+                    onClick = onBackToPractice,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                )
+            } else {
+                BrailuxPrimaryButton(
+                    text = stringResource(R.string.practice_again),
+                    onClick = onPracticeAgain,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                )
+                if (onChangeConfiguration != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    BrailuxSecondaryButton(
+                        text = stringResource(R.string.custom_practice_change_configuration),
+                        onClick = onChangeConfiguration,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .widthIn(max = 560.dp),
+                    )
+                }
                 Spacer(modifier = Modifier.height(10.dp))
                 BrailuxSecondaryButton(
-                    text = stringResource(R.string.custom_practice_change_configuration),
-                    onClick = onChangeConfiguration,
+                    text = stringResource(R.string.practice_back_to_practice),
+                    onClick = onBackToPractice,
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 560.dp),
                 )
             }
-            Spacer(modifier = Modifier.height(10.dp))
-            BrailuxSecondaryButton(
-                text = stringResource(
-                    if (level == PracticeLevel.Daily) {
-                        R.string.daily_practice_back_home
-                    } else {
-                        R.string.practice_back_to_practice
-                    },
-                ),
-                onClick = onBackToPractice,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 560.dp),
-            )
         }
     }
 }
@@ -1148,3 +1205,111 @@ private fun PracticeMode.titleResource(): Int = when (this) {
     PracticeMode.CharacterToSign -> R.string.practice_mode_character_to_sign
     PracticeMode.Mixed -> R.string.practice_mode_mixed
 }
+
+@Composable
+private fun DailyPracticeHeader(
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 600.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (onBack != null) {
+            BrailuxBackButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.Start),
+            )
+            Spacer(modifier = Modifier.heightIn(min = 20.dp))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.daily_practice_header_title),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+            DailyPracticeBadge()
+        }
+        Text(
+            text = stringResource(R.string.daily_practice_header_subtitle),
+            modifier = Modifier.padding(top = 6.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.daily_practice_habit_message),
+            modifier = Modifier.padding(top = 4.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun DailyPracticeSummaryHeader(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 600.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.daily_practice_completed),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+            DailyPracticeBadge()
+        }
+        Text(
+            text = stringResource(R.string.daily_practice_completed_confirmation),
+            modifier = Modifier.padding(top = 6.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun DailyPracticeBadge(
+    modifier: Modifier = Modifier,
+) {
+    val description = stringResource(R.string.daily_practice_badge_accessibility)
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = modifier.semantics {
+            contentDescription = description
+        },
+    ) {
+        Text(
+            text = stringResource(R.string.daily_practice_badge),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+

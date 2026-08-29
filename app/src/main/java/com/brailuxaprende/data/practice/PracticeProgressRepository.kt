@@ -39,6 +39,11 @@ internal const val CustomFirstAttemptCorrectKeyName = "practice_custom_first_att
 internal const val CustomErrorsKeyName = "practice_custom_errors"
 internal const val CustomHintsUsedKeyName = "practice_custom_hints_used"
 internal const val CustomLastPracticeDateKeyName = "practice_custom_last_practice_date"
+internal const val DailyCompletedSessionsKeyName = "practice_daily_completed_sessions"
+internal const val DailyTotalExercisesKeyName = "practice_daily_total_exercises"
+internal const val DailyFirstAttemptCorrectKeyName = "practice_daily_first_attempt_correct"
+internal const val DailyErrorsKeyName = "practice_daily_errors"
+internal const val DailyLastPracticeDateKeyName = "practice_daily_last_practice_date"
 
 data class PracticeProgress(
     val level1CompletedSessions: Int = 0,
@@ -63,6 +68,11 @@ data class PracticeProgress(
     val customErrors: Int = 0,
     val customHintsUsed: Int = 0,
     val customLastPracticeDate: String? = null,
+    val dailyCompletedSessions: Int = 0,
+    val dailyTotalExercises: Int = 0,
+    val dailyFirstAttemptCorrect: Int = 0,
+    val dailyErrors: Int = 0,
+    val dailyLastPracticeDate: String? = null,
 ) {
     val level1AccuracyPercentage: Int
         get() = calculateAccuracyPercentage(level1FirstAttemptCorrect, level1TotalExercises)
@@ -75,6 +85,9 @@ data class PracticeProgress(
 
     val customAccuracyPercentage: Int
         get() = calculateAccuracyPercentage(customFirstAttemptCorrect, customTotalExercises)
+
+    val dailyAccuracyPercentage: Int
+        get() = calculateAccuracyPercentage(dailyFirstAttemptCorrect, dailyTotalExercises)
 }
 
 internal fun calculateAccuracyPercentage(firstAttemptCorrect: Int, totalExercises: Int): Int {
@@ -357,6 +370,67 @@ class PracticeProgressRepository(
         )
     }
 
+    suspend fun recordDailySession(
+        exercisesCompleted: Int,
+        firstAttemptCorrect: Int,
+        errors: Int = 0,
+        practiceDate: String,
+        mode: PracticeMode = PracticeMode.Mixed,
+        longestFirstAttemptCorrectStreak: Int = 0,
+        sessionId: String = UUID.randomUUID().toString(),
+    ): PracticeProgressRecord {
+        require(exercisesCompleted > 0)
+        require(firstAttemptCorrect in 0..exercisesCompleted)
+        require(errors >= 0)
+        require(practiceDate.isNotBlank())
+        require(sessionId.isNotBlank())
+
+        val parsedDate = requireNotNull(PracticeDate.parse(practiceDate))
+        var recordedProgress: PracticeProgress? = null
+        var engagementUpdate: EngagementUpdate? = null
+        dataStore.edit { preferences ->
+            val currentProgress = preferences.toPracticeProgress()
+            val currentEngagement = preferences.toEngagementProgress()
+            val wasAlreadyCompletedToday = currentEngagement.isDailyPracticeCompleted(parsedDate)
+
+            val engagementRecord = preferences.recordEngagement(
+                session = EngagementSession(
+                    id = sessionId,
+                    kind = PracticeSessionKind.Daily,
+                    exercisesCompleted = exercisesCompleted,
+                    firstAttemptCorrect = firstAttemptCorrect,
+                    errors = errors,
+                    mode = mode,
+                    longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+                ),
+                date = parsedDate,
+            )
+            engagementUpdate = engagementRecord.update
+            if (!engagementRecord.isNewlyRecorded || wasAlreadyCompletedToday) {
+                recordedProgress = currentProgress
+                return@edit
+            }
+            val updatedProgress = currentProgress.copy(
+                dailyCompletedSessions = currentProgress.dailyCompletedSessions + 1,
+                dailyTotalExercises = currentProgress.dailyTotalExercises + exercisesCompleted,
+                dailyFirstAttemptCorrect =
+                    currentProgress.dailyFirstAttemptCorrect + firstAttemptCorrect,
+                dailyErrors = currentProgress.dailyErrors + errors,
+                dailyLastPracticeDate = practiceDate,
+            )
+            preferences[DailyCompletedSessionsKey] = updatedProgress.dailyCompletedSessions
+            preferences[DailyTotalExercisesKey] = updatedProgress.dailyTotalExercises
+            preferences[DailyFirstAttemptCorrectKey] = updatedProgress.dailyFirstAttemptCorrect
+            preferences[DailyErrorsKey] = updatedProgress.dailyErrors
+            preferences[DailyLastPracticeDateKey] = practiceDate
+            recordedProgress = updatedProgress
+        }
+        return PracticeProgressRecord(
+            practiceProgress = checkNotNull(recordedProgress),
+            engagementUpdate = checkNotNull(engagementUpdate),
+        )
+    }
+
     private fun Preferences.toPracticeProgress(): PracticeProgress = PracticeProgress(
         level1CompletedSessions = this[Level1CompletedSessionsKey] ?: 0,
         level1TotalExercises = this[Level1TotalExercisesKey] ?: 0,
@@ -380,6 +454,11 @@ class PracticeProgressRepository(
         customErrors = this[CustomErrorsKey] ?: 0,
         customHintsUsed = this[CustomHintsUsedKey] ?: 0,
         customLastPracticeDate = this[CustomLastPracticeDateKey],
+        dailyCompletedSessions = this[DailyCompletedSessionsKey] ?: 0,
+        dailyTotalExercises = this[DailyTotalExercisesKey] ?: 0,
+        dailyFirstAttemptCorrect = this[DailyFirstAttemptCorrectKey] ?: 0,
+        dailyErrors = this[DailyErrorsKey] ?: 0,
+        dailyLastPracticeDate = this[DailyLastPracticeDateKey],
     )
 
     private companion object {
@@ -405,5 +484,10 @@ class PracticeProgressRepository(
         val CustomErrorsKey = intPreferencesKey(CustomErrorsKeyName)
         val CustomHintsUsedKey = intPreferencesKey(CustomHintsUsedKeyName)
         val CustomLastPracticeDateKey = stringPreferencesKey(CustomLastPracticeDateKeyName)
+        val DailyCompletedSessionsKey = intPreferencesKey(DailyCompletedSessionsKeyName)
+        val DailyTotalExercisesKey = intPreferencesKey(DailyTotalExercisesKeyName)
+        val DailyFirstAttemptCorrectKey = intPreferencesKey(DailyFirstAttemptCorrectKeyName)
+        val DailyErrorsKey = intPreferencesKey(DailyErrorsKeyName)
+        val DailyLastPracticeDateKey = stringPreferencesKey(DailyLastPracticeDateKeyName)
     }
 }

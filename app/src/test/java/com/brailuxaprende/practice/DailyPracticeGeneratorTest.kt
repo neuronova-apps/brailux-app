@@ -74,6 +74,71 @@ class DailyPracticeGeneratorTest {
         assertEquals(5, state.summary().exercisesCompleted)
     }
 
+    @Test
+    fun dailyPracticeUsesLettersAToJWhenNoAdvancedLessonsAreCompleted() {
+        val date = PracticeDate(2026, 8, 28)
+        val session = PracticeSessionGenerator.generateDaily(
+            date = date,
+            learningProgress = com.brailuxaprende.data.learn.LearningProgress(),
+            practiceProgress = com.brailuxaprende.data.practice.PracticeProgress(),
+        )
+        val validChars = ('A'..'J').toSet()
+
+        assertEquals(5, session.exercises.size)
+        assertTrue(session.exercises.all { it.target.printedCharacter in validChars })
+        session.exercises.forEach { exercise ->
+            assertTrue(exercise.options.all { it.printedCharacter in validChars })
+        }
+    }
+
+    @Test
+    fun dailyPracticeExpandsToLettersAToTWhenLessonKToTIsCompleted() {
+        val date = PracticeDate(2026, 8, 28)
+        val session = PracticeSessionGenerator.generateDaily(
+            date = date,
+            learningProgress = com.brailuxaprende.data.learn.LearningProgress(
+                completedLessons = setOf(com.brailuxaprende.learning.LearningLesson.LettersKtoT),
+            ),
+            practiceProgress = com.brailuxaprende.data.practice.PracticeProgress(),
+        )
+        val validChars = ('A'..'T').toSet()
+
+        assertEquals(5, session.exercises.size)
+        assertTrue(session.exercises.all { it.target.printedCharacter in validChars })
+    }
+
+    @Test
+    fun dailyPracticeUsesFullAlphabetWhenAdvancedLessonOrPracticeCompleted() {
+        val date = PracticeDate(2026, 8, 28)
+        val sessionFromLesson = PracticeSessionGenerator.generateDaily(
+            date = date,
+            learningProgress = com.brailuxaprende.data.learn.LearningProgress(
+                completedLessons = setOf(com.brailuxaprende.learning.LearningLesson.LettersUtoZAndEnye),
+            ),
+        )
+        val sessionFromPractice = PracticeSessionGenerator.generateDaily(
+            date = date,
+            practiceProgress = com.brailuxaprende.data.practice.PracticeProgress(
+                level2CompletedSessions = 1,
+            ),
+        )
+        val fullAlphabet = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".toSet()
+
+        assertTrue(sessionFromLesson.exercises.all { it.target.printedCharacter in fullAlphabet })
+        assertTrue(sessionFromPractice.exercises.all { it.target.printedCharacter in fullAlphabet })
+    }
+
+    @Test
+    fun dailyPracticeCombinesSignToLetterAndLetterToSignWithBalancedDistribution() {
+        val date = PracticeDate(2026, 8, 28)
+        val session = PracticeSessionGenerator.generateDaily(date = date)
+        val signToLetterCount = session.exercises.count { it.type == PracticeExerciseType.SignToCharacter }
+        val letterToSignCount = session.exercises.count { it.type == PracticeExerciseType.CharacterToSign }
+
+        assertEquals(5, session.exercises.size)
+        assertTrue((signToLetterCount == 3 && letterToSignCount == 2) || (signToLetterCount == 2 && letterToSignCount == 3))
+    }
+
     private fun answerCorrectlyAndAdvance(state: PracticeSessionState): PracticeSessionState = state
         .selectAnswer(state.currentExercise.target.printedCharacter)
         .checkAnswer()

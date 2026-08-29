@@ -29,8 +29,11 @@
     <string name="home_daily_practice_description">Aquí encontrarás una actividad breve para reforzar lo aprendido.</string>
     <string name="home_daily_practice_details">5 ejercicios · 3–5 min</string>
     <string name="home_daily_practice_pending">Pendiente</string>
-    <string name="home_daily_practice_completed_today">Completada hoy</string>
+    <string name="home_daily_practice_completed">Completada</string>
+    <string name="home_daily_practice_completed_today">Completada</string>
     <string name="home_daily_practice_start">Comenzar</string>
+    <string name="home_daily_practice_continue">Continuar</string>
+    <string name="home_daily_practice_view_summary">Ver resumen</string>
     <string name="home_consistency_title">Tu constancia</string>
     <string name="home_weekly_practice_title">Esta semana</string>
     <string name="home_weekly_practice_value">%1$d de %2$d días</string>
@@ -187,6 +190,13 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="practice_challenge_completed">Desafío completado</string>
     <string name="custom_practice_completed">Práctica completada</string>
     <string name="daily_practice_completed">Práctica diaria completada</string>
+    <string name="daily_practice_header_title">Práctica de hoy</string>
+    <string name="daily_practice_header_subtitle">5 ejercicios · sesión diaria</string>
+    <string name="daily_practice_badge">DIARIA</string>
+    <string name="daily_practice_badge_accessibility">Sesión de práctica diaria</string>
+    <string name="daily_practice_habit_message">Una práctica breve para mantener tu racha</string>
+    <string name="daily_practice_completed_confirmation">Práctica de hoy completada</string>
+    <string name="daily_practice_back_to_home">Volver al inicio</string>
     <string name="practice_reward_xp">+%1$d XP obtenidos</string>
     <string name="practice_reward_xp_accessibility">Has obtenido %1$d puntos de experiencia.</string>
     <string name="daily_practice_reward_new_day">Hoy sumaste un nuevo día de práctica.</string>
@@ -194,7 +204,9 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="daily_practice_reward_week">Esta semana: %1$d de %2$d días</string>
     <string name="daily_practice_reward_mini">Mini logro completado: %1$s</string>
     <string name="daily_practice_reward_achievements">Logros permanentes obtenidos: %1$d</string>
-    <string name="daily_practice_back_home">Volver a Inicio</string>
+    <string name="daily_practice_reward_streak">Racha actual: %1$s</string>
+    <string name="daily_practice_summary_completed_fraction">%1$d de %2$d ejercicios completados</string>
+    <string name="daily_practice_back_home">Volver al inicio</string>
     <string name="mini_achievement_five_exercises">Completa 5 ejercicios</string>
     <string name="mini_achievement_session">Completa una sesión</string>
     <string name="mini_achievement_three_correct">Consigue 3 aciertos consecutivos al primer intento</string>
