@@ -444,18 +444,40 @@ private fun PracticeLevelCard(
 
 @Composable
 private fun LearningProgressSection(progress: LearningProgress) {
+    val totalLessons = LearningPath.lessons.size
+    val completedCount = LearningPath.completedCount(progress.completedLessons)
+    val percentage = LearningPath.progressPercentage(progress.completedLessons)
+    val summaryAccessibility = stringResource(
+        R.string.progress_learning_summary_accessibility,
+        completedCount,
+        totalLessons,
+        percentage,
+    )
+
     SectionTitle(R.string.progress_learning_title)
+    ProgressValue(
+        label = stringResource(R.string.progress_learning_completed_label),
+        value = stringResource(
+            R.string.progress_learning_completed_value,
+            completedCount,
+            totalLessons,
+        ),
+    )
+    ProgressValue(
+        label = stringResource(R.string.progress_learning_percentage_label),
+        value = stringResource(R.string.progress_percentage_value, percentage),
+    )
+    AccessibleProgressBar(
+        progress = percentage / 100f,
+        description = summaryAccessibility,
+    )
+    Spacer(modifier = Modifier.height(12.dp))
     LearningPath.lessons.forEachIndexed { index, lesson ->
-        val status = stringResource(
-            if (progress.isCompleted(lesson)) {
-                R.string.learning_status_completed
-            } else {
-                R.string.learning_status_available
-            },
-        )
+        val status = LearningPath.statusFor(lesson, progress.completedLessons)
+        val statusText = stringResource(status.labelResource())
         LearningProgressItem(
             lesson = lesson,
-            status = status,
+            status = statusText,
             showDivider = index != LearningPath.lessons.lastIndex,
         )
     }

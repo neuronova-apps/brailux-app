@@ -40,6 +40,18 @@ private const val SIX_DOTS_EXPLANATION_STAGE = 0
 private const val SIX_DOTS_CHECK_STAGE = 1
 private const val SIX_DOTS_COMPLETED_STAGE = 2
 
+private data class SixDotsCheckItem(
+    val questionRes: Int,
+    val options: List<SixDotsOption>,
+    val correctId: Int,
+)
+
+private data class SixDotsOption(
+    val id: Int,
+    val labelRes: Int,
+    val pointArg: Int? = null,
+)
+
 @Composable
 fun BrailleLessonScreen(
     onCompleted: () -> Unit,
@@ -51,8 +63,48 @@ fun BrailleLessonScreen(
     var stage by rememberSaveable { mutableIntStateOf(SIX_DOTS_EXPLANATION_STAGE) }
     var questionIndex by rememberSaveable { mutableIntStateOf(0) }
     var selectedAnswer by rememberSaveable { mutableStateOf<Int?>(null) }
-    val correctAnswers = listOf(1, 6)
-    val answerOptions = listOf(listOf(1, 4), listOf(3, 6))
+
+    val questions = rememberSaveable(
+        saver = androidx.compose.runtime.saveable.Saver(
+            save = { 0 },
+            restore = { null },
+        ),
+    ) {
+        listOf(
+            SixDotsCheckItem(
+                questionRes = R.string.lesson_question_upper_left,
+                options = listOf(
+                    SixDotsOption(id = 1, labelRes = R.string.lesson_point_answer, pointArg = 1),
+                    SixDotsOption(id = 4, labelRes = R.string.lesson_point_answer, pointArg = 4),
+                ),
+                correctId = 1,
+            ),
+            SixDotsCheckItem(
+                questionRes = R.string.lesson_question_lower_right,
+                options = listOf(
+                    SixDotsOption(id = 3, labelRes = R.string.lesson_point_answer, pointArg = 3),
+                    SixDotsOption(id = 6, labelRes = R.string.lesson_point_answer, pointArg = 6),
+                ),
+                correctId = 6,
+            ),
+            SixDotsCheckItem(
+                questionRes = R.string.lesson_question_left_column,
+                options = listOf(
+                    SixDotsOption(id = 1, labelRes = R.string.lesson_option_left_column),
+                    SixDotsOption(id = 2, labelRes = R.string.lesson_option_right_column),
+                ),
+                correctId = 1,
+            ),
+            SixDotsCheckItem(
+                questionRes = R.string.lesson_question_letter_a,
+                options = listOf(
+                    SixDotsOption(id = 1, labelRes = R.string.lesson_point_answer, pointArg = 1),
+                    SixDotsOption(id = 2, labelRes = R.string.lesson_point_answer, pointArg = 2),
+                ),
+                correctId = 1,
+            ),
+        )
+    }
 
     fun repeatLesson() {
         stage = SIX_DOTS_EXPLANATION_STAGE
@@ -98,7 +150,19 @@ fun BrailleLessonScreen(
                         BrailleCellView(
                             cell = BrailleCell.fromPoints(emptySet()),
                             contentDescription = stringResource(R.string.lesson_cell_description),
-                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp),
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 20.dp),
+                        )
+                        Text(
+                            text = stringResource(R.string.lesson_combinations_explanation),
+                            modifier = Modifier.padding(top = 20.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                        )
+                        BrailleCellView(
+                            cell = BrailleCell.fromPoints(setOf(1)),
+                            contentDescription = stringResource(R.string.lesson_cell_example_a_description),
+                            modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 16.dp),
                         )
                         BrailuxPrimaryButton(
                             text = stringResource(R.string.lesson_start_check),
@@ -109,8 +173,21 @@ fun BrailleLessonScreen(
                 }
 
                 SIX_DOTS_CHECK_STAGE -> {
-                    val correctAnswer = correctAnswers[questionIndex]
-                    val answerIsCorrect = selectedAnswer == correctAnswer
+                    val currentQuestion = questions[questionIndex]
+                    val answerIsCorrect = selectedAnswer == currentQuestion.correctId
+                    val isLastQuestion = questionIndex == questions.lastIndex
+
+                    Text(
+                        text = stringResource(
+                            R.string.lesson_practice_progress,
+                            questionIndex + 1,
+                            questions.size,
+                        ),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
                     BrailuxSectionCard(
                         modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp),
                     ) {
@@ -120,22 +197,24 @@ fun BrailleLessonScreen(
                             fontWeight = FontWeight.Bold,
                         )
                         Text(
-                            text = stringResource(
-                                if (questionIndex == 0) R.string.lesson_question_upper_left
-                                else R.string.lesson_question_lower_right,
-                            ),
+                            text = stringResource(currentQuestion.questionRes),
                             modifier = Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.bodyLarge,
                         )
-                        Row(
+                        Column(
                             modifier = Modifier.fillMaxWidth().padding(top = 18.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
                         ) {
-                            answerOptions[questionIndex].forEach { answer ->
+                            currentQuestion.options.forEach { option ->
+                                val text = if (option.pointArg != null) {
+                                    stringResource(option.labelRes, option.pointArg)
+                                } else {
+                                    stringResource(option.labelRes)
+                                }
                                 BrailuxSecondaryButton(
-                                    text = stringResource(R.string.lesson_point_answer, answer),
-                                    onClick = { selectedAnswer = answer },
-                                    modifier = Modifier.weight(1f),
+                                    text = text,
+                                    onClick = { selectedAnswer = option.id },
+                                    modifier = Modifier.fillMaxWidth(),
                                 )
                             }
                         }
@@ -158,16 +237,16 @@ fun BrailleLessonScreen(
                             Spacer(modifier = Modifier.height(14.dp))
                             BrailuxPrimaryButton(
                                 text = stringResource(
-                                    if (questionIndex == 0) R.string.lesson_next_question
-                                    else R.string.lesson_finish,
+                                    if (isLastQuestion) R.string.lesson_finish
+                                    else R.string.lesson_next_question,
                                 ),
                                 onClick = {
-                                    if (questionIndex == 0) {
-                                        questionIndex = 1
-                                        selectedAnswer = null
-                                    } else {
+                                    if (isLastQuestion) {
                                         onCompleted()
                                         stage = SIX_DOTS_COMPLETED_STAGE
+                                    } else {
+                                        questionIndex++
+                                        selectedAnswer = null
                                     }
                                 },
                                 modifier = Modifier.fillMaxWidth().widthIn(max = 560.dp),

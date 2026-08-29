@@ -89,9 +89,10 @@ private fun LearningLessonCard(
     onClick: () -> Unit,
 ) {
     val statusText = stringResource(status.labelResource())
+    val isEnabled = status != LearningLessonStatus.Locked
     Card(
         onClick = onClick,
-        enabled = true,
+        enabled = isEnabled,
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 104.dp)
@@ -111,10 +112,20 @@ private fun LearningLessonCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val badgeColor = when (status) {
+                LearningLessonStatus.Available -> MaterialTheme.colorScheme.primaryContainer
+                LearningLessonStatus.Completed -> MaterialTheme.colorScheme.primaryContainer
+                LearningLessonStatus.Locked -> MaterialTheme.colorScheme.surfaceVariant
+            }
+            val badgeContentColor = when (status) {
+                LearningLessonStatus.Available -> MaterialTheme.colorScheme.onPrimaryContainer
+                LearningLessonStatus.Completed -> MaterialTheme.colorScheme.onPrimaryContainer
+                LearningLessonStatus.Locked -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
             Surface(
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = badgeColor,
+                contentColor = badgeContentColor,
             ) {
                 Text(
                     text = lesson.number.toString(),
@@ -128,12 +139,21 @@ private fun LearningLessonCard(
                     text = stringResource(lesson.titleResource()),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
+                    color = if (isEnabled) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
                 )
                 Text(
                     text = statusText,
                     modifier = Modifier.padding(top = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = when (status) {
+                        LearningLessonStatus.Completed -> MaterialTheme.colorScheme.primary
+                        LearningLessonStatus.Available -> MaterialTheme.colorScheme.onSurfaceVariant
+                        LearningLessonStatus.Locked -> MaterialTheme.colorScheme.outline
+                    },
                 )
             }
         }
@@ -148,7 +168,8 @@ internal fun LearningLesson.titleResource(): Int = when (this) {
     LearningLesson.LettersUtoZAndEnye -> R.string.learning_lesson_5_title
 }
 
-private fun LearningLessonStatus.labelResource(): Int = when (this) {
+internal fun LearningLessonStatus.labelResource(): Int = when (this) {
     LearningLessonStatus.Available -> R.string.learning_status_available
     LearningLessonStatus.Completed -> R.string.learning_status_completed
+    LearningLessonStatus.Locked -> R.string.learning_status_locked
 }

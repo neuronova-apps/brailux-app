@@ -14,6 +14,7 @@ enum class LearningLesson(val number: Int) {
 enum class LearningLessonStatus {
     Available,
     Completed,
+    Locked,
 }
 
 object LearningPath {
@@ -36,11 +37,36 @@ object LearningPath {
         return lessons.getOrNull(index + 1)
     }
 
+    fun previousLesson(lesson: LearningLesson): LearningLesson? {
+        val index = lessons.indexOf(lesson)
+        return if (index > 0) lessons[index - 1] else null
+    }
+
+    fun isUnlocked(
+        lesson: LearningLesson,
+        completedLessons: Set<LearningLesson>,
+    ): Boolean = when (lesson) {
+        LearningLesson.SixDots -> true
+        LearningLesson.Vowels -> LearningLesson.SixDots in completedLessons
+        LearningLesson.LettersAtoJ -> LearningLesson.Vowels in completedLessons
+        LearningLesson.LettersKtoT -> LearningLesson.LettersAtoJ in completedLessons
+        LearningLesson.LettersUtoZAndEnye -> LearningLesson.LettersKtoT in completedLessons
+    }
+
     fun statusFor(
         lesson: LearningLesson,
         completedLessons: Set<LearningLesson>,
     ): LearningLessonStatus = when {
         lesson in completedLessons -> LearningLessonStatus.Completed
-        else -> LearningLessonStatus.Available
+        isUnlocked(lesson, completedLessons) -> LearningLessonStatus.Available
+        else -> LearningLessonStatus.Locked
+    }
+
+    fun completedCount(completedLessons: Set<LearningLesson>): Int =
+        completedLessons.intersect(lessons.toSet()).size
+
+    fun progressPercentage(completedLessons: Set<LearningLesson>): Int {
+        if (lessons.isEmpty()) return 0
+        return (completedCount(completedLessons) * 100) / lessons.size
     }
 }
