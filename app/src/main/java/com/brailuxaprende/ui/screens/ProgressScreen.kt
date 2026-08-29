@@ -46,6 +46,7 @@ import com.brailuxaprende.data.play.GameProgress
 import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
+import com.brailuxaprende.practice.AchievementFamily
 import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.DailyMiniAchievementXp
 import com.brailuxaprende.practice.EngagementProgress
@@ -128,9 +129,10 @@ fun ProgressScreen(
                     }
                 }
                 ProgressTab.Achievements -> {
-                    ProgressContentCard {
-                        PermanentAchievementsSection(engagementProgress.unlockedAchievements)
-                    }
+                    PermanentAchievementsTabContent(
+                        engagementProgress = engagementProgress,
+                        learningProgress = learningProgress,
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
@@ -565,76 +567,448 @@ private fun LearningProgressItem(
 }
 
 @Composable
-private fun PermanentAchievementsSection(
-    unlockedAchievements: Set<PermanentAchievement>,
+private fun PermanentAchievementsTabContent(
+    engagementProgress: EngagementProgress,
+    learningProgress: LearningProgress,
 ) {
-    SectionTitle(R.string.progress_achievements_title)
-    Text(
-        text = stringResource(R.string.progress_achievements_description),
-        modifier = Modifier.padding(top = 6.dp, bottom = 14.dp),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    val activeAchievements = PermanentAchievement.activeEntries
+    val totalBadges = activeAchievements.size
+    val unlockedCount = activeAchievements.count { it in engagementProgress.unlockedAchievements }
+    val accessibilityHeader = stringResource(
+        R.string.progress_achievements_header_summary_accessibility,
+        unlockedCount,
+        totalBadges,
     )
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        PermanentAchievement.entries.forEach { achievement ->
-            AchievementItem(
-                achievement = achievement,
-                unlocked = achievement in unlockedAchievements,
-            )
+    val precisionAccessibility = stringResource(
+        R.string.progress_precision_header_summary_accessibility,
+        engagementProgress.currentPrecisionStreak,
+        engagementProgress.bestPrecisionStreak,
+    )
+
+    ProgressContentCard {
+        SectionTitle(R.string.progress_achievements_title)
+        Text(
+            text = stringResource(R.string.progress_achievements_description),
+            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics { contentDescription = accessibilityHeader },
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(
+                        R.string.progress_achievements_header_summary,
+                        unlockedCount,
+                        totalBadges,
+                    ),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Text(
+                    text = "${(unlockedCount * 100 / totalBadges)}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
+        AccessibleProgressBar(
+            progress = unlockedCount.toFloat() / totalBadges.toFloat(),
+            description = accessibilityHeader,
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics { contentDescription = precisionAccessibility },
+            shape = MaterialTheme.shapes.small,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        ) {
+            Column(modifier = Modifier.padding(12.dp)) {
+                Text(
+                    text = stringResource(R.string.achievements_family_precision),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.progress_precision_header_summary,
+                        engagementProgress.currentPrecisionStreak,
+                        engagementProgress.bestPrecisionStreak,
+                    ),
+                    modifier = Modifier.padding(top = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+
+    ProgressSpacer()
+
+    AchievementFamily.entries.forEach { family ->
+        val familyBadges = activeAchievements.filter { it.family == family }
+        val familyUnlockedCount = familyBadges.count { it in engagementProgress.unlockedAchievements }
+        ProgressContentCard {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(family.titleResource()),
+                    modifier = Modifier
+                        .weight(1f)
+                        .semantics { heading() },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                )
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = if (familyUnlockedCount == familyBadges.size) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = if (familyUnlockedCount == familyBadges.size) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                ) {
+                    Text(
+                        text = "$familyUnlockedCount / ${familyBadges.size}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                familyBadges.forEach { achievement ->
+                    AchievementBadgeCard(
+                        achievement = achievement,
+                        engagementProgress = engagementProgress,
+                        learningProgress = learningProgress,
+                    )
+                }
+            }
+        }
+        ProgressSpacer()
     }
 }
 
 @Composable
-private fun AchievementItem(
+private fun AchievementBadgeCard(
     achievement: PermanentAchievement,
-    unlocked: Boolean,
+    engagementProgress: EngagementProgress,
+    learningProgress: LearningProgress,
     modifier: Modifier = Modifier,
 ) {
+    val isUnlocked = achievement in engagementProgress.unlockedAchievements
+    val unlockDate = engagementProgress.achievementUnlockDates[achievement]
+    val (currentVal, targetVal, progressFormatted) = computeAchievementProgress(
+        achievement = achievement,
+        engagementProgress = engagementProgress,
+        learningProgress = learningProgress,
+    )
     val title = stringResource(achievement.titleResource())
     val description = stringResource(achievement.descriptionResource())
-    val status = stringResource(
-        if (unlocked) {
-            R.string.progress_achievement_unlocked
-        } else {
-            R.string.progress_achievement_pending
-        },
-    )
-    val accessibilityText = stringResource(
-        R.string.progress_achievement_accessibility,
-        title,
-        description,
-        status,
-    )
+    val formattedDate = unlockDate?.let { formattedPracticeDate(it) }
+    val statusText = when {
+        isUnlocked && formattedDate != null -> stringResource(
+            R.string.progress_achievement_unlocked_with_date,
+            formattedDate,
+        )
+        isUnlocked -> stringResource(R.string.progress_achievement_unlocked)
+        currentVal > 0 -> stringResource(R.string.progress_achievement_in_progress)
+        else -> stringResource(R.string.progress_achievement_locked)
+    }
+
+    val accessibilityText = if (isUnlocked) {
+        stringResource(
+            R.string.progress_achievement_accessibility,
+            title,
+            description,
+            statusText,
+        )
+    } else {
+        stringResource(
+            R.string.progress_achievement_progress_accessibility,
+            title,
+            description,
+            statusText,
+            progressFormatted,
+        )
+    }
+
+    val cardBorder = if (isUnlocked) {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    }
+
+    val cardBackground = if (isUnlocked) {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
+    } else {
+        MaterialTheme.colorScheme.surface
+    }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .clearAndSetSemantics { contentDescription = accessibilityText },
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = cardBackground,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = cardBorder,
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top,
+            ) {
+                Text(
+                    text = title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = when {
+                        isUnlocked -> MaterialTheme.colorScheme.primaryContainer
+                        currentVal > 0 -> MaterialTheme.colorScheme.secondaryContainer
+                        else -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+                    contentColor = when {
+                        isUnlocked -> MaterialTheme.colorScheme.onPrimaryContainer
+                        currentVal > 0 -> MaterialTheme.colorScheme.onSecondaryContainer
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                ) {
+                    Text(
+                        text = if (isUnlocked) {
+                            stringResource(R.string.progress_achievement_unlocked)
+                        } else if (currentVal > 0) {
+                            stringResource(R.string.progress_achievement_in_progress)
+                        } else {
+                            stringResource(R.string.progress_achievement_locked)
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+            }
             Text(
                 text = description,
                 modifier = Modifier.padding(top = 4.dp),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Text(
-                text = status,
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
+            if (isUnlocked) {
+                if (formattedDate != null) {
+                    Text(
+                        text = stringResource(
+                            R.string.progress_achievement_unlocked_with_date,
+                            formattedDate,
+                        ),
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            } else {
+                Text(
+                    text = progressFormatted,
+                    modifier = Modifier.padding(top = 8.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                val progressFraction =
+                    (currentVal.toFloat() / targetVal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                LinearProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun computeAchievementProgress(
+    achievement: PermanentAchievement,
+    engagementProgress: EngagementProgress,
+    learningProgress: LearningProgress,
+): Triple<Int, Int, String> {
+    return when (achievement) {
+        PermanentAchievement.FirstStep -> {
+            val current = engagementProgress.totalSessions
+            Triple(current, 1, stringResource(R.string.badge_progress_sessions, current, 1))
+        }
+        PermanentAchievement.Explorer -> {
+            val current = engagementProgress.level1Sessions
+            Triple(current, 5, stringResource(R.string.badge_progress_sessions, current, 5))
+        }
+        PermanentAchievement.Recognizer -> {
+            val current = engagementProgress.level2Sessions
+            Triple(current, 5, stringResource(R.string.badge_progress_sessions, current, 5))
+        }
+        PermanentAchievement.Challenger -> {
+            val current = engagementProgress.level3Sessions
+            Triple(current, 3, stringResource(R.string.badge_progress_sessions, current, 3))
+        }
+        PermanentAchievement.FullAlphabet -> {
+            val current = learningProgress.completedLessons.size
+            Triple(current, 5, stringResource(R.string.badge_progress_lessons, current, 5))
+        }
+        PermanentAchievement.Consistency -> {
+            val current = engagementProgress.activityDates.size
+            Triple(current, 3, stringResource(R.string.badge_progress_days, current, 3))
+        }
+        PermanentAchievement.WeekInMotion -> {
+            val current = engagementProgress.activityDates.groupingBy { it.weekStart }
+                .eachCount().values.maxOrNull() ?: 0
+            Triple(current, 5, stringResource(R.string.badge_progress_days, current, 5))
+        }
+        PermanentAchievement.ConstantWeek -> {
+            val current = maxOf(engagementProgress.currentStreak, engagementProgress.bestStreak)
+            Triple(
+                current,
+                7,
+                stringResource(R.string.badge_progress_consecutive_days, current, 7),
             )
+        }
+        PermanentAchievement.TwoWeeks -> {
+            val current = maxOf(engagementProgress.currentStreak, engagementProgress.bestStreak)
+            Triple(
+                current,
+                14,
+                stringResource(R.string.badge_progress_consecutive_days, current, 14),
+            )
+        }
+        PermanentAchievement.ConsistencyMonth -> {
+            val current = maxOf(engagementProgress.currentStreak, engagementProgress.bestStreak)
+            Triple(
+                current,
+                30,
+                stringResource(R.string.badge_progress_consecutive_days, current, 30),
+            )
+        }
+        PermanentAchievement.SuperiorConsistency -> {
+            val current = maxOf(engagementProgress.currentStreak, engagementProgress.bestStreak)
+            Triple(
+                current,
+                60,
+                stringResource(R.string.badge_progress_consecutive_days, current, 60),
+            )
+        }
+        PermanentAchievement.Bronze -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 25, stringResource(R.string.badge_progress_exercises, current, 25))
+        }
+        PermanentAchievement.Silver -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 75, stringResource(R.string.badge_progress_exercises, current, 75))
+        }
+        PermanentAchievement.Gold -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 125, stringResource(R.string.badge_progress_exercises, current, 125))
+        }
+        PermanentAchievement.Platinum -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 300, stringResource(R.string.badge_progress_exercises, current, 300))
+        }
+        PermanentAchievement.Diamond -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 600, stringResource(R.string.badge_progress_exercises, current, 600))
+        }
+        PermanentAchievement.BrailleSupremacy -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 1200, stringResource(R.string.badge_progress_exercises, current, 1200))
+        }
+        PermanentAchievement.BrailleFocus -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                5,
+                stringResource(R.string.badge_progress_precision_streak, current, 5),
+            )
+        }
+        PermanentAchievement.BrailleRhythm -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                10,
+                stringResource(R.string.badge_progress_precision_streak, current, 10),
+            )
+        }
+        PermanentAchievement.BraillePrecision -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                15,
+                stringResource(R.string.badge_progress_precision_streak, current, 15),
+            )
+        }
+        PermanentAchievement.SustainedReading -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                30,
+                stringResource(R.string.badge_progress_precision_streak, current, 30),
+            )
+        }
+        PermanentAchievement.ConstantMastery -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                50,
+                stringResource(R.string.badge_progress_precision_streak, current, 50),
+            )
+        }
+        PermanentAchievement.SuperiorPrecision -> {
+            val current = engagementProgress.bestPrecisionStreak
+            Triple(
+                current,
+                75,
+                stringResource(R.string.badge_progress_precision_streak, current, 75),
+            )
+        }
+        PermanentAchievement.DoubleMeaning -> {
+            val current = engagementProgress.recognizerMixedSessions
+            Triple(current, 5, stringResource(R.string.badge_progress_sessions, current, 5))
+        }
+        PermanentAchievement.BidirectionalReading -> {
+            val current = engagementProgress.advancedMixedSessions
+            Triple(current, 15, stringResource(R.string.badge_progress_sessions, current, 15))
+        }
+        PermanentAchievement.HundredExercises -> {
+            val current = engagementProgress.totalExercises.toInt()
+            Triple(current, 100, stringResource(R.string.badge_progress_exercises, current, 100))
         }
     }
 }
@@ -745,23 +1119,71 @@ private fun DailyMiniAchievement.titleResource(): Int = when (this) {
 }
 
 @StringRes
-private fun PermanentAchievement.titleResource(): Int = when (this) {
+private fun AchievementFamily.titleResource(): Int = when (this) {
+    AchievementFamily.LearningPath -> R.string.achievements_family_learning_path
+    AchievementFamily.Consistency -> R.string.achievements_family_consistency
+    AchievementFamily.BrailleTrajectory -> R.string.achievements_family_trajectory
+    AchievementFamily.Precision -> R.string.achievements_family_precision
+    AchievementFamily.MixedMastery -> R.string.achievements_family_mixed_mastery
+}
+
+@StringRes
+internal fun PermanentAchievement.titleResource(): Int = when (this) {
     PermanentAchievement.FirstStep -> R.string.achievement_first_step_title
-    PermanentAchievement.Consistency -> R.string.achievement_consistency_title
-    PermanentAchievement.WeekInMotion -> R.string.achievement_week_in_motion_title
     PermanentAchievement.Explorer -> R.string.achievement_explorer_title
     PermanentAchievement.Recognizer -> R.string.achievement_recognizer_title
     PermanentAchievement.Challenger -> R.string.achievement_challenger_title
+    PermanentAchievement.FullAlphabet -> R.string.achievement_full_alphabet_title
+    PermanentAchievement.Consistency -> R.string.achievement_consistency_title
+    PermanentAchievement.WeekInMotion -> R.string.achievement_week_in_motion_title
+    PermanentAchievement.ConstantWeek -> R.string.achievement_constant_week_title
+    PermanentAchievement.TwoWeeks -> R.string.achievement_two_weeks_title
+    PermanentAchievement.ConsistencyMonth -> R.string.achievement_consistency_month_title
+    PermanentAchievement.SuperiorConsistency -> R.string.achievement_superior_consistency_title
+    PermanentAchievement.Bronze -> R.string.achievement_bronze_title
+    PermanentAchievement.Silver -> R.string.achievement_silver_title
+    PermanentAchievement.Gold -> R.string.achievement_gold_title
+    PermanentAchievement.Platinum -> R.string.achievement_platinum_title
+    PermanentAchievement.Diamond -> R.string.achievement_diamond_title
+    PermanentAchievement.BrailleSupremacy -> R.string.achievement_braille_supremacy_title
+    PermanentAchievement.BrailleFocus -> R.string.achievement_braille_focus_title
+    PermanentAchievement.BrailleRhythm -> R.string.achievement_braille_rhythm_title
+    PermanentAchievement.BraillePrecision -> R.string.achievement_braille_precision_title
+    PermanentAchievement.SustainedReading -> R.string.achievement_sustained_reading_title
+    PermanentAchievement.ConstantMastery -> R.string.achievement_constant_mastery_title
+    PermanentAchievement.SuperiorPrecision -> R.string.achievement_superior_precision_title
+    PermanentAchievement.DoubleMeaning -> R.string.achievement_double_meaning_title
+    PermanentAchievement.BidirectionalReading -> R.string.achievement_bidirectional_reading_title
     PermanentAchievement.HundredExercises -> R.string.achievement_hundred_exercises_title
 }
 
 @StringRes
-private fun PermanentAchievement.descriptionResource(): Int = when (this) {
+internal fun PermanentAchievement.descriptionResource(): Int = when (this) {
     PermanentAchievement.FirstStep -> R.string.achievement_first_step_description
-    PermanentAchievement.Consistency -> R.string.achievement_consistency_description
-    PermanentAchievement.WeekInMotion -> R.string.achievement_week_in_motion_description
     PermanentAchievement.Explorer -> R.string.achievement_explorer_description
     PermanentAchievement.Recognizer -> R.string.achievement_recognizer_description
     PermanentAchievement.Challenger -> R.string.achievement_challenger_description
+    PermanentAchievement.FullAlphabet -> R.string.achievement_full_alphabet_description
+    PermanentAchievement.Consistency -> R.string.achievement_consistency_description
+    PermanentAchievement.WeekInMotion -> R.string.achievement_week_in_motion_description
+    PermanentAchievement.ConstantWeek -> R.string.achievement_constant_week_description
+    PermanentAchievement.TwoWeeks -> R.string.achievement_two_weeks_description
+    PermanentAchievement.ConsistencyMonth -> R.string.achievement_consistency_month_description
+    PermanentAchievement.SuperiorConsistency -> R.string.achievement_superior_consistency_description
+    PermanentAchievement.Bronze -> R.string.achievement_bronze_description
+    PermanentAchievement.Silver -> R.string.achievement_silver_description
+    PermanentAchievement.Gold -> R.string.achievement_gold_description
+    PermanentAchievement.Platinum -> R.string.achievement_platinum_description
+    PermanentAchievement.Diamond -> R.string.achievement_diamond_description
+    PermanentAchievement.BrailleSupremacy -> R.string.achievement_braille_supremacy_description
+    PermanentAchievement.BrailleFocus -> R.string.achievement_braille_focus_description
+    PermanentAchievement.BrailleRhythm -> R.string.achievement_braille_rhythm_description
+    PermanentAchievement.BraillePrecision -> R.string.achievement_braille_precision_description
+    PermanentAchievement.SustainedReading -> R.string.achievement_sustained_reading_description
+    PermanentAchievement.ConstantMastery -> R.string.achievement_constant_mastery_description
+    PermanentAchievement.SuperiorPrecision -> R.string.achievement_superior_precision_description
+    PermanentAchievement.DoubleMeaning -> R.string.achievement_double_meaning_description
+    PermanentAchievement.BidirectionalReading -> R.string.achievement_bidirectional_reading_description
     PermanentAchievement.HundredExercises -> R.string.achievement_hundred_exercises_description
 }
+

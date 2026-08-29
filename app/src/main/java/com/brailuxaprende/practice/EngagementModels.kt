@@ -18,15 +18,68 @@ enum class PracticeSessionKind(
     Custom(completionBonusXp = 10),
 }
 
-enum class PermanentAchievement {
-    FirstStep,
+enum class AchievementFamily {
+    LearningPath,
     Consistency,
-    WeekInMotion,
-    Explorer,
-    Recognizer,
-    Challenger,
-    HundredExercises,
+    BrailleTrajectory,
+    Precision,
+    MixedMastery,
 }
+
+enum class PermanentAchievement(
+    val family: AchievementFamily?,
+    val threshold: Int,
+    val isLegacy: Boolean = false,
+) {
+    // Familia A: Camino de aprendizaje
+    FirstStep(family = AchievementFamily.LearningPath, threshold = 1),
+    Explorer(family = AchievementFamily.LearningPath, threshold = 5),
+    Recognizer(family = AchievementFamily.LearningPath, threshold = 5),
+    Challenger(family = AchievementFamily.LearningPath, threshold = 3),
+    FullAlphabet(family = AchievementFamily.LearningPath, threshold = 5),
+
+    // Familia B: Constancia
+    Consistency(family = AchievementFamily.Consistency, threshold = 3),
+    WeekInMotion(family = AchievementFamily.Consistency, threshold = 5),
+    ConstantWeek(family = AchievementFamily.Consistency, threshold = 7),
+    TwoWeeks(family = AchievementFamily.Consistency, threshold = 14),
+    ConsistencyMonth(family = AchievementFamily.Consistency, threshold = 30),
+    SuperiorConsistency(family = AchievementFamily.Consistency, threshold = 60),
+
+    // Familia C: Trayectoria Braille
+    Bronze(family = AchievementFamily.BrailleTrajectory, threshold = 25),
+    Silver(family = AchievementFamily.BrailleTrajectory, threshold = 75),
+    Gold(family = AchievementFamily.BrailleTrajectory, threshold = 125),
+    Platinum(family = AchievementFamily.BrailleTrajectory, threshold = 300),
+    Diamond(family = AchievementFamily.BrailleTrajectory, threshold = 600),
+    BrailleSupremacy(family = AchievementFamily.BrailleTrajectory, threshold = 1200),
+
+    // Familia D: Precisión
+    BrailleFocus(family = AchievementFamily.Precision, threshold = 5),
+    BrailleRhythm(family = AchievementFamily.Precision, threshold = 10),
+    BraillePrecision(family = AchievementFamily.Precision, threshold = 15),
+    SustainedReading(family = AchievementFamily.Precision, threshold = 30),
+    ConstantMastery(family = AchievementFamily.Precision, threshold = 50),
+    SuperiorPrecision(family = AchievementFamily.Precision, threshold = 75),
+
+    // Familia E: Dominio mixto
+    DoubleMeaning(family = AchievementFamily.MixedMastery, threshold = 5),
+    BidirectionalReading(family = AchievementFamily.MixedMastery, threshold = 15),
+
+    // Logro legacy (mantenido internamente para compatibilidad de esquemas previos)
+    HundredExercises(family = null, threshold = 100, isLegacy = true),
+    ;
+
+    companion object {
+        val activeEntries: List<PermanentAchievement>
+            get() = entries.filterNot { it.isLegacy }
+    }
+}
+
+data class PracticeExerciseResult(
+    val firstAttemptCorrect: Boolean,
+    val hintUsed: Boolean = false,
+)
 
 enum class DailyMiniAchievement(
     val target: Int,
@@ -67,11 +120,16 @@ data class EngagementProgress(
     val dailyPracticeDates: Set<PracticeDate> = emptySet(),
     val dailyChallengeDates: Set<PracticeDate> = emptySet(),
     val dailyChallengeSessions: Int = 0,
+    val recognizerMixedSessions: Int = 0,
+    val challengeMixedSessions: Int = 0,
+    val currentPrecisionStreak: Int = 0,
+    val bestPrecisionStreak: Int = 0,
     val currentMonthKey: String? = null,
     val currentMonthExercises: Int = 0,
     val completedMonthGoals: Set<String> = emptySet(),
     val monthlyExerciseCounts: Map<String, Int> = emptyMap(),
     val unlockedAchievements: Set<PermanentAchievement> = emptySet(),
+    val achievementUnlockDates: Map<PermanentAchievement, PracticeDate> = emptyMap(),
     val miniAchievementDate: PracticeDate? = null,
     val miniAchievementType: DailyMiniAchievement? = null,
     val miniAchievementProgress: Int = 0,
@@ -79,6 +137,9 @@ data class EngagementProgress(
     val miniRewardedDates: Set<PracticeDate> = emptySet(),
     val practicedModalitiesToday: Set<PracticeExerciseType> = emptySet(),
 ) {
+    val advancedMixedSessions: Int
+        get() = recognizerMixedSessions + challengeMixedSessions
+
     fun hasPracticed(date: PracticeDate): Boolean = date in activityDates
 
     fun isDailyPracticeCompleted(date: PracticeDate): Boolean = date in dailyPracticeDates
@@ -125,6 +186,8 @@ data class EngagementSession(
     val hintsUsed: Int = 0,
     val mode: PracticeMode = PracticeMode.SignToCharacter,
     val longestFirstAttemptCorrectStreak: Int = 0,
+    val exerciseResults: List<PracticeExerciseResult> = emptyList(),
+    val isPrecisionEligible: Boolean = false,
     val id: String = UUID.randomUUID().toString(),
 ) {
     init {

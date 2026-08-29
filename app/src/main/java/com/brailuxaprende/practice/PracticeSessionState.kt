@@ -154,6 +154,17 @@ data class PracticeSessionState(
 
     fun summary(): PracticeSessionSummary {
         require(isCompleted) { "A summary is only available after completing the session." }
+        val wasAnyHintUsed = hintsUsed > 0 || revealedHintCount > 0
+        val exerciseResults = completedAnswers.map { answer ->
+            val exercise = session.exercises.getOrNull(answer.exerciseIndex)
+            val isFirstAttempt = answer.responses.size == 1 &&
+                exercise != null &&
+                answer.responses.firstOrNull() == exercise.target.printedCharacter
+            PracticeExerciseResult(
+                firstAttemptCorrect = isFirstAttempt,
+                hintUsed = wasAnyHintUsed,
+            )
+        }
         return PracticeSessionSummary(
             exercisesCompleted = session.exercises.size,
             firstAttemptCorrect = firstAttemptCorrect,
@@ -168,6 +179,7 @@ data class PracticeSessionState(
                 ?: setOf(PracticeContentGroup.SpanishAlphabet),
             mode = session.mode,
             longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+            exerciseResults = exerciseResults,
             sessionId = sessionId,
         )
     }

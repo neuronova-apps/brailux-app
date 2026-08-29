@@ -276,6 +276,36 @@ class EngagementProgressRepositoryTest {
         assertFalse(PermanentAchievement.Challenger in migrated.unlockedAchievements)
     }
 
+    @Test
+    fun schemaV2FieldsRoundTripAfterRepositoryIsReopened() = runBlocking {
+        val date = PracticeDate(2026, 8, 29)
+        val mixedSession = session(
+            kind = PracticeSessionKind.Level2,
+            exercises = 15,
+            firstAttemptCorrect = 15,
+            mode = PracticeMode.Mixed,
+        ).copy(
+            isPrecisionEligible = true,
+            exerciseResults = List(15) {
+                com.brailuxaprende.practice.PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false)
+            },
+        )
+
+        val update = repository.recordSession(mixedSession, date)
+        val restored = reopenRepository().progress.first()
+
+        assertEquals(update.progress, restored)
+        assertEquals(1, restored.recognizerMixedSessions)
+        assertEquals(0, restored.challengeMixedSessions)
+        assertEquals(1, restored.advancedMixedSessions)
+        assertEquals(15, restored.currentPrecisionStreak)
+        assertEquals(15, restored.bestPrecisionStreak)
+        assertEquals(date, restored.achievementUnlockDates[PermanentAchievement.FirstStep])
+        assertEquals(date, restored.achievementUnlockDates[PermanentAchievement.BrailleFocus])
+        assertEquals(date, restored.achievementUnlockDates[PermanentAchievement.BrailleRhythm])
+        assertEquals(date, restored.achievementUnlockDates[PermanentAchievement.BraillePrecision])
+    }
+
     private fun createRepository() {
         dataStoreScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
         dataStore = PreferenceDataStoreFactory.create(

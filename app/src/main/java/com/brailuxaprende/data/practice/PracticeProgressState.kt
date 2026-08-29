@@ -1,7 +1,10 @@
 package com.brailuxaprende.data.practice
 
+import com.brailuxaprende.data.learn.LearningProgress
+import com.brailuxaprende.practice.CustomPracticeConfiguration
 import com.brailuxaprende.practice.EngagementReward
 import com.brailuxaprende.practice.PracticeClock
+import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.CancellationException
@@ -24,6 +27,7 @@ class PracticeProgressState(
 
     fun recordLevel1Session(
         summary: PracticeSessionSummary,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -34,9 +38,11 @@ class PracticeProgressState(
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
+                    mode = summary.mode ?: PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
@@ -49,6 +55,7 @@ class PracticeProgressState(
 
     fun recordLevel2Session(
         summary: PracticeSessionSummary,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -60,9 +67,11 @@ class PracticeProgressState(
                     errors = summary.errors,
                     hintsUsed = summary.hintsUsed,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
+                    mode = summary.mode ?: PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
@@ -75,6 +84,7 @@ class PracticeProgressState(
 
     fun recordLevel3Session(
         summary: PracticeSessionSummary,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -85,9 +95,11 @@ class PracticeProgressState(
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
+                    mode = summary.mode ?: PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
@@ -100,6 +112,8 @@ class PracticeProgressState(
 
     fun recordCustomSession(
         summary: PracticeSessionSummary,
+        customConfiguration: CustomPracticeConfiguration? = null,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -111,9 +125,12 @@ class PracticeProgressState(
                     errors = summary.errors,
                     hintsUsed = summary.hintsUsed,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.SignToCharacter,
+                    mode = summary.mode ?: PracticeMode.SignToCharacter,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
+                    customConfiguration = customConfiguration,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
@@ -126,6 +143,7 @@ class PracticeProgressState(
 
     fun recordDailySession(
         summary: PracticeSessionSummary,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -136,9 +154,11 @@ class PracticeProgressState(
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.Mixed,
+                    mode = summary.mode ?: PracticeMode.Mixed,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {
@@ -151,6 +171,7 @@ class PracticeProgressState(
 
     fun recordDailyChallengeSession(
         summary: PracticeSessionSummary,
+        learningProgress: LearningProgress = LearningProgress(),
         onRecorded: (EngagementReward?) -> Unit = {},
     ) {
         val practiceDate = clock.today().isoValue
@@ -161,9 +182,11 @@ class PracticeProgressState(
                     firstAttemptCorrect = summary.firstAttemptCorrect,
                     errors = summary.errors,
                     practiceDate = practiceDate,
-                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.Mixed,
+                    mode = summary.mode ?: PracticeMode.Mixed,
                     longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    exerciseResults = summary.exerciseResults,
                     sessionId = summary.sessionId,
+                    learningProgress = learningProgress,
                 )
                 onRecorded(record.engagementUpdate.reward)
             } catch (exception: CancellationException) {

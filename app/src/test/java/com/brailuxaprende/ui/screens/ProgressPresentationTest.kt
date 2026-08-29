@@ -1,6 +1,7 @@
 package com.brailuxaprende.ui.screens
 
 import com.brailuxaprende.practice.EngagementProgress
+import com.brailuxaprende.practice.PermanentAchievement
 import com.brailuxaprende.practice.PracticeDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -72,4 +73,15 @@ class ProgressPresentationTest {
         assertEquals(com.brailuxaprende.R.string.progress_play_sequence_games, com.brailuxaprende.R.string.progress_play_sequence_games)
         assertEquals(com.brailuxaprende.R.string.progress_play_order_games, com.brailuxaprende.R.string.progress_play_order_games)
     }
+
+    @Test
+    fun `all 25 permanent achievements have valid title and description string resources`() {
+        PermanentAchievement.entries.forEach { achievement ->
+            val titleRes = achievement.titleResource()
+            val descRes = achievement.descriptionResource()
+            assertTrue("Title resource for $achievement should be non-zero", titleRes != 0)
+            assertTrue("Description resource for $achievement should be non-zero", descRes != 0)
+        }
+    }
 }
+

@@ -249,5 +249,6 @@ data class PracticeSessionSummary(
     ),
     val mode: PracticeMode? = null,
     val longestFirstAttemptCorrectStreak: Int = 0,
+    val exerciseResults: List<PracticeExerciseResult> = emptyList(),
     val sessionId: String = newPracticeSessionId(),
 )
