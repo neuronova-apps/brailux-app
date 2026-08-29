@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -1287,19 +1289,24 @@ private fun DailyPracticeHeader(
             )
             Spacer(modifier = Modifier.heightIn(min = 20.dp))
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 text = stringResource(R.string.daily_practice_header_title),
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
-            DailyPracticeBadge()
+            DailyPracticeBadge(
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
         Text(
             text = stringResource(R.string.daily_practice_header_subtitle),
@@ -1329,19 +1336,24 @@ private fun DailyPracticeSummaryHeader(
             .widthIn(max = 600.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 text = stringResource(R.string.daily_practice_completed),
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
-            DailyPracticeBadge()
+            DailyPracticeBadge(
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
         Text(
             text = stringResource(R.string.daily_practice_completed_confirmation),
@@ -1355,25 +1367,41 @@ private fun DailyPracticeSummaryHeader(
 }
 
 @Composable
-private fun DailyPracticeBadge(
+private fun PracticeIdentityBadge(
+    text: String,
+    accessibilityDescription: String,
     modifier: Modifier = Modifier,
 ) {
-    val description = stringResource(R.string.daily_practice_badge_accessibility)
     Surface(
         shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.semantics {
-            contentDescription = description
-        },
+        modifier = modifier
+            .wrapContentWidth()
+            .semantics {
+                contentDescription = accessibilityDescription
+            },
     ) {
         Text(
-            text = stringResource(R.string.daily_practice_badge),
+            text = text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            softWrap = false,
         )
     }
+}
+
+@Composable
+private fun DailyPracticeBadge(
+    modifier: Modifier = Modifier,
+) {
+    PracticeIdentityBadge(
+        text = stringResource(R.string.daily_practice_badge),
+        accessibilityDescription = stringResource(R.string.daily_practice_badge_accessibility),
+        modifier = modifier,
+    )
 }
 
 @Composable
@@ -1394,19 +1422,24 @@ private fun DailyChallengeHeader(
             )
             Spacer(modifier = Modifier.heightIn(min = 20.dp))
         }
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 text = stringResource(R.string.daily_challenge_header_title),
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
-            DailyChallengeBadge()
+            DailyChallengeBadge(
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
         Text(
             text = stringResource(R.string.daily_challenge_header_subtitle),
@@ -1436,19 +1469,24 @@ private fun DailyChallengeSummaryHeader(
             .widthIn(max = 600.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
                 text = stringResource(R.string.daily_challenge_completed),
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .semantics { heading() },
                 style = MaterialTheme.typography.headlineMedium,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground,
                 textAlign = TextAlign.Center,
             )
-            DailyChallengeBadge()
+            DailyChallengeBadge(
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
         }
         Text(
             text = stringResource(R.string.daily_challenge_completed_confirmation),
@@ -1465,21 +1503,10 @@ private fun DailyChallengeSummaryHeader(
 private fun DailyChallengeBadge(
     modifier: Modifier = Modifier,
 ) {
-    val description = stringResource(R.string.daily_challenge_badge_accessibility)
-    Surface(
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        modifier = modifier.semantics {
-            contentDescription = description
-        },
-    ) {
-        Text(
-            text = stringResource(R.string.daily_challenge_badge),
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Bold,
-        )
-    }
+    PracticeIdentityBadge(
+        text = stringResource(R.string.daily_challenge_badge),
+        accessibilityDescription = stringResource(R.string.daily_challenge_badge_accessibility),
+        modifier = modifier,
+    )
 }
 
