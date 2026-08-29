@@ -43,6 +43,8 @@ class BrailuxNavigationTest {
         assertTrue(shouldShowBottomBar(BrailuxRoutes.HOME))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.SETTINGS))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.ABOUT))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.DAILY_PRACTICE))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.DAILY_CHALLENGE))
         assertFalse(shouldShowBottomBar(null))
     }
 

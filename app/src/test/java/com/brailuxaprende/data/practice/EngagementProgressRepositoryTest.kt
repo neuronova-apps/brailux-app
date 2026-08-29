@@ -90,6 +90,28 @@ class EngagementProgressRepositoryTest {
     }
 
     @Test
+    fun dailyChallengeProgressRoundTripsAfterRepositoryIsReopened() = runBlocking {
+        val date = PracticeDate(2026, 8, 28)
+        val update = repository.recordSession(
+            session = session(
+                kind = PracticeSessionKind.DailyChallenge,
+                exercises = 10,
+                firstAttemptCorrect = 10,
+                mode = PracticeMode.Mixed,
+            ),
+            date = date,
+        )
+
+        val restored = reopenRepository().progress.first()
+
+        assertEquals(update.progress, restored)
+        assertTrue(restored.hasPracticed(date))
+        assertTrue(restored.isDailyChallengeCompleted(date))
+        assertEquals(1, restored.dailyChallengeSessions)
+        assertEquals(mapOf(date.monthKey to 10), restored.monthlyExerciseCounts)
+    }
+
+    @Test
     fun streakWeekMonthAndAchievementsSurviveRestoration() = runBlocking {
         val monday = PracticeDate(2026, 8, 3)
         repeat(5) { offset ->
@@ -285,6 +307,7 @@ class EngagementProgressRepositoryTest {
         kind = kind,
         exercises = when (kind) {
             PracticeSessionKind.Daily -> 5
+            PracticeSessionKind.DailyChallenge -> 10
             PracticeSessionKind.Level1 -> 10
             PracticeSessionKind.Level2 -> 15
             PracticeSessionKind.Level3 -> 20

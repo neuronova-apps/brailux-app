@@ -53,6 +53,12 @@
     <string name="home_metric_accessibility">%1$s: %2$s.</string>
     <string name="home_daily_challenge">Desafío del día</string>
     <string name="home_daily_challenge_description">Aquí encontrarás un reto de Braille para poner a prueba lo aprendido.</string>
+    <string name="home_daily_challenge_details">10 ejercicios · reto diario</string>
+    <string name="home_daily_challenge_pending">Pendiente</string>
+    <string name="home_daily_challenge_completed">Completado</string>
+    <string name="home_daily_challenge_start">Comenzar</string>
+    <string name="home_daily_challenge_continue">Continuar</string>
+    <string name="home_daily_challenge_view_summary">Ver resultado</string>
     <string name="home_coming_soon">Próximamente</string>
     <string name="home_more_options">Más opciones</string>
     <string name="home_access_settings">Configuración</string>
@@ -207,6 +213,16 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="daily_practice_reward_streak">Racha actual: %1$s</string>
     <string name="daily_practice_summary_completed_fraction">%1$d de %2$d ejercicios completados</string>
     <string name="daily_practice_back_home">Volver al inicio</string>
+    <string name="daily_challenge_completed">Desafío diario completado</string>
+    <string name="daily_challenge_header_title">Desafío de hoy</string>
+    <string name="daily_challenge_header_subtitle">10 ejercicios · reto diario</string>
+    <string name="daily_challenge_badge">DESAFÍO</string>
+    <string name="daily_challenge_badge_accessibility">Sesión de desafío diario</string>
+    <string name="daily_challenge_habit_message">Pon a prueba lo que has aprendido</string>
+    <string name="daily_challenge_completed_confirmation">Desafío de hoy completado</string>
+    <string name="daily_challenge_back_to_home">Volver al inicio</string>
+    <string name="daily_challenge_reward_streak">Racha actual: %1$s</string>
+    <string name="daily_challenge_summary_completed_fraction">%1$d de %2$d ejercicios completados</string>
     <string name="mini_achievement_five_exercises">Completa 5 ejercicios</string>
     <string name="mini_achievement_session">Completa una sesión</string>
     <string name="mini_achievement_three_correct">Consigue 3 aciertos consecutivos al primer intento</string>
@@ -256,6 +272,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_mini_achievement_pending">Pendiente</string>
     <string name="progress_mini_achievement_accessibility">Mini logro de hoy, %1$s. Progreso, %2$d de %3$d. Estado, %4$s.</string>
     <string name="progress_practice_title">Progreso de Práctica</string>
+    <string name="progress_daily_challenge_title">Desafío del día</string>
     <string name="progress_level_1_title">Explorador Braille</string>
     <string name="progress_level_2_title">Reconocedor Braille</string>
     <string name="progress_level_3_title">Desafío Braille</string>

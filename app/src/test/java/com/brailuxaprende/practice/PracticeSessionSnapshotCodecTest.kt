@@ -31,6 +31,13 @@ class PracticeSessionSnapshotCodecTest {
     }
 
     @Test
+    fun dailyChallengeSessionRoundTripsAtMidpoint() {
+        assertActiveRoundTrip(
+            progressedState(PracticeSessionGenerator.generateDailyChallenge(Random(1)), completed = 5),
+        )
+    }
+
+    @Test
     fun level1SessionRoundTripsAtMidpoint() {
         assertActiveRoundTrip(
             progressedState(PracticeSessionGenerator.generate(random = Random(2)), completed = 4),
