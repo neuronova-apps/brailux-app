@@ -96,6 +96,7 @@
     <string name="learning_lesson_number">Lección %1$d</string>
     <string name="learning_status_available">Disponible</string>
     <string name="learning_status_completed">Completada</string>
+    <string name="learning_status_locked">Bloqueada</string>
 
     <string name="practice_title">Práctica</string>
     <string name="practice_description">Refuerza el reconocimiento de letras Braille con ejercicios accesibles.</string>
@@ -337,6 +338,10 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_achievement_pending">Pendiente</string>
     <string name="progress_achievement_accessibility">%1$s. %2$s. Estado: %3$s.</string>
     <string name="progress_learning_title">Progreso en Aprende</string>
+    <string name="progress_learning_completed_label">Lecciones completadas</string>
+    <string name="progress_learning_completed_value">%1$d de %2$d</string>
+    <string name="progress_learning_percentage_label">Progreso en lecciones</string>
+    <string name="progress_learning_summary_accessibility">Progreso en Aprende: %1$d de %2$d lecciones completadas, %3$d por ciento.</string>
     <string name="progress_learning_accessibility">%1$s. Estado: %2$s.</string>
     <string name="achievement_first_step_title">Primer paso</string>
     <string name="achievement_first_step_description">Completa tu primera sesión.</string>
@@ -479,13 +484,19 @@ Puntos 4, 5 y 6 a la derecha.</string>
 
     <string name="lesson_explanation">La celda Braille tiene seis puntos. Se numeran de arriba abajo: 1, 2 y 3 a la izquierda; 4, 5 y 6 a la derecha.</string>
     <string name="lesson_columns_explanation">La columna izquierda contiene los puntos 1, 2 y 3. La columna derecha contiene los puntos 4, 5 y 6. En ambas columnas la numeración avanza de arriba hacia abajo.</string>
+    <string name="lesson_combinations_explanation">Al activar uno o más puntos en la celda se forman todas las letras y signos. Por ejemplo, activando únicamente el punto superior izquierdo (punto 1) se obtiene la letra A.</string>
     <string name="lesson_cell_description">Celda Braille informativa con los puntos numerados del 1 al 6</string>
+    <string name="lesson_cell_example_a_description">Celda Braille de ejemplo para la letra A con el punto 1 activo</string>
     <string name="lesson_start_check">Comprobar lo aprendido</string>
     <string name="lesson_mini_check">Mini comprobación</string>
     <string name="lesson_question_upper_left">¿Cuál es el punto superior izquierdo?</string>
     <string name="lesson_question_lower_right">¿Cuál es el punto inferior derecho?</string>
+    <string name="lesson_question_left_column">¿Qué puntos forman la columna izquierda?</string>
+    <string name="lesson_question_letter_a">¿Qué punto se activa para formar la letra A?</string>
+    <string name="lesson_option_left_column">Puntos 1, 2 y 3</string>
+    <string name="lesson_option_right_column">Puntos 4, 5 y 6</string>
     <string name="lesson_point_answer">Punto %1$d</string>
-    <string name="lesson_check_correct">Correcto. Has identificado el punto.</string>
+    <string name="lesson_check_correct">Correcto. Has identificado la posición adecuada.</string>
     <string name="lesson_check_try_again">Observa de nuevo la posición y elige otra respuesta.</string>
     <string name="lesson_next_question">Siguiente pregunta</string>
     <string name="lesson_finish">Finalizar</string>
