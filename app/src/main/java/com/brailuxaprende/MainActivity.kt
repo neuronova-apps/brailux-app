@@ -33,6 +33,7 @@ import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.BrailuxPremiumAccess
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
+import com.brailuxaprende.ui.screens.AssistantUiState
 import com.brailuxaprende.ui.screens.AssistantViewModel
 import com.brailuxaprende.ui.screens.AssistantViewModelFactory
 import com.brailuxaprende.ui.screens.PracticeSessionViewModel
@@ -118,7 +119,11 @@ class MainActivity : ComponentActivity() {
                 customPracticePreferencesState.configuration.collectAsState()
             val engagementProgress by engagementProgressState.progress.collectAsState()
             val practiceSessions by practiceSessionViewModel.sessions.collectAsState()
-            val assistantUiState by assistantViewModel.uiState.collectAsState()
+            val assistantUiState = if (BrailuxFeatures.ASSISTANT_ENABLED) {
+                assistantViewModel.uiState.collectAsState().value
+            } else {
+                AssistantUiState()
+            }
             val currentPracticeDate = rememberCurrentPracticeDate()
             val realDate = AnnualDate(
                 month = currentPracticeDate.month,
@@ -154,8 +159,16 @@ class MainActivity : ComponentActivity() {
                     preferences = preferences,
                     seasonalTheme = seasonalTheme,
                     assistantState = assistantUiState,
-                    onAssistantInputChange = assistantViewModel::updateInput,
-                    onAssistantSend = assistantViewModel::send,
+                    onAssistantInputChange = if (BrailuxFeatures.ASSISTANT_ENABLED) {
+                        assistantViewModel::updateInput
+                    } else {
+                        {}
+                    },
+                    onAssistantSend = if (BrailuxFeatures.ASSISTANT_ENABLED) {
+                        assistantViewModel::send
+                    } else {
+                        {}
+                    },
                     learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,

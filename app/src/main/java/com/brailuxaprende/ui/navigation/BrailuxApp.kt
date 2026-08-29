@@ -36,6 +36,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.brailuxaprende.BrailuxFeatures
 import com.brailuxaprende.R
 import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.data.practice.PracticeProgress
@@ -571,7 +572,11 @@ private fun BrailuxNavHost(
                 },
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
-                onAssistant = { navController.navigate(BrailuxRoutes.ASSISTANT) },
+                onAssistant = {
+                    if (BrailuxFeatures.ASSISTANT_ENABLED) {
+                        navController.navigate(BrailuxRoutes.ASSISTANT)
+                    }
+                },
                 onSettings = { navController.navigate(BrailuxRoutes.SETTINGS) },
             )
         }
@@ -684,13 +689,15 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.ABOUT) {
             AboutScreen(onBack = ::goBack)
         }
-        composable(BrailuxRoutes.ASSISTANT) {
-            AssistantScreen(
-                state = assistantState,
-                onInputChange = onAssistantInputChange,
-                onSend = onAssistantSend,
-                onBack = ::goBack,
-            )
+        if (BrailuxFeatures.ASSISTANT_ENABLED) {
+            composable(BrailuxRoutes.ASSISTANT) {
+                AssistantScreen(
+                    state = assistantState,
+                    onInputChange = onAssistantInputChange,
+                    onSend = onAssistantSend,
+                    onBack = ::goBack,
+                )
+            }
         }
         composable(BrailuxRoutes.SIX_DOTS_LESSON) {
             BrailleLessonScreen(

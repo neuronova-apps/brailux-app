@@ -46,6 +46,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.brailuxaprende.BrailuxFeatures
 import com.brailuxaprende.R
 import com.brailuxaprende.data.seasonal.SeasonalEvent
 import com.brailuxaprende.data.seasonal.SeasonalTheme
@@ -138,12 +139,14 @@ fun HomeScreen(
                     iconResource = R.drawable.ic_practice,
                     onClick = onPractice,
                 )
-                BrailuxMenuCard(
-                    title = stringResource(R.string.assistant_title),
-                    description = stringResource(R.string.home_access_assistant_description),
-                    iconResource = R.drawable.ic_assistant,
-                    onClick = onAssistant,
-                )
+                if (BrailuxFeatures.ASSISTANT_ENABLED) {
+                    BrailuxMenuCard(
+                        title = stringResource(R.string.assistant_title),
+                        description = stringResource(R.string.home_access_assistant_description),
+                        iconResource = R.drawable.ic_assistant,
+                        onClick = onAssistant,
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(24.dp))
         }

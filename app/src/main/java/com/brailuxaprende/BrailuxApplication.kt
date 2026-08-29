@@ -8,9 +8,11 @@ class BrailuxApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        FirebaseApp.initializeApp(this)
-        FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
-            appCheckProviderFactory(),
-        )
+        if (BrailuxFeatures.ASSISTANT_ENABLED) {
+            FirebaseApp.initializeApp(this)
+            FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
+                appCheckProviderFactory(),
+            )
+        }
     }
 }
