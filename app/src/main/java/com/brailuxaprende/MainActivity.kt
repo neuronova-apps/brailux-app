@@ -21,6 +21,9 @@ import com.brailuxaprende.data.practice.CustomPracticePreferencesState
 import com.brailuxaprende.data.practice.EngagementProgressRepository
 import com.brailuxaprende.data.practice.EngagementProgressState
 import com.brailuxaprende.data.seasonal.AnnualDate
+import com.brailuxaprende.data.seasonal.SeasonalDebugOverride
+import com.brailuxaprende.data.seasonal.SeasonalTheme
+import com.brailuxaprende.data.seasonal.SeasonalThemeDetector
 import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
@@ -106,14 +109,22 @@ class MainActivity : ComponentActivity() {
             val practiceSessions by practiceSessionViewModel.sessions.collectAsState()
             val assistantUiState by assistantViewModel.uiState.collectAsState()
             val currentPracticeDate = rememberCurrentPracticeDate()
-            val currentDate = AnnualDate(
+            val realDate = AnnualDate(
                 month = currentPracticeDate.month,
                 day = currentPracticeDate.day,
             )
+            val currentDate = SeasonalDebugOverride.effectiveDate(realDate)
             val seasonalEvent = SeasonalThemeResolver.activeEvent(
                 date = currentDate,
                 eventsEnabled = preferences.seasonalThemesEnabled,
             )
+            // Unified seasonal theme for background + decorations.
+            // Uses the same seasonalThemesEnabled preference as the banner system.
+            val seasonalTheme = if (preferences.seasonalThemesEnabled) {
+                SeasonalThemeDetector.resolve(currentDate)
+            } else {
+                SeasonalTheme.NONE
+            }
             val premiumState = BrailuxPremiumAccess.currentState
             val customBackgroundVisible = BrailuxBackgroundCatalog.activeDrawableResource(
                 selectedId = preferences.selectedBackgroundId,
@@ -130,6 +141,7 @@ class MainActivity : ComponentActivity() {
             ) {
                 BrailuxApp(
                     preferences = preferences,
+                    seasonalTheme = seasonalTheme,
                     assistantState = assistantUiState,
                     onAssistantInputChange = assistantViewModel::updateInput,
                     onAssistantSend = assistantViewModel::send,

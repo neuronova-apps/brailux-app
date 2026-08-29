@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -40,11 +41,12 @@ fun LearnScreen(
     progress: LearningProgress,
     onOpenLesson: (LearningLesson) -> Unit,
     onBack: () -> Unit,
+    hasSeasonalBackground: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        color = if (hasSeasonalBackground) Color.Transparent else MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
@@ -57,6 +59,7 @@ fun LearnScreen(
                 title = stringResource(R.string.learn_title),
                 subtitle = stringResource(R.string.learn_description),
                 onBack = onBack,
+                hasSeasonalBackground = hasSeasonalBackground,
             )
             Spacer(modifier = Modifier.height(24.dp))
             Column(

@@ -41,6 +41,8 @@ import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.data.practice.StoredPracticeSessions
 import com.brailuxaprende.data.seasonal.SeasonalEvent
+import com.brailuxaprende.data.seasonal.SeasonalTheme
+import com.brailuxaprende.data.seasonal.SeasonalThemeCatalog
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
@@ -136,6 +138,7 @@ private val routesWithoutBottomBar = setOf(
 @Composable
 fun BrailuxApp(
     preferences: AccessibilityPreferences,
+    seasonalTheme: SeasonalTheme = SeasonalTheme.NONE,
     assistantState: AssistantUiState = AssistantUiState(),
     onAssistantInputChange: (String) -> Unit = {},
     onAssistantSend: () -> Unit = {},
@@ -185,11 +188,24 @@ fun BrailuxApp(
     val currentDestination = backStackEntry?.destination
     val currentRoute = currentDestination?.route
     val selectedMainRoute = selectedMainDestination(currentRoute)
-    val activeBackgroundResource = BrailuxBackgroundCatalog.activeDrawableResource(
-        selectedId = preferences.selectedBackgroundId,
-        isPremiumUnlocked = isPremiumUnlocked,
-        highContrastEnabled = preferences.highContrastEnabled,
-    )
+
+    // Resolve the background image to display, following the priority:
+    //   1. High contrast active  → no background image
+    //   2. Seasonal theme active → seasonal background image
+    //   3. User custom bg selected (and premium unlocked) → custom background image
+    //   4. Otherwise            → no background image (Material default)
+    val seasonalResources = SeasonalThemeCatalog.resourcesFor(seasonalTheme)
+    val activeBackgroundResource: Int? = when {
+        preferences.highContrastEnabled -> null
+        seasonalResources != null -> seasonalResources.backgroundResource
+        else -> BrailuxBackgroundCatalog.activeDrawableResource(
+            selectedId = preferences.selectedBackgroundId,
+            isPremiumUnlocked = isPremiumUnlocked,
+            highContrastEnabled = false,
+        )
+    }
+    // True only when the seasonal background is the one being shown (not high contrast, not custom bg)
+    val hasSeasonalBackground = !preferences.highContrastEnabled && seasonalResources != null
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (activeBackgroundResource != null) {
@@ -219,6 +235,8 @@ fun BrailuxApp(
             BrailuxNavHost(
             navController = navController,
             preferences = preferences,
+            seasonalTheme = seasonalTheme,
+            hasSeasonalBackground = hasSeasonalBackground,
             assistantState = assistantState,
             onAssistantInputChange = onAssistantInputChange,
             onAssistantSend = onAssistantSend,
@@ -331,6 +349,8 @@ private fun BrailuxBottomBar(
 private fun BrailuxNavHost(
     navController: NavHostController,
     preferences: AccessibilityPreferences,
+    seasonalTheme: SeasonalTheme,
+    hasSeasonalBackground: Boolean,
     assistantState: AssistantUiState,
     onAssistantInputChange: (String) -> Unit,
     onAssistantSend: () -> Unit,
@@ -479,6 +499,7 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.HOME) {
             HomeScreen(
                 seasonalEvent = seasonalEvent,
+                seasonalTheme = seasonalTheme,
                 engagementProgress = engagementProgress,
                 currentDate = currentDate,
                 onStartDailyPractice = {
@@ -493,6 +514,7 @@ private fun BrailuxNavHost(
         composable(BrailuxRoutes.LEARN) {
             LearnScreen(
                 progress = learningProgress,
+                hasSeasonalBackground = hasSeasonalBackground,
                 onOpenLesson = ::openLearningLesson,
                 onBack = ::goBack,
             )
@@ -539,6 +561,7 @@ private fun BrailuxNavHost(
             PlaceholderScreen(
                 title = stringResource(R.string.play_title),
                 description = stringResource(R.string.play_description),
+                hasSeasonalBackground = hasSeasonalBackground,
                 onBack = ::goBack,
             )
         }
@@ -548,6 +571,7 @@ private fun BrailuxNavHost(
                 learningProgress = learningProgress,
                 engagementProgress = engagementProgress,
                 currentDate = currentDate,
+                hasSeasonalBackground = hasSeasonalBackground,
                 onBack = ::goBack,
             )
         }

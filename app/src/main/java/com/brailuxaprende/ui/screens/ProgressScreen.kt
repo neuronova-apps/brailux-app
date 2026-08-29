@@ -27,6 +27,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +71,7 @@ fun ProgressScreen(
     engagementProgress: EngagementProgress = EngagementProgress(),
     currentDate: PracticeDate = SystemPracticeClock.today(),
     initialTab: ProgressTab = ProgressTab.Summary,
+    hasSeasonalBackground: Boolean = false,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,7 +79,7 @@ fun ProgressScreen(
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        color = if (hasSeasonalBackground) Color.Transparent else MaterialTheme.colorScheme.background,
     ) {
         Column(
             modifier = Modifier
@@ -90,6 +92,7 @@ fun ProgressScreen(
                 title = stringResource(R.string.progress_title),
                 subtitle = stringResource(R.string.progress_description),
                 onBack = onBack,
+                hasSeasonalBackground = hasSeasonalBackground,
             )
             Spacer(modifier = Modifier.height(20.dp))
             ProgressTabSelector(

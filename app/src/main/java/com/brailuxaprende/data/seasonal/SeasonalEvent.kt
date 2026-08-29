@@ -1,5 +1,6 @@
 package com.brailuxaprende.data.seasonal
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.brailuxaprende.R
 import java.util.Calendar
@@ -63,6 +64,7 @@ data class SeasonalEvent(
     val accent: SeasonalAccent? = null,
     val visualState: SeasonalVisualState,
     @param:StringRes val messageResource: Int? = null,
+    val theme: SeasonalTheme = SeasonalTheme.NONE,
 ) {
     fun includes(date: AnnualDate): Boolean = if (start <= end) {
         date in start..end
@@ -82,16 +84,19 @@ object SeasonalEvents {
             accent = SeasonalAccent.Sky,
             visualState = SeasonalVisualState.Braille,
             messageResource = R.string.season_message_world_braille_day,
+            theme = SeasonalTheme.NONE,
         ),
+        // San Valentín: 1 feb → 15 feb inclusive
         SeasonalEvent(
             id = "valentines_day",
             nameResource = R.string.season_valentines_day,
-            start = AnnualDate(2, 13),
+            start = AnnualDate(2, 1),
             end = AnnualDate(2, 15),
             priority = 50,
             accent = SeasonalAccent.Rose,
             visualState = SeasonalVisualState.Heart,
             messageResource = R.string.season_message_valentines_day,
+            theme = SeasonalTheme.SAN_VALENTIN,
         ),
         SeasonalEvent(
             id = "book_day",
@@ -102,6 +107,7 @@ object SeasonalEvents {
             accent = SeasonalAccent.Amber,
             visualState = SeasonalVisualState.Book,
             messageResource = R.string.season_message_book_day,
+            theme = SeasonalTheme.NONE,
         ),
         SeasonalEvent(
             id = "peru_independence",
@@ -112,6 +118,7 @@ object SeasonalEvents {
             accent = SeasonalAccent.Red,
             visualState = SeasonalVisualState.Peru,
             messageResource = R.string.season_message_peru_independence,
+            theme = SeasonalTheme.NONE,
         ),
         SeasonalEvent(
             id = "white_cane_day",
@@ -122,16 +129,19 @@ object SeasonalEvents {
             accent = SeasonalAccent.Cyan,
             visualState = SeasonalVisualState.WhiteCane,
             messageResource = R.string.season_message_white_cane_day,
+            theme = SeasonalTheme.NONE,
         ),
+        // Halloween: 15 oct → 2 nov inclusive
         SeasonalEvent(
             id = "halloween",
             nameResource = R.string.season_halloween,
-            start = AnnualDate(10, 29),
-            end = AnnualDate(10, 31),
+            start = AnnualDate(10, 15),
+            end = AnnualDate(11, 2),
             priority = 40,
             accent = SeasonalAccent.Orange,
             visualState = SeasonalVisualState.Halloween,
             messageResource = R.string.season_message_halloween,
+            theme = SeasonalTheme.HALLOWEEN,
         ),
         SeasonalEvent(
             id = "disability_day",
@@ -142,26 +152,31 @@ object SeasonalEvents {
             accent = SeasonalAccent.Violet,
             visualState = SeasonalVisualState.Accessibility,
             messageResource = R.string.season_message_disability_day,
+            theme = SeasonalTheme.NONE,
         ),
+        // Navidad: 1 dic → 27 dic inclusive
         SeasonalEvent(
             id = "christmas",
             nameResource = R.string.season_christmas,
-            start = AnnualDate(12, 20),
-            end = AnnualDate(12, 25),
+            start = AnnualDate(12, 1),
+            end = AnnualDate(12, 27),
             priority = 60,
             accent = SeasonalAccent.Green,
             visualState = SeasonalVisualState.Christmas,
             messageResource = R.string.season_message_christmas,
+            theme = SeasonalTheme.NAVIDAD,
         ),
+        // Año Nuevo: 28 dic → 4 ene inclusive (cruza año)
         SeasonalEvent(
             id = "new_year",
             nameResource = R.string.season_new_year,
-            start = AnnualDate(12, 30),
-            end = AnnualDate(1, 1),
+            start = AnnualDate(12, 28),
+            end = AnnualDate(1, 4),
             priority = 85,
             accent = SeasonalAccent.Gold,
             visualState = SeasonalVisualState.NewYear,
             messageResource = R.string.season_message_new_year,
+            theme = SeasonalTheme.ANO_NUEVO,
         ),
     )
 }

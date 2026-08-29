@@ -108,14 +108,34 @@ fun BrailuxSecondaryButton(
 fun BrailuxBackButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    hasSeasonalBackground: Boolean = false,
 ) {
     val backDescription = stringResource(R.string.action_back_description)
+    val colors = if (hasSeasonalBackground) {
+        ButtonDefaults.outlinedButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        )
+    } else {
+        ButtonDefaults.outlinedButtonColors()
+    }
+    val border = if (hasSeasonalBackground) {
+        BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+        )
+    } else {
+        ButtonDefaults.outlinedButtonBorder(enabled = true)
+    }
+
     OutlinedButton(
         onClick = onClick,
         modifier = modifier
             .heightIn(min = 48.dp)
             .semantics { contentDescription = backDescription },
         shape = MaterialTheme.shapes.small,
+        colors = colors,
+        border = border,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
     ) {
         Icon(
@@ -138,6 +158,7 @@ fun BrailuxScreenHeader(
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
     textAlign: TextAlign = TextAlign.Center,
+    hasSeasonalBackground: Boolean = false,
 ) {
     Column(
         modifier = modifier
@@ -152,25 +173,64 @@ fun BrailuxScreenHeader(
         if (onBack != null) {
             BrailuxBackButton(
                 onClick = onBack,
+                hasSeasonalBackground = hasSeasonalBackground,
                 modifier = Modifier.align(Alignment.Start),
             )
             Spacer(modifier = Modifier.heightIn(min = 20.dp))
         }
-        Text(
-            text = title,
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            textAlign = textAlign,
-        )
-        if (subtitle != null) {
+        if (hasSeasonalBackground) {
+            Surface(
+                shape = MaterialTheme.shapes.large,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                ),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
+                    horizontalAlignment = if (textAlign == TextAlign.Center) {
+                        Alignment.CenterHorizontally
+                    } else {
+                        Alignment.Start
+                    },
+                ) {
+                    Text(
+                        text = title,
+                        modifier = Modifier.semantics { heading() },
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = textAlign,
+                    )
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            modifier = Modifier.padding(top = 8.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = textAlign,
+                        )
+                    }
+                }
+            }
+        } else {
             Text(
-                text = subtitle,
-                modifier = Modifier.padding(top = 10.dp),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                text = title,
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground,
                 textAlign = textAlign,
             )
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    modifier = Modifier.padding(top = 10.dp),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = textAlign,
+                )
+            }
         }
     }
 }
