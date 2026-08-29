@@ -16,6 +16,13 @@ enum class PracticeLevel(
         allowsPointNumberToggle = false,
         hintLimit = 0,
     ),
+    DailyChallenge(
+        exerciseCount = 10,
+        optionCount = 4,
+        showPointNumbersByDefault = false,
+        allowsPointNumberToggle = false,
+        hintLimit = 0,
+    ),
     BrailleExplorer(
         exerciseCount = 10,
         optionCount = 4,

@@ -7,8 +7,8 @@ object EngagementEngine {
         date: PracticeDate,
     ): EngagementUpdate {
         if (
-            session.kind == PracticeSessionKind.Daily &&
-            current.isDailyPracticeCompleted(date)
+            (session.kind == PracticeSessionKind.Daily && current.isDailyPracticeCompleted(date)) ||
+            (session.kind == PracticeSessionKind.DailyChallenge && current.isDailyChallengeCompleted(date))
         ) {
             return EngagementUpdate(
                 progress = current,
@@ -30,6 +30,11 @@ object EngagementEngine {
             current.dailyPracticeDates + date
         } else {
             current.dailyPracticeDates
+        }
+        val dailyChallengeDates = if (session.kind == PracticeSessionKind.DailyChallenge) {
+            current.dailyChallengeDates + date
+        } else {
+            current.dailyChallengeDates
         }
         val monthly = updatedMonthlyProgress(current, session.exercisesCompleted, date)
         val mini = updatedMiniAchievement(current, session, date)
@@ -59,6 +64,10 @@ object EngagementEngine {
                 session.kind == PracticeSessionKind.Custom
             ) 1 else 0,
             dailyPracticeDates = dailyPracticeDates,
+            dailyChallengeDates = dailyChallengeDates,
+            dailyChallengeSessions = current.dailyChallengeSessions + if (
+                session.kind == PracticeSessionKind.DailyChallenge
+            ) 1 else 0,
             currentMonthKey = monthly.key,
             currentMonthExercises = monthly.exercises,
             completedMonthGoals = monthly.completedGoals,

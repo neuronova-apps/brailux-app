@@ -68,6 +68,7 @@ import com.brailuxaprende.ui.screens.BrailleExplorerScreen
 import com.brailuxaprende.ui.screens.BrailleRecognizerScreen
 import com.brailuxaprende.ui.screens.CustomBraillePracticeScreen
 import com.brailuxaprende.ui.screens.CustomPracticeConfigurationScreen
+import com.brailuxaprende.ui.screens.DailyChallengeScreen
 import com.brailuxaprende.ui.screens.DailyPracticeScreen
 import com.brailuxaprende.ui.screens.HomeScreen
 import com.brailuxaprende.ui.screens.LearnScreen
@@ -102,6 +103,7 @@ object BrailuxRoutes {
     const val CUSTOM_PRACTICE_CONFIGURATION = "configuracion_practica_personalizada"
     const val CUSTOM_PRACTICE = "practica_personalizada"
     const val DAILY_PRACTICE = "practica_diaria"
+    const val DAILY_CHALLENGE = "desafio_del_dia"
 }
 
 private data class BottomDestination(
@@ -132,6 +134,7 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.CUSTOM_PRACTICE_CONFIGURATION,
     BrailuxRoutes.CUSTOM_PRACTICE,
     BrailuxRoutes.DAILY_PRACTICE,
+    BrailuxRoutes.DAILY_CHALLENGE,
     BrailuxRoutes.ASSISTANT,
 )
 
@@ -172,6 +175,10 @@ fun BrailuxApp(
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit = { _, onRecorded -> onRecorded(null) },
     onDailySessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit = { _, onRecorded -> onRecorded(null) },
+    onDailyChallengeSessionCompleted: (
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit = { _, onRecorded -> onRecorded(null) },
@@ -262,6 +269,7 @@ fun BrailuxApp(
             onCustomPracticeConfigurationUsed = onCustomPracticeConfigurationUsed,
             onCustomSessionCompleted = onCustomSessionCompleted,
             onDailySessionCompleted = onDailySessionCompleted,
+            onDailyChallengeSessionCompleted = onDailyChallengeSessionCompleted,
             onPracticeSessionChanged = onPracticeSessionChanged,
             onPracticeSessionReadyForCredit = onPracticeSessionReadyForCredit,
             onPracticeSessionCreditResolved = onPracticeSessionCreditResolved,
@@ -316,7 +324,9 @@ private fun BrailuxBottomBar(
                             Icon(
                                 painter = painterResource(destination.icon),
                                 contentDescription = null,
-                                modifier = Modifier.padding(8.dp),
+                                modifier = Modifier
+                                    .padding(8.dp)
+                                    .fillMaxSize(),
                             )
                         }
                         if (selected) {
@@ -379,6 +389,10 @@ private fun BrailuxNavHost(
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit,
     onDailySessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit,
+    onDailyChallengeSessionCompleted: (
         PracticeSessionSummary,
         onRecorded: (EngagementReward?) -> Unit,
     ) -> Unit,
@@ -505,14 +519,26 @@ private fun BrailuxNavHost(
                     dailySnapshot.state.completedAnswers.isNotEmpty() ||
                     dailySnapshot.state.attemptsOnCurrentExercise > 0)
 
+            val dailyChallengeSnapshot = practiceSessions.snapshots[PracticeLevel.DailyChallenge]
+            val hasIncompleteDailyChallenge = dailyChallengeSnapshot != null &&
+                dailyChallengeSnapshot.phase == PracticeSessionPhase.Active &&
+                dailyChallengeSnapshot.sessionId == com.brailuxaprende.practice.dailyChallengeSessionId(currentDate) &&
+                (dailyChallengeSnapshot.state.currentExerciseIndex > 0 ||
+                    dailyChallengeSnapshot.state.completedAnswers.isNotEmpty() ||
+                    dailyChallengeSnapshot.state.attemptsOnCurrentExercise > 0)
+
             HomeScreen(
                 seasonalEvent = seasonalEvent,
                 seasonalTheme = seasonalTheme,
                 engagementProgress = engagementProgress,
                 currentDate = currentDate,
                 hasIncompleteDailySession = hasIncompleteDaily,
+                hasIncompleteDailyChallengeSession = hasIncompleteDailyChallenge,
                 onStartDailyPractice = {
                     navController.navigate(BrailuxRoutes.DAILY_PRACTICE)
+                },
+                onStartDailyChallenge = {
+                    navController.navigate(BrailuxRoutes.DAILY_CHALLENGE)
                 },
                 onLearn = { navController.navigate(BrailuxRoutes.LEARN) },
                 onPractice = { navController.navigate(BrailuxRoutes.PRACTICE) },
@@ -751,6 +777,21 @@ private fun BrailuxNavHost(
                 onSessionCompleted = onDailySessionCompleted,
                 onBackToHome = ::backToHome,
                 storedSnapshot = practiceSessions.snapshots[PracticeLevel.Daily],
+                sessionsLoaded = practiceSessions.isLoaded,
+                onSnapshotChanged = onPracticeSessionChanged,
+                onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,
+                onSnapshotCreditResolved = onPracticeSessionCreditResolved,
+                onSnapshotCleared = onPracticeSessionCleared,
+            )
+        }
+        composable(BrailuxRoutes.DAILY_CHALLENGE) {
+            DailyChallengeScreen(
+                date = currentDate,
+                learningProgress = learningProgress,
+                practiceProgress = practiceProgress,
+                onSessionCompleted = onDailyChallengeSessionCompleted,
+                onBackToHome = ::backToHome,
+                storedSnapshot = practiceSessions.snapshots[PracticeLevel.DailyChallenge],
                 sessionsLoaded = practiceSessions.isLoaded,
                 onSnapshotChanged = onPracticeSessionChanged,
                 onSnapshotReadyForCredit = onPracticeSessionReadyForCredit,

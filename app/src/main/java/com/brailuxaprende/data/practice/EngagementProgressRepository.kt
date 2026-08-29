@@ -138,6 +138,8 @@ internal fun Preferences.toEngagementProgress(): EngagementProgress {
         level3Sessions = this[EngagementLevel3SessionsKey] ?: 0,
         customSessions = this[EngagementCustomSessionsKey] ?: 0,
         dailyPracticeDates = parseDates(this[DailyPracticeDatesKey]),
+        dailyChallengeDates = parseDates(this[DailyChallengeDatesKey]),
+        dailyChallengeSessions = this[EngagementDailyChallengeSessionsKey] ?: 0,
         currentMonthKey = this[CurrentMonthKey]?.takeIf(MonthKeyPattern::matches),
         currentMonthExercises = this[CurrentMonthExercisesKey] ?: 0,
         completedMonthGoals = parseNames(this[CompletedMonthGoalsKey])
@@ -218,6 +220,8 @@ private fun MutablePreferences.writeEngagement(progress: EngagementProgress) {
     this[EngagementLevel3SessionsKey] = progress.level3Sessions
     this[EngagementCustomSessionsKey] = progress.customSessions
     this[DailyPracticeDatesKey] = progress.dailyPracticeDates.toStoredDates()
+    this[DailyChallengeDatesKey] = progress.dailyChallengeDates.toStoredDates()
+    this[EngagementDailyChallengeSessionsKey] = progress.dailyChallengeSessions
     progress.currentMonthKey?.let { this[CurrentMonthKey] = it }
     this[CurrentMonthExercisesKey] = progress.currentMonthExercises
     this[CompletedMonthGoalsKey] = progress.completedMonthGoals.sorted().joinToString(",")
@@ -306,6 +310,8 @@ private val EngagementLevel2SessionsKey = intPreferencesKey("engagement_level_2_
 private val EngagementLevel3SessionsKey = intPreferencesKey("engagement_level_3_sessions")
 private val EngagementCustomSessionsKey = intPreferencesKey("engagement_custom_sessions")
 private val DailyPracticeDatesKey = stringPreferencesKey("engagement_daily_practice_dates")
+private val DailyChallengeDatesKey = stringPreferencesKey("engagement_daily_challenge_dates")
+private val EngagementDailyChallengeSessionsKey = intPreferencesKey("engagement_daily_challenge_sessions")
 private val CurrentMonthKey = stringPreferencesKey("engagement_current_month")
 private val CurrentMonthExercisesKey = intPreferencesKey("engagement_current_month_exercises")
 private val CompletedMonthGoalsKey = stringPreferencesKey("engagement_completed_month_goals")

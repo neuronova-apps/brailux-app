@@ -371,6 +371,13 @@ private fun PracticeProgressSection(progress: PracticeProgress) {
             errors = progress.customErrors,
             hintsUsed = progress.customHintsUsed,
         )
+        PracticeLevelCard(
+            title = stringResource(R.string.progress_daily_challenge_title),
+            completedSessions = progress.dailyChallengeCompletedSessions,
+            totalExercises = progress.dailyChallengeTotalExercises,
+            firstAttemptCorrect = progress.dailyChallengeFirstAttemptCorrect,
+            errors = progress.dailyChallengeErrors,
+        )
     }
 }
 

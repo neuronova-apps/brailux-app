@@ -91,6 +91,31 @@ class PracticeProgressRepositoryTest {
         assertEquals(0, progress.dailyErrors)
         assertEquals(0, progress.dailyAccuracyPercentage)
         assertNull(progress.dailyLastPracticeDate)
+        assertEquals(0, progress.dailyChallengeCompletedSessions)
+        assertEquals(0, progress.dailyChallengeTotalExercises)
+        assertEquals(0, progress.dailyChallengeFirstAttemptCorrect)
+        assertEquals(0, progress.dailyChallengeErrors)
+        assertEquals(0, progress.dailyChallengeAccuracyPercentage)
+        assertNull(progress.dailyChallengeLastPracticeDate)
+    }
+
+    @Test
+    fun dailyChallengeProgressPersistsIndependently() = runBlocking {
+        repository.recordDailyChallengeSession(
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 9,
+            errors = 1,
+            practiceDate = "2026-08-28",
+        )
+
+        val progress = reopenRepository().progress.first()
+
+        assertEquals(1, progress.dailyChallengeCompletedSessions)
+        assertEquals(10, progress.dailyChallengeTotalExercises)
+        assertEquals(9, progress.dailyChallengeFirstAttemptCorrect)
+        assertEquals(1, progress.dailyChallengeErrors)
+        assertEquals(90, progress.dailyChallengeAccuracyPercentage)
+        assertEquals("2026-08-28", progress.dailyChallengeLastPracticeDate)
     }
 
     @Test

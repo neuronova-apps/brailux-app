@@ -49,6 +49,47 @@ object PracticeSessionGenerator {
         random = random,
     )
 
+    fun generateDailyChallenge(
+        date: PracticeDate = SystemPracticeClock.today(),
+        learningProgress: LearningProgress = LearningProgress(),
+        practiceProgress: PracticeProgress = PracticeProgress(),
+        random: Random = Random(date.epochDay * 31L + 17L),
+    ): PracticeSession {
+        val characters = availableCharactersForDaily(learningProgress, practiceProgress)
+        val targets = characters.shuffled(random).take(PracticeLevel.DailyChallenge.exerciseCount)
+        require(targets.size == PracticeLevel.DailyChallenge.exerciseCount) {
+            "Daily challenge requires at least 10 available characters."
+        }
+        val exercises = targets.mapIndexed { index, target ->
+            PracticeExercise(
+                target = target,
+                type = exerciseType(PracticeMode.Mixed, index),
+                options = createChallengingPedagogicalOptions(
+                    target = target,
+                    characters = characters,
+                    optionCount = PracticeLevel.DailyChallenge.optionCount,
+                    random = random,
+                ),
+            )
+        }
+        return PracticeSession(
+            level = PracticeLevel.DailyChallenge,
+            mode = PracticeMode.Mixed,
+            exercises = exercises,
+        )
+    }
+
+    fun generateDailyChallenge(
+        random: Random,
+    ): PracticeSession = generateDailyChallenge(
+        date = SystemPracticeClock.today(),
+        learningProgress = LearningProgress(
+            completedLessons = setOf(LearningLesson.LettersUtoZAndEnye),
+        ),
+        practiceProgress = PracticeProgress(),
+        random = random,
+    )
+
     internal fun availableCharactersForDaily(
         learningProgress: LearningProgress,
         practiceProgress: PracticeProgress,
@@ -126,6 +167,7 @@ object PracticeSessionGenerator {
             PracticeLevel.BrailleChallenge -> BrailleRepository.getLevel2Characters()
             PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
             PracticeLevel.Daily -> error("Daily sessions use the balanced daily generator.")
+            PracticeLevel.DailyChallenge -> error("Daily challenge sessions use the daily challenge generator.")
         }
 
         val targets = when (level) {
@@ -139,6 +181,7 @@ object PracticeSessionGenerator {
             }
             PracticeLevel.Custom -> error("Custom sessions require an explicit configuration.")
             PracticeLevel.Daily -> error("Daily sessions use the balanced daily generator.")
+            PracticeLevel.DailyChallenge -> error("Daily challenge sessions use the daily challenge generator.")
         }
 
         val exercises = targets.mapIndexed { index, target ->
@@ -194,6 +237,23 @@ object PracticeSessionGenerator {
             .sortedBy { candidate ->
                 val distance = kotlin.math.abs(characters.indexOf(candidate) - targetIndex)
                 distance * 10 + random.nextInt(10)
+            }
+            .take(optionCount - 1)
+        return (distractors + target).shuffled(random)
+    }
+
+    private fun createChallengingPedagogicalOptions(
+        target: BrailleCharacter,
+        characters: List<BrailleCharacter>,
+        optionCount: Int,
+        random: Random,
+    ): List<BrailleCharacter> {
+        val targetIndex = characters.indexOf(target)
+        val distractors = characters
+            .filterNot { it.printedCharacter == target.printedCharacter }
+            .sortedBy { candidate ->
+                val distance = kotlin.math.abs(characters.indexOf(candidate) - targetIndex)
+                distance * 5 + random.nextInt(5)
             }
             .take(optionCount - 1)
         return (distractors + target).shuffled(random)

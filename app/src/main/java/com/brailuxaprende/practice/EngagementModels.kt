@@ -11,6 +11,7 @@ enum class PracticeSessionKind(
     val completionBonusXp: Int,
 ) {
     Daily(completionBonusXp = 10),
+    DailyChallenge(completionBonusXp = 20),
     Level1(completionBonusXp = 10),
     Level2(completionBonusXp = 15),
     Level3(completionBonusXp = 20),
@@ -64,6 +65,8 @@ data class EngagementProgress(
     val level3Sessions: Int = 0,
     val customSessions: Int = 0,
     val dailyPracticeDates: Set<PracticeDate> = emptySet(),
+    val dailyChallengeDates: Set<PracticeDate> = emptySet(),
+    val dailyChallengeSessions: Int = 0,
     val currentMonthKey: String? = null,
     val currentMonthExercises: Int = 0,
     val completedMonthGoals: Set<String> = emptySet(),
@@ -79,6 +82,8 @@ data class EngagementProgress(
     fun hasPracticed(date: PracticeDate): Boolean = date in activityDates
 
     fun isDailyPracticeCompleted(date: PracticeDate): Boolean = date in dailyPracticeDates
+
+    fun isDailyChallengeCompleted(date: PracticeDate): Boolean = date in dailyChallengeDates
 
     fun weeklyPracticeDays(date: PracticeDate): Int = activityDates.count {
         it.weekStart == date.weekStart
@@ -132,6 +137,7 @@ data class EngagementSession(
         require(longestFirstAttemptCorrectStreak <= firstAttemptCorrect)
         when (kind) {
             PracticeSessionKind.Daily -> require(exercisesCompleted == 5)
+            PracticeSessionKind.DailyChallenge -> require(exercisesCompleted == 10)
             PracticeSessionKind.Level1 -> require(exercisesCompleted == 10)
             PracticeSessionKind.Level2 -> require(exercisesCompleted == 15)
             PracticeSessionKind.Level3 -> require(exercisesCompleted == 20)

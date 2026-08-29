@@ -197,6 +197,12 @@ class MainActivity : ComponentActivity() {
                             onRecorded = onRecorded,
                         )
                     },
+                    onDailyChallengeSessionCompleted = { summary, onRecorded ->
+                        practiceProgressState.recordDailyChallengeSession(
+                            summary = summary,
+                            onRecorded = onRecorded,
+                        )
+                    },
                     onPracticeSessionChanged = practiceSessionViewModel::save,
                     onPracticeSessionReadyForCredit =
                         practiceSessionViewModel::saveBeforeCredit,

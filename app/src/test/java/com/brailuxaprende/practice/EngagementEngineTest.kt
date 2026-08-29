@@ -499,6 +499,7 @@ class EngagementEngineTest {
     private companion object {
         fun defaultExercises(kind: PracticeSessionKind): Int = when (kind) {
             PracticeSessionKind.Daily -> 5
+            PracticeSessionKind.DailyChallenge -> 10
             PracticeSessionKind.Level1 -> 10
             PracticeSessionKind.Level2 -> 15
             PracticeSessionKind.Level3 -> 20

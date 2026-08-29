@@ -60,6 +60,7 @@ import com.brailuxaprende.practice.PracticeSessionState
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeValidationState
 import com.brailuxaprende.practice.SystemPracticeClock
+import com.brailuxaprende.practice.dailyChallengeSessionId
 import com.brailuxaprende.practice.dailyPracticeSessionId
 import com.brailuxaprende.practice.newPracticeSessionId
 import com.brailuxaprende.ui.components.BrailleCellView
@@ -108,6 +109,49 @@ fun DailyPracticeScreen(
             )
         },
         expectedSessionId = dailyPracticeSessionId(date),
+        onDailySessionCompleted = onSessionCompleted,
+        onBackToPractice = onBackToHome,
+        storedSnapshot = storedSnapshot,
+        sessionsLoaded = sessionsLoaded,
+        onSnapshotChanged = onSnapshotChanged,
+        onSnapshotReadyForCredit = onSnapshotReadyForCredit,
+        onSnapshotCreditResolved = onSnapshotCreditResolved,
+        onSnapshotCleared = onSnapshotCleared,
+        modifier = modifier,
+    )
+}
+
+@Composable
+fun DailyChallengeScreen(
+    date: PracticeDate = SystemPracticeClock.today(),
+    learningProgress: LearningProgress = LearningProgress(),
+    practiceProgress: PracticeProgress = PracticeProgress(),
+    onSessionCompleted: (
+        PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit,
+    ) -> Unit,
+    onBackToHome: () -> Unit,
+    storedSnapshot: PracticeSessionSnapshot?,
+    sessionsLoaded: Boolean,
+    onSnapshotChanged: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotReadyForCredit: (
+        PracticeSessionSnapshot,
+        onPersisted: (Boolean) -> Unit,
+    ) -> Unit,
+    onSnapshotCreditResolved: (PracticeSessionSnapshot) -> Unit,
+    onSnapshotCleared: (PracticeLevel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BraillePracticeLevelScreen(
+        level = PracticeLevel.DailyChallenge,
+        sessionFactory = {
+            PracticeSessionGenerator.generateDailyChallenge(
+                date = date,
+                learningProgress = learningProgress,
+                practiceProgress = practiceProgress,
+            )
+        },
+        expectedSessionId = dailyChallengeSessionId(date),
         onDailySessionCompleted = onSessionCompleted,
         onBackToPractice = onBackToHome,
         storedSnapshot = storedSnapshot,
@@ -353,7 +397,7 @@ private fun BraillePracticeLevelScreen(
     if (snapshot.phase == PracticeSessionPhase.Credited) {
         BackHandler {
             onBackToPractice()
-            if (level != PracticeLevel.Daily) {
+            if (level != PracticeLevel.Daily && level != PracticeLevel.DailyChallenge) {
                 onSnapshotCleared(level)
             }
         }
@@ -380,7 +424,7 @@ private fun BraillePracticeLevelScreen(
             engagementReward = snapshot.engagementReward,
             onBackToPractice = {
                 onBackToPractice()
-                if (level != PracticeLevel.Daily) {
+                if (level != PracticeLevel.Daily && level != PracticeLevel.DailyChallenge) {
                     onSnapshotCleared(level)
                 }
             },
@@ -453,6 +497,10 @@ private fun BraillePracticeExercise(
         ) {
             if (level == PracticeLevel.Daily) {
                 DailyPracticeHeader(
+                    onBack = onBack,
+                )
+            } else if (level == PracticeLevel.DailyChallenge) {
+                DailyChallengeHeader(
                     onBack = onBack,
                 )
             } else {
@@ -911,6 +959,8 @@ internal fun BraillePracticeSummary(
         ) {
             if (level == PracticeLevel.Daily) {
                 DailyPracticeSummaryHeader()
+            } else if (level == PracticeLevel.DailyChallenge) {
+                DailyChallengeSummaryHeader()
             } else {
                 BrailuxScreenHeader(
                     title = stringResource(level.completionTitleResource()),
@@ -927,6 +977,7 @@ internal fun BraillePracticeSummary(
                     stringResource(
                         when {
                             level == PracticeLevel.Daily -> R.string.daily_practice_summary_completed_fraction
+                            level == PracticeLevel.DailyChallenge -> R.string.daily_challenge_summary_completed_fraction
                             level != PracticeLevel.BrailleExplorer -> R.string.practice_summary_exercises_done
                             else -> R.string.practice_summary_completed
                         },
@@ -965,7 +1016,7 @@ internal fun BraillePracticeSummary(
                             stringResource(customConfiguration.mode.titleResource()),
                         ),
                     )
-                } else if (level != PracticeLevel.Daily) {
+                } else if (level != PracticeLevel.Daily && level != PracticeLevel.DailyChallenge) {
                     SummaryLine(
                         stringResource(
                             R.string.practice_summary_letters,
@@ -976,7 +1027,7 @@ internal fun BraillePracticeSummary(
                 if (engagementReward != null) {
                     XpRewardSummary(engagementReward.xpEarned)
                 }
-                if (level == PracticeLevel.Daily && engagementReward != null) {
+                if ((level == PracticeLevel.Daily || level == PracticeLevel.DailyChallenge) && engagementReward != null) {
                     val streakDays = pluralStringResource(
                         R.plurals.home_streak_days,
                         engagementReward.currentStreak,
@@ -984,7 +1035,11 @@ internal fun BraillePracticeSummary(
                     )
                     SummaryLine(
                         stringResource(
-                            R.string.daily_practice_reward_streak,
+                            if (level == PracticeLevel.DailyChallenge) {
+                                R.string.daily_challenge_reward_streak
+                            } else {
+                                R.string.daily_practice_reward_streak
+                            },
                             streakDays,
                         ),
                     )
@@ -1023,9 +1078,15 @@ internal fun BraillePracticeSummary(
                 }
             }
             Spacer(modifier = Modifier.height(18.dp))
-            if (level == PracticeLevel.Daily) {
+            if (level == PracticeLevel.Daily || level == PracticeLevel.DailyChallenge) {
                 BrailuxPrimaryButton(
-                    text = stringResource(R.string.daily_practice_back_to_home),
+                    text = stringResource(
+                        if (level == PracticeLevel.DailyChallenge) {
+                            R.string.daily_challenge_back_to_home
+                        } else {
+                            R.string.daily_practice_back_to_home
+                        },
+                    ),
                     onClick = onBackToPractice,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1163,6 +1224,7 @@ private fun activePointsText(character: BrailleCharacter): String =
 @androidx.annotation.StringRes
 private fun PracticeLevel.titleResource(): Int = when (this) {
     PracticeLevel.Daily -> R.string.home_daily_practice
+    PracticeLevel.DailyChallenge -> R.string.home_daily_challenge
     PracticeLevel.BrailleExplorer -> R.string.practice_level_1_title
     PracticeLevel.BrailleRecognizer -> R.string.practice_level_2_title
     PracticeLevel.BrailleChallenge -> R.string.practice_level_3_title
@@ -1172,6 +1234,7 @@ private fun PracticeLevel.titleResource(): Int = when (this) {
 @androidx.annotation.StringRes
 private fun PracticeLevel.completionTitleResource(): Int = when (this) {
     PracticeLevel.Daily -> R.string.daily_practice_completed
+    PracticeLevel.DailyChallenge -> R.string.daily_challenge_completed
     PracticeLevel.BrailleChallenge -> R.string.practice_challenge_completed
     PracticeLevel.Custom -> R.string.custom_practice_completed
     PracticeLevel.BrailleExplorer,
@@ -1306,6 +1369,113 @@ private fun DailyPracticeBadge(
     ) {
         Text(
             text = stringResource(R.string.daily_practice_badge),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
+private fun DailyChallengeHeader(
+    onBack: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 600.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        if (onBack != null) {
+            BrailuxBackButton(
+                onClick = onBack,
+                modifier = Modifier.align(Alignment.Start),
+            )
+            Spacer(modifier = Modifier.heightIn(min = 20.dp))
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.daily_challenge_header_title),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+            DailyChallengeBadge()
+        }
+        Text(
+            text = stringResource(R.string.daily_challenge_header_subtitle),
+            modifier = Modifier.padding(top = 6.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.daily_challenge_habit_message),
+            modifier = Modifier.padding(top = 4.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun DailyChallengeSummaryHeader(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .widthIn(max = 600.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.daily_challenge_completed),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center,
+            )
+            DailyChallengeBadge()
+        }
+        Text(
+            text = stringResource(R.string.daily_challenge_completed_confirmation),
+            modifier = Modifier.padding(top = 6.dp),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun DailyChallengeBadge(
+    modifier: Modifier = Modifier,
+) {
+    val description = stringResource(R.string.daily_challenge_badge_accessibility)
+    Surface(
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = modifier.semantics {
+            contentDescription = description
+        },
+    ) {
+        Text(
+            text = stringResource(R.string.daily_challenge_badge),
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.Bold,
