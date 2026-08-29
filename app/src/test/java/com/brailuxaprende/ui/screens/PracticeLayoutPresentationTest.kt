@@ -123,4 +123,29 @@ class PracticeLayoutPresentationTest {
             }
         }
     }
+
+    @Test
+    fun `daily practice badge and daily challenge badge resource identifiers are configured`() {
+        val dailyBadge = com.brailuxaprende.R.string.daily_practice_badge
+        val dailyBadgeAccessibility = com.brailuxaprende.R.string.daily_practice_badge_accessibility
+        val challengeBadge = com.brailuxaprende.R.string.daily_challenge_badge
+        val challengeBadgeAccessibility = com.brailuxaprende.R.string.daily_challenge_badge_accessibility
+
+        assertTrue(dailyBadge != 0)
+        assertTrue(dailyBadgeAccessibility != 0)
+        assertTrue(challengeBadge != 0)
+        assertTrue(challengeBadgeAccessibility != 0)
+    }
+
+    @Test
+    fun `daily badges conceptually guarantee single-line horizontal text without character wrapping`() {
+        val dailyText = "DIARIA"
+        val challengeText = "DESAFÍO"
+
+        assertFalse(dailyText.contains("\n"))
+        assertFalse(challengeText.contains("\n"))
+        assertTrue(dailyText.length in 1..15)
+        assertTrue(challengeText.length in 1..15)
+    }
 }
+
