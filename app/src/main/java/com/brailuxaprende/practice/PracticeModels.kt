@@ -13,8 +13,8 @@ enum class PracticeLevel(
         exerciseCount = 5,
         optionCount = 4,
         showPointNumbersByDefault = true,
-        allowsPointNumberToggle = true,
-        hintLimit = null,
+        allowsPointNumberToggle = false,
+        hintLimit = 0,
     ),
     BrailleExplorer(
         exerciseCount = 10,

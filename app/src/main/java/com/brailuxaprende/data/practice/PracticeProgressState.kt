@@ -123,4 +123,29 @@ class PracticeProgressState(
             }
         }
     }
+
+    fun recordDailySession(
+        summary: PracticeSessionSummary,
+        onRecorded: (EngagementReward?) -> Unit = {},
+    ) {
+        val practiceDate = clock.today().isoValue
+        scope.launch {
+            try {
+                val record = repository.recordDailySession(
+                    exercisesCompleted = summary.exercisesCompleted,
+                    firstAttemptCorrect = summary.firstAttemptCorrect,
+                    errors = summary.errors,
+                    practiceDate = practiceDate,
+                    mode = summary.mode ?: com.brailuxaprende.practice.PracticeMode.Mixed,
+                    longestFirstAttemptCorrectStreak = summary.longestFirstAttemptCorrectStreak,
+                    sessionId = summary.sessionId,
+                )
+                onRecorded(record.engagementUpdate.reward)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                onRecorded(null)
+            }
+        }
+    }
 }

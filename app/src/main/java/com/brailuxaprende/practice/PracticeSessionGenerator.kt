@@ -2,14 +2,23 @@ package com.brailuxaprende.practice
 
 import com.brailuxaprende.braille.BrailleCharacter
 import com.brailuxaprende.braille.BrailleRepository
+import com.brailuxaprende.data.learn.LearningProgress
+import com.brailuxaprende.data.practice.PracticeProgress
+import com.brailuxaprende.learning.LearningLesson
 import kotlin.random.Random
 
 object PracticeSessionGenerator {
     fun generateDaily(
-        random: Random = Random.Default,
+        date: PracticeDate = SystemPracticeClock.today(),
+        learningProgress: LearningProgress = LearningProgress(),
+        practiceProgress: PracticeProgress = PracticeProgress(),
+        random: Random = Random(date.epochDay),
     ): PracticeSession {
-        val characters = BrailleRepository.getLevel2Characters()
+        val characters = availableCharactersForDaily(learningProgress, practiceProgress)
         val targets = characters.shuffled(random).take(PracticeLevel.Daily.exerciseCount)
+        require(targets.size == PracticeLevel.Daily.exerciseCount) {
+            "Daily practice requires at least 5 available characters."
+        }
         val exercises = targets.mapIndexed { index, target ->
             PracticeExercise(
                 target = target,
@@ -27,6 +36,33 @@ object PracticeSessionGenerator {
             mode = PracticeMode.Mixed,
             exercises = exercises,
         )
+    }
+
+    fun generateDaily(
+        random: Random,
+    ): PracticeSession = generateDaily(
+        date = SystemPracticeClock.today(),
+        learningProgress = LearningProgress(
+            completedLessons = setOf(LearningLesson.LettersUtoZAndEnye),
+        ),
+        practiceProgress = PracticeProgress(),
+        random = random,
+    )
+
+    internal fun availableCharactersForDaily(
+        learningProgress: LearningProgress,
+        practiceProgress: PracticeProgress,
+    ): List<BrailleCharacter> = when {
+        learningProgress.isCompleted(LearningLesson.LettersUtoZAndEnye) ||
+            practiceProgress.level2CompletedSessions > 0 ||
+            practiceProgress.level3CompletedSessions > 0 ->
+            BrailleRepository.getLevel2Characters()
+
+        learningProgress.isCompleted(LearningLesson.LettersKtoT) ->
+            BrailleRepository.getLevel1Characters() + BrailleRepository.getLettersKToT()
+
+        else ->
+            BrailleRepository.getLevel1Characters()
     }
 
     fun generate(

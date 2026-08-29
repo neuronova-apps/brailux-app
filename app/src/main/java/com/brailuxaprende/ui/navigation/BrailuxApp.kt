@@ -497,11 +497,20 @@ private fun BrailuxNavHost(
             )
         }
         composable(BrailuxRoutes.HOME) {
+            val dailySnapshot = practiceSessions.snapshots[PracticeLevel.Daily]
+            val hasIncompleteDaily = dailySnapshot != null &&
+                dailySnapshot.phase == PracticeSessionPhase.Active &&
+                dailySnapshot.sessionId == com.brailuxaprende.practice.dailyPracticeSessionId(currentDate) &&
+                (dailySnapshot.state.currentExerciseIndex > 0 ||
+                    dailySnapshot.state.completedAnswers.isNotEmpty() ||
+                    dailySnapshot.state.attemptsOnCurrentExercise > 0)
+
             HomeScreen(
                 seasonalEvent = seasonalEvent,
                 seasonalTheme = seasonalTheme,
                 engagementProgress = engagementProgress,
                 currentDate = currentDate,
+                hasIncompleteDailySession = hasIncompleteDaily,
                 onStartDailyPractice = {
                     navController.navigate(BrailuxRoutes.DAILY_PRACTICE)
                 },
@@ -736,6 +745,9 @@ private fun BrailuxNavHost(
         }
         composable(BrailuxRoutes.DAILY_PRACTICE) {
             DailyPracticeScreen(
+                date = currentDate,
+                learningProgress = learningProgress,
+                practiceProgress = practiceProgress,
                 onSessionCompleted = onDailySessionCompleted,
                 onBackToHome = ::backToHome,
                 storedSnapshot = practiceSessions.snapshots[PracticeLevel.Daily],

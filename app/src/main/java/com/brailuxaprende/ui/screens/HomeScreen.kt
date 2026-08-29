@@ -63,6 +63,7 @@ import com.brailuxaprende.ui.theme.BrailuxPreviewTheme
 fun HomeScreen(
     engagementProgress: EngagementProgress = EngagementProgress(),
     currentDate: PracticeDate = SystemPracticeClock.today(),
+    hasIncompleteDailySession: Boolean = false,
     seasonalEvent: SeasonalEvent? = null,
     seasonalTheme: SeasonalTheme = SeasonalTheme.NONE,
     onStartDailyPractice: () -> Unit = {},
@@ -119,6 +120,7 @@ fun HomeScreen(
             ) {
                 DailyPracticeCard(
                     completedToday = engagementProgress.isDailyPracticeCompleted(currentDate),
+                    hasIncompleteSession = hasIncompleteDailySession,
                     onClick = onStartDailyPractice,
                     seasonalResources = seasonalResources,
                 )
@@ -218,15 +220,23 @@ private fun HomeHeader(
 @Composable
 private fun DailyPracticeCard(
     completedToday: Boolean,
+    hasIncompleteSession: Boolean = false,
     onClick: () -> Unit,
     seasonalResources: SeasonalThemeResources?,
     modifier: Modifier = Modifier,
 ) {
     val status = stringResource(
         if (completedToday) {
-            R.string.home_daily_practice_completed_today
+            R.string.home_daily_practice_completed
         } else {
             R.string.home_daily_practice_pending
+        },
+    )
+    val buttonText = stringResource(
+        when {
+            completedToday -> R.string.home_daily_practice_view_summary
+            hasIncompleteSession -> R.string.home_daily_practice_continue
+            else -> R.string.home_daily_practice_start
         },
     )
 
@@ -297,7 +307,7 @@ private fun DailyPracticeCard(
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                 ) {
                     Text(
-                        text = stringResource(R.string.home_daily_practice_start),
+                        text = buttonText,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
