@@ -32,6 +32,14 @@ class BrailuxNavigationTest {
     }
 
     @Test
+    fun `play module routes are defined correctly`() {
+        assertEquals("juega", BrailuxRoutes.PLAY)
+        assertEquals("juega_memoria", BrailuxRoutes.PLAY_MEMORY)
+        assertEquals("juega_secuencia", BrailuxRoutes.PLAY_SEQUENCE)
+        assertEquals("juega_orden", BrailuxRoutes.PLAY_ORDER)
+    }
+
+    @Test
     fun `settings and about do not select home`() {
         assertNull(selectedMainDestination(BrailuxRoutes.SETTINGS))
         assertNull(selectedMainDestination(BrailuxRoutes.ABOUT))
@@ -41,10 +49,16 @@ class BrailuxNavigationTest {
     @Test
     fun `secondary settings and about screens hide the bottom navigation`() {
         assertTrue(shouldShowBottomBar(BrailuxRoutes.HOME))
+        assertTrue(shouldShowBottomBar(BrailuxRoutes.LEARN))
+        assertTrue(shouldShowBottomBar(BrailuxRoutes.PLAY))
+        assertTrue(shouldShowBottomBar(BrailuxRoutes.PROGRESS))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.SETTINGS))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.ABOUT))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.DAILY_PRACTICE))
         assertFalse(shouldShowBottomBar(BrailuxRoutes.DAILY_CHALLENGE))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.PLAY_MEMORY))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.PLAY_SEQUENCE))
+        assertFalse(shouldShowBottomBar(BrailuxRoutes.PLAY_ORDER))
         assertFalse(shouldShowBottomBar(null))
     }
 

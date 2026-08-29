@@ -66,5 +66,10 @@ class ProgressPresentationTest {
         assertEquals(com.brailuxaprende.R.string.progress_daily_challenge_title, com.brailuxaprende.R.string.progress_daily_challenge_title)
         assertEquals(com.brailuxaprende.R.string.progress_errors_label, com.brailuxaprende.R.string.progress_errors_label)
         assertEquals(com.brailuxaprende.R.string.progress_hints_used_label, com.brailuxaprende.R.string.progress_hints_used_label)
+        assertEquals(com.brailuxaprende.R.string.progress_play_title, com.brailuxaprende.R.string.progress_play_title)
+        assertEquals(com.brailuxaprende.R.string.progress_play_total_games, com.brailuxaprende.R.string.progress_play_total_games)
+        assertEquals(com.brailuxaprende.R.string.progress_play_memory_games, com.brailuxaprende.R.string.progress_play_memory_games)
+        assertEquals(com.brailuxaprende.R.string.progress_play_sequence_games, com.brailuxaprende.R.string.progress_play_sequence_games)
+        assertEquals(com.brailuxaprende.R.string.progress_play_order_games, com.brailuxaprende.R.string.progress_play_order_games)
     }
 }
