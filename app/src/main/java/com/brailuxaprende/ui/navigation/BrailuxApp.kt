@@ -59,6 +59,7 @@ import com.brailuxaprende.practice.PracticeSessionSnapshot
 import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
+import com.brailuxaprende.data.play.GameProgress
 import com.brailuxaprende.ui.screens.AboutScreen
 import com.brailuxaprende.ui.screens.AssistantScreen
 import com.brailuxaprende.ui.screens.AssistantUiState
@@ -75,11 +76,14 @@ import com.brailuxaprende.ui.screens.LearnScreen
 import com.brailuxaprende.ui.screens.LettersAtoJLessonScreen
 import com.brailuxaprende.ui.screens.LettersKtoTLessonScreen
 import com.brailuxaprende.ui.screens.LettersUtoZAndEnyeLessonScreen
-import com.brailuxaprende.ui.screens.VowelsLessonScreen
-import com.brailuxaprende.ui.screens.PlaceholderScreen
+import com.brailuxaprende.ui.screens.MemoryGameScreen
+import com.brailuxaprende.ui.screens.OrderGameScreen
+import com.brailuxaprende.ui.screens.PlayScreen
 import com.brailuxaprende.ui.screens.PracticeScreen
 import com.brailuxaprende.ui.screens.ProgressScreen
+import com.brailuxaprende.ui.screens.SequenceGameScreen
 import com.brailuxaprende.ui.screens.SettingsScreen
+import com.brailuxaprende.ui.screens.VowelsLessonScreen
 import com.brailuxaprende.ui.screens.WelcomeScreen
 
 object BrailuxRoutes {
@@ -88,6 +92,9 @@ object BrailuxRoutes {
     const val LEARN = "aprende"
     const val PRACTICE = "practica"
     const val PLAY = "juega"
+    const val PLAY_MEMORY = "juega_memoria"
+    const val PLAY_SEQUENCE = "juega_secuencia"
+    const val PLAY_ORDER = "juega_orden"
     const val PROGRESS = "mi_progreso"
     const val SETTINGS = "configuracion"
     const val ABOUT = "acerca_de"
@@ -135,6 +142,9 @@ private val routesWithoutBottomBar = setOf(
     BrailuxRoutes.CUSTOM_PRACTICE,
     BrailuxRoutes.DAILY_PRACTICE,
     BrailuxRoutes.DAILY_CHALLENGE,
+    BrailuxRoutes.PLAY_MEMORY,
+    BrailuxRoutes.PLAY_SEQUENCE,
+    BrailuxRoutes.PLAY_ORDER,
     BrailuxRoutes.ASSISTANT,
 )
 
@@ -148,6 +158,7 @@ fun BrailuxApp(
     learningProgress: LearningProgress = LearningProgress(),
     practiceProgress: PracticeProgress = PracticeProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
+    gameProgress: GameProgress = GameProgress(),
     practiceSessions: StoredPracticeSessions = StoredPracticeSessions(
         isLoaded = true,
         snapshots = emptyMap(),
@@ -163,6 +174,10 @@ fun BrailuxApp(
     isPremiumUnlocked: Boolean = false,
     onBackgroundChange: (String) -> Unit = {},
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
+    onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit = { _, _ -> },
+    onRecordSequenceGame: (sessionId: String, correctSequences: Int, bestLength: Int, errors: Int) -> Unit =
+        { _, _, _, _ -> },
+    onRecordOrderGame: (sessionId: String, errors: Int) -> Unit = { _, _ -> },
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit =
         { _, onRecorded -> onRecorded(null) },
@@ -250,6 +265,7 @@ fun BrailuxApp(
             learningProgress = learningProgress,
             practiceProgress = practiceProgress,
             engagementProgress = engagementProgress,
+            gameProgress = gameProgress,
             practiceSessions = practiceSessions,
             currentDate = currentDate,
             seasonalEvent = seasonalEvent,
@@ -262,6 +278,9 @@ fun BrailuxApp(
             isPremiumUnlocked = isPremiumUnlocked,
             onBackgroundChange = onBackgroundChange,
             onLearningLessonCompleted = onLearningLessonCompleted,
+            onRecordMemoryGame = onRecordMemoryGame,
+            onRecordSequenceGame = onRecordSequenceGame,
+            onRecordOrderGame = onRecordOrderGame,
             onLevel1SessionCompleted = onLevel1SessionCompleted,
             onLevel2SessionCompleted = onLevel2SessionCompleted,
             onLevel3SessionCompleted = onLevel3SessionCompleted,
@@ -367,6 +386,7 @@ private fun BrailuxNavHost(
     learningProgress: LearningProgress,
     practiceProgress: PracticeProgress,
     engagementProgress: EngagementProgress,
+    gameProgress: GameProgress,
     practiceSessions: StoredPracticeSessions,
     currentDate: PracticeDate,
     seasonalEvent: SeasonalEvent?,
@@ -379,6 +399,9 @@ private fun BrailuxNavHost(
     isPremiumUnlocked: Boolean,
     onBackgroundChange: (String) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
+    onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit,
+    onRecordSequenceGame: (sessionId: String, correctSequences: Int, bestLength: Int, errors: Int) -> Unit,
+    onRecordOrderGame: (sessionId: String, errors: Int) -> Unit,
     onLevel1SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onLevel2SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
     onLevel3SessionCompleted: (PracticeSessionSummary, onRecorded: (EngagementReward?) -> Unit) -> Unit,
@@ -474,6 +497,12 @@ private fun BrailuxNavHost(
     fun backToLearn() {
         if (!navController.popBackStack(BrailuxRoutes.LEARN, inclusive = false)) {
             navController.navigate(BrailuxRoutes.LEARN) { launchSingleTop = true }
+        }
+    }
+
+    fun backToPlay() {
+        if (!navController.popBackStack(BrailuxRoutes.PLAY, inclusive = false)) {
+            navController.navigate(BrailuxRoutes.PLAY) { launchSingleTop = true }
         }
     }
 
@@ -593,11 +622,37 @@ private fun BrailuxNavHost(
             )
         }
         composable(BrailuxRoutes.PLAY) {
-            PlaceholderScreen(
-                title = stringResource(R.string.play_title),
-                description = stringResource(R.string.play_description),
-                hasSeasonalBackground = hasSeasonalBackground,
+            PlayScreen(
+                learningProgress = learningProgress,
+                onStartMemory = { navController.navigate(BrailuxRoutes.PLAY_MEMORY) },
+                onStartSequence = { navController.navigate(BrailuxRoutes.PLAY_SEQUENCE) },
+                onStartOrder = { navController.navigate(BrailuxRoutes.PLAY_ORDER) },
                 onBack = ::goBack,
+                hasSeasonalBackground = hasSeasonalBackground,
+            )
+        }
+        composable(BrailuxRoutes.PLAY_MEMORY) {
+            MemoryGameScreen(
+                learningProgress = learningProgress,
+                onRecordGameCompletion = onRecordMemoryGame,
+                onBackToPlay = ::backToPlay,
+                hasSeasonalBackground = hasSeasonalBackground,
+            )
+        }
+        composable(BrailuxRoutes.PLAY_SEQUENCE) {
+            SequenceGameScreen(
+                learningProgress = learningProgress,
+                onRecordGameCompletion = onRecordSequenceGame,
+                onBackToPlay = ::backToPlay,
+                hasSeasonalBackground = hasSeasonalBackground,
+            )
+        }
+        composable(BrailuxRoutes.PLAY_ORDER) {
+            OrderGameScreen(
+                learningProgress = learningProgress,
+                onRecordGameCompletion = onRecordOrderGame,
+                onBackToPlay = ::backToPlay,
+                hasSeasonalBackground = hasSeasonalBackground,
             )
         }
         composable(BrailuxRoutes.PROGRESS) {
@@ -605,6 +660,7 @@ private fun BrailuxNavHost(
                 progress = practiceProgress,
                 learningProgress = learningProgress,
                 engagementProgress = engagementProgress,
+                gameProgress = gameProgress,
                 currentDate = currentDate,
                 hasSeasonalBackground = hasSeasonalBackground,
                 onBack = ::goBack,

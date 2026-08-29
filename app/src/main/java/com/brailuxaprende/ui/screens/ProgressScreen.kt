@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.learn.LearningProgress
+import com.brailuxaprende.data.play.GameProgress
 import com.brailuxaprende.data.practice.PracticeProgress
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
@@ -69,6 +70,7 @@ fun ProgressScreen(
     progress: PracticeProgress,
     learningProgress: LearningProgress = LearningProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
+    gameProgress: GameProgress = GameProgress(),
     currentDate: PracticeDate = SystemPracticeClock.today(),
     initialTab: ProgressTab = ProgressTab.Summary,
     hasSeasonalBackground: Boolean = false,
@@ -116,6 +118,10 @@ fun ProgressScreen(
                 }
                 ProgressTab.Statistics -> {
                     PracticeProgressSection(progress)
+                    ProgressSpacer()
+                    ProgressContentCard {
+                        GameProgressSection(gameProgress)
+                    }
                     ProgressSpacer()
                     ProgressContentCard {
                         LearningProgressSection(learningProgress)
@@ -438,6 +444,46 @@ private fun PracticeLevelCard(
         AccessibleProgressBar(
             progress = accuracy / 100f,
             description = accuracyAccessibility,
+        )
+    }
+}
+
+@Composable
+private fun GameProgressSection(progress: GameProgress) {
+    SectionTitle(R.string.progress_play_title)
+    ProgressValue(
+        label = stringResource(R.string.progress_play_total_games, progress.totalGamesCompleted),
+        value = progress.totalGamesCompleted.toString(),
+        modifier = Modifier.padding(top = 4.dp),
+    )
+    ProgressValue(
+        label = stringResource(R.string.play_game_memory_title),
+        value = stringResource(R.string.progress_play_memory_games, progress.memoryCompletedGames),
+    )
+    if (progress.memoryBestMoves != null && progress.memoryBestMoves > 0) {
+        ProgressValue(
+            label = stringResource(R.string.progress_play_best_memory, progress.memoryBestMoves),
+            value = "${progress.memoryBestMoves}",
+        )
+    }
+    ProgressValue(
+        label = stringResource(R.string.play_game_sequence_title),
+        value = stringResource(R.string.progress_play_sequence_games, progress.sequenceCompletedGames),
+    )
+    if (progress.sequenceBestLength > 0) {
+        ProgressValue(
+            label = stringResource(R.string.progress_play_best_sequence, progress.sequenceBestLength),
+            value = "${progress.sequenceBestLength}",
+        )
+    }
+    ProgressValue(
+        label = stringResource(R.string.play_game_order_title),
+        value = stringResource(R.string.progress_play_order_games, progress.orderCompletedGames),
+    )
+    if (progress.orderBestErrors != null) {
+        ProgressValue(
+            label = stringResource(R.string.progress_play_best_order, progress.orderBestErrors),
+            value = "${progress.orderBestErrors}",
         )
     }
 }

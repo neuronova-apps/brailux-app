@@ -13,6 +13,8 @@ import androidx.lifecycle.lifecycleScope
 import com.brailuxaprende.ai.BrailuxAiService
 import com.brailuxaprende.data.learn.LearningProgressRepository
 import com.brailuxaprende.data.learn.LearningProgressState
+import com.brailuxaprende.data.play.GameProgressRepository
+import com.brailuxaprende.data.play.GameProgressState
 import com.brailuxaprende.data.practice.PracticeProgressRepository
 import com.brailuxaprende.data.practice.PracticeProgressState
 import com.brailuxaprende.data.practice.PracticeSessionRepository
@@ -78,6 +80,14 @@ class MainActivity : ComponentActivity() {
             scope = lifecycleScope,
         )
     }
+    private val gameProgressState by lazy {
+        GameProgressState(
+            repository = GameProgressRepository(
+                applicationContext.accessibilityPreferencesDataStore,
+            ),
+            scope = lifecycleScope,
+        )
+    }
     private val customPracticePreferencesState by lazy {
         CustomPracticePreferencesState(
             repository = CustomPracticePreferencesRepository(
@@ -103,6 +113,7 @@ class MainActivity : ComponentActivity() {
             val preferences by settingsState.preferences.collectAsState()
             val practiceProgress by practiceProgressState.progress.collectAsState()
             val learningProgress by learningProgressState.progress.collectAsState()
+            val gameProgress by gameProgressState.progress.collectAsState()
             val customPracticeConfiguration by
                 customPracticePreferencesState.configuration.collectAsState()
             val engagementProgress by engagementProgressState.progress.collectAsState()
@@ -148,6 +159,7 @@ class MainActivity : ComponentActivity() {
                     learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,
+                    gameProgress = gameProgress,
                     practiceSessions = practiceSessions,
                     currentDate = currentPracticeDate,
                     customPracticeConfiguration = customPracticeConfiguration,
@@ -166,6 +178,9 @@ class MainActivity : ComponentActivity() {
                         )
                     },
                     onLearningLessonCompleted = learningProgressState::markCompleted,
+                    onRecordMemoryGame = gameProgressState::recordMemoryGame,
+                    onRecordSequenceGame = gameProgressState::recordSequenceGame,
+                    onRecordOrderGame = gameProgressState::recordOrderGame,
                     onLevel1SessionCompleted = { summary, onRecorded ->
                         practiceProgressState.recordLevel1Session(
                             summary = summary,
