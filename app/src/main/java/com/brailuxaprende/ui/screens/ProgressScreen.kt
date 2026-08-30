@@ -1,17 +1,22 @@
 package com.brailuxaprende.ui.screens
 
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -28,6 +33,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
@@ -768,6 +775,9 @@ private fun AchievementBadgeCard(
         MaterialTheme.colorScheme.surface
     }
 
+    val iconResource = achievement.iconResource()
+    val isMedal = achievement.family == AchievementFamily.BrailleTrajectory
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -777,82 +787,110 @@ private fun AchievementBadgeCard(
         contentColor = MaterialTheme.colorScheme.onSurface,
         border = cardBorder,
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
-            ) {
-                Text(
-                    text = title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = when {
-                        isUnlocked -> MaterialTheme.colorScheme.primaryContainer
-                        currentVal > 0 -> MaterialTheme.colorScheme.secondaryContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            if (iconResource != null) {
+                Box(
+                    modifier = if (isMedal) {
+                        Modifier
+                            .width(58.dp)
+                            .aspectRatio(512f / 612f)
+                    } else {
+                        Modifier.size(64.dp)
                     },
-                    contentColor = when {
-                        isUnlocked -> MaterialTheme.colorScheme.onPrimaryContainer
-                        currentVal > 0 -> MaterialTheme.colorScheme.onSecondaryContainer
-                        else -> MaterialTheme.colorScheme.onSurfaceVariant
-                    },
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = if (isUnlocked) {
-                            stringResource(R.string.progress_achievement_unlocked)
-                        } else if (currentVal > 0) {
-                            stringResource(R.string.progress_achievement_in_progress)
-                        } else {
-                            stringResource(R.string.progress_achievement_locked)
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
+                    Image(
+                        painter = painterResource(iconResource),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit,
+                        alpha = if (isUnlocked) 1f else 0.38f,
                     )
                 }
             }
-            Text(
-                text = description,
-                modifier = Modifier.padding(top = 4.dp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (isUnlocked) {
-                if (formattedDate != null) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top,
+                ) {
                     Text(
-                        text = stringResource(
-                            R.string.progress_achievement_unlocked_with_date,
-                            formattedDate,
-                        ),
-                        modifier = Modifier.padding(top = 8.dp),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
+                        text = title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
+                    Surface(
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = when {
+                            isUnlocked -> MaterialTheme.colorScheme.primaryContainer
+                            currentVal > 0 -> MaterialTheme.colorScheme.secondaryContainer
+                            else -> MaterialTheme.colorScheme.surfaceVariant
+                        },
+                        contentColor = when {
+                            isUnlocked -> MaterialTheme.colorScheme.onPrimaryContainer
+                            currentVal > 0 -> MaterialTheme.colorScheme.onSecondaryContainer
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    ) {
+                        Text(
+                            text = if (isUnlocked) {
+                                stringResource(R.string.progress_achievement_unlocked)
+                            } else if (currentVal > 0) {
+                                stringResource(R.string.progress_achievement_in_progress)
+                            } else {
+                                stringResource(R.string.progress_achievement_locked)
+                            },
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
-            } else {
                 Text(
-                    text = progressFormatted,
-                    modifier = Modifier.padding(top = 8.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
+                    text = description,
+                    modifier = Modifier.padding(top = 4.dp),
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                val progressFraction =
-                    (currentVal.toFloat() / targetVal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
-                LinearProgressIndicator(
-                    progress = { progressFraction },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(6.dp)
-                        .padding(top = 4.dp),
-                )
+                if (isUnlocked) {
+                    if (formattedDate != null) {
+                        Text(
+                            text = stringResource(
+                                R.string.progress_achievement_unlocked_with_date,
+                                formattedDate,
+                            ),
+                            modifier = Modifier.padding(top = 8.dp),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                } else {
+                    Text(
+                        text = progressFormatted,
+                        modifier = Modifier.padding(top = 8.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    val progressFraction =
+                        (currentVal.toFloat() / targetVal.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f)
+                    LinearProgressIndicator(
+                        progress = { progressFraction },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .padding(top = 4.dp),
+                    )
+                }
             }
         }
     }
@@ -1186,4 +1224,35 @@ internal fun PermanentAchievement.descriptionResource(): Int = when (this) {
     PermanentAchievement.BidirectionalReading -> R.string.achievement_bidirectional_reading_description
     PermanentAchievement.HundredExercises -> R.string.achievement_hundred_exercises_description
 }
+
+@DrawableRes
+internal fun PermanentAchievement.iconResource(): Int? = when (this) {
+    PermanentAchievement.FirstStep -> R.drawable.achievement_primer_paso
+    PermanentAchievement.Explorer -> R.drawable.achievement_explorador_braille
+    PermanentAchievement.Recognizer -> R.drawable.achievement_reconocedor_braille
+    PermanentAchievement.Challenger -> R.drawable.achievement_desafiante_braille
+    PermanentAchievement.FullAlphabet -> R.drawable.achievement_alfabeto_completo
+    PermanentAchievement.Consistency -> R.drawable.achievement_constancia
+    PermanentAchievement.WeekInMotion -> R.drawable.achievement_semana_en_movimiento
+    PermanentAchievement.ConstantWeek -> R.drawable.achievement_semana_constante
+    PermanentAchievement.TwoWeeks -> R.drawable.achievement_dos_semanas
+    PermanentAchievement.ConsistencyMonth -> R.drawable.achievement_mes_de_constancia
+    PermanentAchievement.SuperiorConsistency -> R.drawable.achievement_constancia_superior
+    PermanentAchievement.Bronze -> R.drawable.medal_bronze
+    PermanentAchievement.Silver -> R.drawable.medal_silver
+    PermanentAchievement.Gold -> R.drawable.medal_gold
+    PermanentAchievement.Platinum -> R.drawable.medal_platinum
+    PermanentAchievement.Diamond -> R.drawable.medal_diamond
+    PermanentAchievement.BrailleSupremacy -> R.drawable.medal_supremacy
+    PermanentAchievement.BrailleFocus -> R.drawable.achievement_enfoque_braille
+    PermanentAchievement.BrailleRhythm -> R.drawable.achievement_ritmo_braille
+    PermanentAchievement.BraillePrecision -> R.drawable.achievement_precision_braille
+    PermanentAchievement.SustainedReading -> R.drawable.achievement_lectura_sostenida
+    PermanentAchievement.ConstantMastery -> R.drawable.achievement_dominio_constante
+    PermanentAchievement.SuperiorPrecision -> R.drawable.achievement_precision_superior
+    PermanentAchievement.DoubleMeaning -> R.drawable.achievement_doble_sentido
+    PermanentAchievement.BidirectionalReading -> R.drawable.achievement_lectura_bidireccional
+    PermanentAchievement.HundredExercises -> null
+}
+
 

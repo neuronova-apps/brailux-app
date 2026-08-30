@@ -6,6 +6,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.brailuxaprende.data.learn.LearningProgressRepository
+import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.practice.DailyMiniAchievement
 import com.brailuxaprende.practice.EngagementProgress
 import com.brailuxaprende.practice.EngagementSession
@@ -353,4 +355,88 @@ class EngagementProgressRepositoryTest {
         }
         error("No date found for $type")
     }
+
+    @Test
+    fun `existing user with 5 of 5 lessons completed retroactively syncs and unlocks FullAlphabet`() = runBlocking {
+        // Simular usuario existente con las 5 lecciones completadas en DataStore pero sin FullAlphabet en logros
+        dataStore.edit { preferences ->
+            LearningProgressRepository.completedLessonKeys.values.forEach { key ->
+                preferences[key] = true
+            }
+        }
+
+        // Caso D: Al sincronizar o leer el progreso, FullAlphabet debe estar desbloqueado y tener fecha
+        val syncDate = PracticeDate(2026, 8, 30)
+        val synced = repository.syncAchievements(date = syncDate)
+
+        assertTrue(
+            "Caso D: Usuario con 5/5 debe desbloquear FullAlphabet retroactivamente",
+            PermanentAchievement.FullAlphabet in synced.unlockedAchievements,
+        )
+        assertEquals(syncDate, synced.achievementUnlockDates[PermanentAchievement.FullAlphabet])
+
+        // Verificar que persiste tras reiniciar el repositorio
+        val restored = reopenRepository().progress.first()
+        assertTrue(
+            "FullAlphabet debe persistir tras reapertura del repositorio",
+            PermanentAchievement.FullAlphabet in restored.unlockedAchievements,
+        )
+        assertEquals(syncDate, restored.achievementUnlockDates[PermanentAchievement.FullAlphabet])
+    }
+
+    @Test
+    fun `syncing FullAlphabet when already unlocked is idempotent and preserves original date`() = runBlocking {
+        val originalDate = PracticeDate(2026, 8, 15)
+        dataStore.edit { preferences ->
+            LearningProgressRepository.completedLessonKeys.values.forEach { key ->
+                preferences[key] = true
+            }
+        }
+        val firstSync = repository.syncAchievements(date = originalDate)
+        assertEquals(originalDate, firstSync.achievementUnlockDates[PermanentAchievement.FullAlphabet])
+
+        // Caso E: Volver a sincronizar en una fecha posterior
+        val laterDate = PracticeDate(2026, 8, 30)
+        val secondSync = repository.syncAchievements(date = laterDate)
+
+        // No debe duplicar el logro ni alterar la fecha original
+        assertEquals(
+            1,
+            secondSync.unlockedAchievements.count { it == PermanentAchievement.FullAlphabet },
+        )
+        assertEquals(
+            "Caso E: La fecha original debe preservarse intacta tras nueva sincronización",
+            originalDate,
+            secondSync.achievementUnlockDates[PermanentAchievement.FullAlphabet],
+        )
+    }
+
+    @Test
+    fun `completing 5th lesson with LearningProgressRepository automatically unlocks and persists FullAlphabet`() = runBlocking {
+        val learnRepo = LearningProgressRepository(dataStore)
+        val completionDate = PracticeDate(2026, 8, 30)
+
+        // Completar lecciones 1 a 4
+        learnRepo.markCompleted(LearningLesson.SixDots, date = completionDate)
+        learnRepo.markCompleted(LearningLesson.Vowels, date = completionDate)
+        learnRepo.markCompleted(LearningLesson.LettersAtoJ, date = completionDate)
+        learnRepo.markCompleted(LearningLesson.LettersKtoT, date = completionDate)
+
+        val progress4 = repository.progress.first()
+        assertFalse(
+            "Con 4 lecciones no debe estar desbloqueado FullAlphabet",
+            PermanentAchievement.FullAlphabet in progress4.unlockedAchievements,
+        )
+
+        // Completar lección 5
+        learnRepo.markCompleted(LearningLesson.LettersUtoZAndEnye, date = completionDate)
+
+        val progress5 = repository.progress.first()
+        assertTrue(
+            "Al completar la 5ta lección debe desbloquearse FullAlphabet automáticamente",
+            PermanentAchievement.FullAlphabet in progress5.unlockedAchievements,
+        )
+        assertEquals(completionDate, progress5.achievementUnlockDates[PermanentAchievement.FullAlphabet])
+    }
 }
+

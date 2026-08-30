@@ -26,6 +26,15 @@ class EngagementProgressState(
         initialValue = EngagementProgress(),
     )
 
+    init {
+        scope.launch {
+            try {
+                repository.syncAchievements(clock.today())
+            } catch (_: Exception) {
+            }
+        }
+    }
+
     fun recordSession(
         summary: PracticeSessionSummary,
         kind: PracticeSessionKind,

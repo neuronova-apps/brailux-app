@@ -52,13 +52,44 @@ class AchievementSystemBadgesTest {
         assertTrue(PermanentAchievement.Challenger in challengerDone)
 
         // 5. Alfabeto completo: 5 lecciones de Aprende
-        val partialLearn = LearningProgress(completedLessons = setOf(LearningLesson.LettersAtoJ, LearningLesson.LettersKtoT))
-        val fullAlphabetUnder = EngagementEngine.evaluateAchievements(base, partialLearn)
-        assertFalse(PermanentAchievement.FullAlphabet in fullAlphabetUnder)
+        val partialLearn4 = LearningProgress(
+            completedLessons = setOf(
+                LearningLesson.SixDots,
+                LearningLesson.Vowels,
+                LearningLesson.LettersAtoJ,
+                LearningLesson.LettersKtoT,
+            ),
+        )
+        val fullAlphabetUnder4 = EngagementEngine.evaluateAchievements(base, partialLearn4)
+        assertFalse("Caso A: 4 lecciones completadas no deben desbloquear FullAlphabet", PermanentAchievement.FullAlphabet in fullAlphabetUnder4)
 
-        val fullLearn = LearningProgress(completedLessons = LearningLesson.entries.toSet())
-        val fullAlphabetDone = EngagementEngine.evaluateAchievements(base, fullLearn)
-        assertTrue(PermanentAchievement.FullAlphabet in fullAlphabetDone)
+        val fullLearn5 = LearningProgress(completedLessons = LearningLesson.entries.toSet())
+        val fullAlphabetDone5 = EngagementEngine.evaluateAchievements(base, fullLearn5)
+        assertTrue("Caso B: 5 lecciones completadas deben desbloquear FullAlphabet", PermanentAchievement.FullAlphabet in fullAlphabetDone5)
+
+        // Caso C: 5 lecciones completadas con errores registrados
+        val baseWithErrors = base.copy(
+            totalExercises = 50,
+            totalSessions = 5,
+        )
+        val sessionWithErrors = EngagementSession(
+            id = "session_with_errors",
+            kind = PracticeSessionKind.Daily,
+            exercisesCompleted = 5,
+            firstAttemptCorrect = 3,
+            errors = 7,
+            longestFirstAttemptCorrectStreak = 1,
+        )
+        val recordWithErrors = EngagementEngine.recordSession(
+            current = baseWithErrors,
+            session = sessionWithErrors,
+            date = PracticeDate(2026, 8, 30),
+            learningProgress = fullLearn5,
+        )
+        assertTrue(
+            "Caso C: 5 lecciones completadas con errores registrados deben desbloquear FullAlphabet igualmente",
+            PermanentAchievement.FullAlphabet in recordWithErrors.progress.unlockedAchievements,
+        )
     }
 
     @Test
