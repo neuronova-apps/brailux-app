@@ -246,7 +246,9 @@ object EngagementEngine {
         if (progress.level1Sessions >= 5) add(PermanentAchievement.Explorer)
         if (progress.level2Sessions >= 5) add(PermanentAchievement.Recognizer)
         if (progress.level3Sessions >= 3) add(PermanentAchievement.Challenger)
-        if (learningProgress.completedLessons.containsAll(LearningLesson.entries.toSet())) {
+        if (learningProgress.completedLessons.size >= 5 ||
+            learningProgress.completedLessons.containsAll(LearningLesson.entries.toSet())
+        ) {
             add(PermanentAchievement.FullAlphabet)
         }
 

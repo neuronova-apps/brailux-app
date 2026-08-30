@@ -5,7 +5,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import com.brailuxaprende.data.practice.EngagementSchemaVersion
+import com.brailuxaprende.data.practice.EngagementSchemaVersionKey
+import com.brailuxaprende.data.practice.toEngagementProgress
+import com.brailuxaprende.data.practice.writeEngagement
 import com.brailuxaprende.learning.LearningLesson
+import com.brailuxaprende.practice.PermanentAchievement
+import com.brailuxaprende.practice.PracticeDate
+import com.brailuxaprende.practice.SystemPracticeClock
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -24,20 +31,34 @@ class LearningProgressRepository(
         .catch { exception ->
             if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
-        .map { preferences ->
-            LearningProgress(
-                completedLessons = completedLessonKeys.mapNotNullTo(mutableSetOf()) {
-                    (lesson, key) -> lesson.takeIf { preferences[key] == true }
-                },
-            )
-        }
+        .map(Preferences::toLearningProgress)
 
-    suspend fun markCompleted(lesson: LearningLesson) {
+    suspend fun markCompleted(
+        lesson: LearningLesson,
+        date: PracticeDate = SystemPracticeClock.today(),
+    ) {
         val key = completedLessonKeys[lesson] ?: return
-        dataStore.edit { preferences -> preferences[key] = true }
+        dataStore.edit { preferences ->
+            preferences[key] = true
+            val learning = preferences.toLearningProgress()
+            if (learning.completedLessons.size >= 5) {
+                val current = preferences.toEngagementProgress()
+                val isMissingDate = PermanentAchievement.FullAlphabet !in current.achievementUnlockDates
+                val isSchemaUnversioned = (preferences[EngagementSchemaVersionKey] ?: 0) < EngagementSchemaVersion
+                if (isMissingDate || isSchemaUnversioned) {
+                    val updatedAchievements = current.unlockedAchievements + PermanentAchievement.FullAlphabet
+                    val updatedDates = current.achievementUnlockDates + (PermanentAchievement.FullAlphabet to date)
+                    val updatedProgress = current.copy(
+                        unlockedAchievements = updatedAchievements,
+                        achievementUnlockDates = updatedDates,
+                    )
+                    preferences.writeEngagement(updatedProgress)
+                }
+            }
+        }
     }
 
-    private companion object {
+    companion object {
         val completedLessonKeys = mapOf(
             LearningLesson.SixDots to booleanPreferencesKey("learning_lesson_1_completed"),
             LearningLesson.Vowels to booleanPreferencesKey("learning_lesson_2_completed"),
@@ -48,3 +69,11 @@ class LearningProgressRepository(
         )
     }
 }
+
+fun Preferences.toLearningProgress(): LearningProgress =
+    LearningProgress(
+        completedLessons = LearningProgressRepository.completedLessonKeys.mapNotNullTo(mutableSetOf()) {
+            (lesson, key) -> lesson.takeIf { this[key] == true }
+        },
+    )
+
