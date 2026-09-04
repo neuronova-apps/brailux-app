@@ -103,4 +103,55 @@ class BrailuxBackgroundRotationPolicyTest {
             )
         }
     }
+
+    @Test
+    fun allFourPremiumBackgroundsCycleInExpectedSequence() {
+        val candidates = BrailuxBackgroundRotationPolicy.eligiblePremiumBackgrounds(
+            isPremiumUnlocked = true,
+        )
+        val expectedIds = listOf(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            BrailuxBackgroundCatalog.CREMA_ONDAS_ID,
+            BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID,
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+        )
+        assertEquals(expectedIds, candidates.map { it.id })
+
+        var current = expectedIds.first()
+        val visited = mutableListOf(current)
+        for (i in 1..4) {
+            val next = BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
+                currentId = current,
+                isPremiumUnlocked = true,
+            )
+            visited.add(requireNotNull(next))
+            current = next
+        }
+        assertEquals(
+            listOf(
+                BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+                BrailuxBackgroundCatalog.CREMA_ONDAS_ID,
+                BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID,
+                BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+                BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            ),
+            visited,
+        )
+    }
+
+    @Test
+    fun configurationChangeSkipsNextRotationOnStart() {
+        BrailuxBackgroundRotationLifecyclePolicy.reset()
+        BrailuxBackgroundRotationLifecyclePolicy.handleStop(isChangingConfigurations = true)
+        assertTrue(BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart())
+        assertFalse(BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart())
+    }
+
+    @Test
+    fun normalStopDoesNotSkipRotationOnStart() {
+        BrailuxBackgroundRotationLifecyclePolicy.reset()
+        BrailuxBackgroundRotationLifecyclePolicy.handleStop(isChangingConfigurations = false)
+        assertFalse(BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart())
+    }
 }
+

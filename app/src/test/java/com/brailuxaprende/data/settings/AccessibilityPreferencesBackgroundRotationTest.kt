@@ -110,4 +110,21 @@ class AccessibilityPreferencesBackgroundRotationTest {
             repository.preferences.first().selectedBackgroundId,
         )
     }
+
+    @Test
+    fun lockedPremiumDoesNotRotateOnForeground() = runBlocking {
+        repository.selectBackgroundAndFix(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID)
+        repository.setBackgroundRotationMode(BackgroundRotationMode.OnAppOpen)
+
+        repository.rotatePremiumBackgroundOnForeground(
+            isPremiumUnlocked = false,
+            nowMillis = 10_000L,
+        )
+
+        assertEquals(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            repository.preferences.first().selectedBackgroundId,
+        )
+    }
 }
+

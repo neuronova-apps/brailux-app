@@ -30,6 +30,7 @@ import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
+import com.brailuxaprende.data.settings.BrailuxBackgroundRotationLifecyclePolicy
 import com.brailuxaprende.data.settings.BrailuxPremiumAccess
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
@@ -45,10 +46,6 @@ import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
-    private companion object {
-        var skipNextBackgroundRotation = false
-    }
-
     private val assistantViewModel by viewModels<AssistantViewModel> {
         AssistantViewModelFactory(BrailuxAiService())
     }
@@ -255,8 +252,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (skipNextBackgroundRotation) {
-            skipNextBackgroundRotation = false
+        if (BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart()) {
             return
         }
         settingsState.onAppForegrounded(
@@ -265,9 +261,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
-        if (isChangingConfigurations) {
-            skipNextBackgroundRotation = true
-        }
+        BrailuxBackgroundRotationLifecyclePolicy.handleStop(isChangingConfigurations)
         super.onStop()
     }
 }

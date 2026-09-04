@@ -1,9 +1,16 @@
 package com.brailuxaprende.data.settings
 
+import com.brailuxaprende.BuildConfig
+
 data class BrailuxPremiumState(
     val isPremiumUnlocked: Boolean,
 )
 
 object BrailuxPremiumAccess {
-    val currentState = BrailuxPremiumState(isPremiumUnlocked = false)
+    fun resolveState(isDebug: Boolean = BuildConfig.DEBUG): BrailuxPremiumState =
+        BrailuxPremiumState(isPremiumUnlocked = isDebug)
+
+    val currentState: BrailuxPremiumState
+        get() = resolveState()
 }
+

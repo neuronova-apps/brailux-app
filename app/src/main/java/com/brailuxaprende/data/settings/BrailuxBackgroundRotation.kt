@@ -69,3 +69,26 @@ object BrailuxBackgroundRotationPolicy {
         }
     }
 }
+
+object BrailuxBackgroundRotationLifecyclePolicy {
+    internal var skipNextBackgroundRotation: Boolean = false
+
+    fun handleStop(isChangingConfigurations: Boolean) {
+        if (isChangingConfigurations) {
+            skipNextBackgroundRotation = true
+        }
+    }
+
+    fun shouldSkipRotationOnStart(): Boolean {
+        if (skipNextBackgroundRotation) {
+            skipNextBackgroundRotation = false
+            return true
+        }
+        return false
+    }
+
+    fun reset() {
+        skipNextBackgroundRotation = false
+    }
+}
+
