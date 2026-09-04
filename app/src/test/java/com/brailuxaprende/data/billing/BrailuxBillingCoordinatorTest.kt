@@ -1011,7 +1011,6 @@ class BrailuxBillingCoordinatorTest {
             itemStatus = BrailuxThemePurchaseStatus.Free,
         )
         assertFalse(presentation.showPremiumBadge)
-        assertNull(presentation.statusLabel)
         assertTrue(presentation.isSelectable)
         assertFalse(presentation.isPurchasable)
         assertTrue(presentation.canPreview)
@@ -1026,7 +1025,6 @@ class BrailuxBillingCoordinatorTest {
             itemStatus = BrailuxThemePurchaseStatus.Purchased,
         )
         assertTrue(presentation.showPremiumBadge)
-        assertEquals("Comprado", presentation.statusLabel)
         assertTrue(presentation.isSelectable)
         assertFalse(presentation.isPurchasable)
         assertTrue(presentation.canPreview)
@@ -1041,7 +1039,6 @@ class BrailuxBillingCoordinatorTest {
             itemStatus = BrailuxThemePurchaseStatus.Pending,
         )
         assertTrue(presentation.showPremiumBadge)
-        assertEquals("Pendiente", presentation.statusLabel)
         assertFalse(presentation.isSelectable)
         assertFalse(presentation.isPurchasable)
         assertTrue(presentation.canPreview)
@@ -1059,7 +1056,6 @@ class BrailuxBillingCoordinatorTest {
             ),
         )
         assertTrue(presentation.showPremiumBadge)
-        assertEquals("S/ 3.50", presentation.statusLabel)
         assertFalse(presentation.isSelectable)
         assertTrue(presentation.isPurchasable)
         assertTrue(presentation.canPreview)
@@ -1074,7 +1070,6 @@ class BrailuxBillingCoordinatorTest {
             itemStatus = BrailuxThemePurchaseStatus.Unavailable,
         )
         assertTrue(presentation.showPremiumBadge)
-        assertEquals("No disponible", presentation.statusLabel)
         assertFalse(presentation.isSelectable)
         assertFalse(presentation.isPurchasable)
         assertTrue(presentation.canPreview)

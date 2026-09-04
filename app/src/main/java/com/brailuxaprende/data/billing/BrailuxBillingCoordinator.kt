@@ -87,7 +87,6 @@ sealed interface BrailuxRestoreEvent {
  */
 data class BrailuxThemePresentation(
     val showPremiumBadge: Boolean,
-    val statusLabel: String?,
     val isSelectable: Boolean,
     val isPurchasable: Boolean,
     val canPreview: Boolean,
@@ -187,7 +186,6 @@ object BrailuxBillingPresentation {
         if (!background.premium || itemStatus is BrailuxThemePurchaseStatus.Free) {
             return BrailuxThemePresentation(
                 showPremiumBadge = false,
-                statusLabel = null,
                 isSelectable = true,
                 isPurchasable = false,
                 canPreview = true,
@@ -196,35 +194,30 @@ object BrailuxBillingPresentation {
         return when (itemStatus) {
             is BrailuxThemePurchaseStatus.Purchased -> BrailuxThemePresentation(
                 showPremiumBadge = true,
-                statusLabel = "Comprado",
                 isSelectable = true,
                 isPurchasable = false,
                 canPreview = true,
             )
             is BrailuxThemePurchaseStatus.Pending -> BrailuxThemePresentation(
                 showPremiumBadge = true,
-                statusLabel = "Pendiente",
                 isSelectable = false,
                 isPurchasable = false,
                 canPreview = true,
             )
             is BrailuxThemePurchaseStatus.AvailableForPurchase -> BrailuxThemePresentation(
                 showPremiumBadge = true,
-                statusLabel = itemStatus.formattedPrice,
                 isSelectable = false,
                 isPurchasable = true,
                 canPreview = true,
             )
             is BrailuxThemePurchaseStatus.Unavailable -> BrailuxThemePresentation(
                 showPremiumBadge = true,
-                statusLabel = "No disponible",
                 isSelectable = false,
                 isPurchasable = false,
                 canPreview = true,
             )
             is BrailuxThemePurchaseStatus.Free -> BrailuxThemePresentation(
                 showPremiumBadge = false,
-                statusLabel = null,
                 isSelectable = true,
                 isPurchasable = false,
                 canPreview = true,

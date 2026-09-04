@@ -1,8 +1,10 @@
-﻿package com.brailuxaprende.ui.screens
+package com.brailuxaprende.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasAnySibling
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -14,6 +16,7 @@ import com.brailuxaprende.data.billing.BrailuxBillingUiState
 import com.brailuxaprende.data.billing.BrailuxThemeBillingItemState
 import com.brailuxaprende.data.billing.BrailuxThemePurchaseStatus
 import com.brailuxaprende.data.settings.AccessibilityPreferences
+import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -34,9 +37,11 @@ class SettingsScreenBillingIntegrationTest {
         var boughtOfferToken: String? = null
 
         val samplePrice = "USD 0.99"
-        val sampleToken = "token_blackboard_promo"
-        val targetBackgroundId = "blackboard"
-        val expectedProductId = BrailuxBillingProductCatalog.productIdFor(targetBackgroundId)!!
+        val sampleToken = "token_celeste_promo"
+        val targetBackgroundId = BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID
+        val expectedProductId = requireNotNull(
+            BrailuxBillingProductCatalog.productIdFor(targetBackgroundId),
+        )
 
         val billingState = BrailuxBillingUiState(
             items = mapOf(
@@ -75,6 +80,12 @@ class SettingsScreenBillingIntegrationTest {
             }
         }
 
+        val targetOption = requireNotNull(BrailuxBackgroundCatalog.option(targetBackgroundId))
+        val targetBackgroundName = context.getString(targetOption.nameResource)
+        composeRule.onNodeWithText(targetBackgroundName)
+            .performScrollTo()
+            .assertIsDisplayed()
+
         val buyButtonText = context.getString(R.string.settings_buy_with_price, samplePrice)
         composeRule.onNodeWithText(buyButtonText)
             .performScrollTo()
@@ -88,8 +99,10 @@ class SettingsScreenBillingIntegrationTest {
     @Test
     fun purchasedThemeShowsPurchasedTagAndNoBuyButton() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val targetBackgroundId = "blackboard"
-        val expectedProductId = BrailuxBillingProductCatalog.productIdFor(targetBackgroundId)!!
+        val targetBackgroundId = BrailuxBackgroundCatalog.CREMA_ONDAS_ID
+        val expectedProductId = requireNotNull(
+            BrailuxBillingProductCatalog.productIdFor(targetBackgroundId),
+        )
 
         val billingState = BrailuxBillingUiState(
             items = mapOf(
@@ -121,6 +134,12 @@ class SettingsScreenBillingIntegrationTest {
             }
         }
 
+        val targetOption = requireNotNull(BrailuxBackgroundCatalog.option(targetBackgroundId))
+        val targetBackgroundName = context.getString(targetOption.nameResource)
+        composeRule.onNodeWithText(targetBackgroundName)
+            .performScrollTo()
+            .assertIsDisplayed()
+
         val purchasedLabel = "${context.getString(R.string.settings_background_premium)} · ${context.getString(R.string.settings_purchased)}"
         composeRule.onNodeWithText(purchasedLabel)
             .performScrollTo()
@@ -130,8 +149,10 @@ class SettingsScreenBillingIntegrationTest {
     @Test
     fun pendingThemeShowsPendingTag() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        val targetBackgroundId = "blackboard"
-        val expectedProductId = BrailuxBillingProductCatalog.productIdFor(targetBackgroundId)!!
+        val targetBackgroundId = BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID
+        val expectedProductId = requireNotNull(
+            BrailuxBillingProductCatalog.productIdFor(targetBackgroundId),
+        )
 
         val billingState = BrailuxBillingUiState(
             items = mapOf(
@@ -162,6 +183,12 @@ class SettingsScreenBillingIntegrationTest {
                 )
             }
         }
+
+        val targetOption = requireNotNull(BrailuxBackgroundCatalog.option(targetBackgroundId))
+        val targetBackgroundName = context.getString(targetOption.nameResource)
+        composeRule.onNodeWithText(targetBackgroundName)
+            .performScrollTo()
+            .assertIsDisplayed()
 
         val pendingLabel = "${context.getString(R.string.settings_background_premium)} · ${context.getString(R.string.settings_pending)}"
         composeRule.onNodeWithText(pendingLabel)
@@ -206,10 +233,13 @@ class SettingsScreenBillingIntegrationTest {
     fun previewDialogForAvailableThemeShowsBuyAction() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val samplePrice = "EUR 1.19"
-        val sampleToken = "tok_chalk_eur"
-        val targetBackgroundId = "blackboard"
-        val expectedProductId = BrailuxBillingProductCatalog.productIdFor(targetBackgroundId)!!
-        var bought = false
+        val sampleToken = "tok_salvia_eur"
+        val targetBackgroundId = BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID
+        val expectedProductId = requireNotNull(
+            BrailuxBillingProductCatalog.productIdFor(targetBackgroundId),
+        )
+        var boughtProductId: String? = null
+        var boughtOfferToken: String? = null
 
         val billingState = BrailuxBillingUiState(
             items = mapOf(
@@ -240,19 +270,39 @@ class SettingsScreenBillingIntegrationTest {
                     onAbout = {},
                     onBack = {},
                     billingUiState = billingState,
-                    onBuyProduct = { _, _ -> bought = true },
+                    onBuyProduct = { pid, token ->
+                        boughtProductId = pid
+                        boughtOfferToken = token
+                    },
                 )
             }
         }
 
-        val previewNodes = composeRule.onAllNodesWithText(context.getString(R.string.settings_background_preview))
-        previewNodes[0].performScrollTo().performClick()
+        val targetOption = requireNotNull(BrailuxBackgroundCatalog.option(targetBackgroundId))
+        val targetBackgroundName = context.getString(targetOption.nameResource)
+        val previewButtonText = context.getString(R.string.settings_background_preview)
 
+        // Localize the specific real background by its name first
+        composeRule.onNodeWithText(targetBackgroundName)
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        // Deterministically click the preview button of this specific background row
+        composeRule.onNode(
+            hasText(previewButtonText) and
+                hasAnyAncestor(hasAnySibling(hasText(targetBackgroundName))),
+        )
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+
+        // Confirm dialog opened and contains the buy action for this specific theme
         val dialogBuyButtonText = context.getString(R.string.settings_buy_with_price, samplePrice)
         composeRule.onNodeWithText(dialogBuyButtonText)
             .assertIsDisplayed()
             .performClick()
 
-        assertTrue(bought)
+        assertEquals(expectedProductId, boughtProductId)
+        assertEquals(sampleToken, boughtOfferToken)
     }
 }
