@@ -8,11 +8,16 @@ import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
+import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -34,18 +39,29 @@ class BrailuxBillingException(
  * Principios y restricciones de seguridad:
  * - Gestiona una única instancia de [BillingClient] a través de [BrailuxBillingGateway].
  * - Solo consulta productos y compras INAPP pertenecientes al catálogo oficial [BrailuxBillingProductCatalog].
- * - NO concede ningún derecho o entitlement en esta Fase C: ni [onPurchasesUpdated], ni [queryPurchases],
- *   ni [syncBillingData], ni [restorePurchases], ni [launchPurchaseFlow] modifican ownedBackgroundIds ni BrailuxPremiumAccess.
- * - Las compras PENDING nunca equivalen a adquiridas.
+ * - Google Play Billing es la única fuente autoritativa de propiedad.
+ * - [BrailuxPremiumEntitlementRepository] reconcilia compras válidas y actualiza el cache auxiliar.
+ * - Las compras PENDING nunca equivalen a adquiridas ni se hace acknowledge de ellas.
  * - Los productos no recuperados (unfetched) se marcan como [BrailuxProductState.Unavailable] y no inventan precios.
  * - Cache de ProductDetails estrictamente volátil en memoria; nunca se persiste en DataStore ni se serializa.
- * - [acknowledgePurchase] devuelve explícitamente fallo al no estar implementado en esta fase.
+ * - Reconciliación y acknowledgement asíncronos en [onPurchasesUpdated] mediante un [CoroutineScope] administrado.
  */
 class GooglePlayBillingRepository(
     context: Context? = null,
     gateway: BrailuxBillingGateway? = null,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    val entitlementRepository: BrailuxPremiumEntitlementRepository = if (context != null) {
+        BrailuxPremiumEntitlementRepository(context.applicationContext.accessibilityPreferencesDataStore)
+    } else {
+        BrailuxPremiumEntitlementRepository(null)
+    },
+    operationScope: CoroutineScope = CoroutineScope(SupervisorJob() + mainDispatcher),
+    coroutineScope: CoroutineScope? = null,
 ) : BrailuxBillingRepository, PurchasesUpdatedListener {
+
+    private val repositoryScope: CoroutineScope = coroutineScope ?: operationScope
+
+    internal var lastProcessingJob: Job? = null
 
     private val gateway: BrailuxBillingGateway = gateway
         ?: DefaultBillingClientGateway(
@@ -71,6 +87,7 @@ class GooglePlayBillingRepository(
     override val lastBillingOperation: StateFlow<BrailuxBillingOperationState> = _lastBillingOperation.asStateFlow()
 
     private val connectionMutex = Mutex()
+    private val reconciliationMutex = Mutex()
 
     override suspend fun startConnection(): Result<Unit> = connectionMutex.withLock {
         if (gateway.isReady && _connectionState.value is BillingConnectionState.Connected) {
@@ -157,6 +174,22 @@ class GooglePlayBillingRepository(
                             current[record.productId] = record
                         }
                         _purchases.value = current
+
+                        val purchasedRecords = mappedRecords.filter {
+                            it.purchaseState is BrailuxPurchaseState.Purchased
+                        }
+                        if (purchasedRecords.isNotEmpty()) {
+                            lastProcessingJob = repositoryScope.launch {
+                                reconciliationMutex.withLock {
+                                    for (record in purchasedRecords) {
+                                        val granted = entitlementRepository.grantEntitlementForPurchase(record)
+                                        if (granted && !record.isAcknowledged) {
+                                            acknowledgePurchase(record.purchaseToken)
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -171,7 +204,7 @@ class GooglePlayBillingRepository(
             }
             else -> {
                 // Error técnico de facturación distinto de OK:
-                // - No borrar ni modificar purchases existentes.
+                // - No borrar ni modificar purchases existentes ni entitlements conocidos.
                 // - Exponer como error técnico observable sin contaminar connectionState.
                 val errorMsg = billingResult.debugMessage.ifBlank {
                     "Billing error on purchases update (${billingResult.responseCode})"
@@ -187,8 +220,6 @@ class GooglePlayBillingRepository(
                 )
             }
         }
-        // REGLA ABSOLUTA DE ENTITLEMENT:
-        // No conceder derechos, no alterar ownedBackgroundIds, no acknowledge, no DataStore.
     }
 
     override suspend fun queryProductDetails(productIds: Set<String>): Result<List<BrailuxBillingProductDetails>> {
@@ -259,8 +290,11 @@ class GooglePlayBillingRepository(
         }
         _purchases.value = current
 
-        // REGLA ABSOLUTA DE ENTITLEMENT:
-        // NO modificar todavía BrailuxPremiumAccess.currentState ni ownedBackgroundIds.
+        // Reconciliación autoritativa: reemplaza el conjunto activo con las compras actualmente válidas de Google Play
+        reconciliationMutex.withLock {
+            entitlementRepository.reconcileFromPurchases(mappedRecords)
+        }
+
         return Result.success(mappedRecords)
     }
 
@@ -288,13 +322,49 @@ class GooglePlayBillingRepository(
             )
         }
 
-        // NO conceder derechos ni hacer acknowledge.
+        val records = purchasesResult.getOrThrow()
+        reconciliationMutex.withLock {
+            for (record in records) {
+                if (record.purchaseState is BrailuxPurchaseState.Purchased &&
+                    !record.isAcknowledged &&
+                    entitlementRepository.isPurchaseEligible(record)
+                ) {
+                    acknowledgePurchase(record.purchaseToken)
+                }
+            }
+        }
+
         return Result.success(Unit)
     }
 
     override suspend fun restorePurchases(): Result<List<BrailuxPurchaseRecord>> {
-        // En esta fase solo consulta compras activas. No modifica DataStore, no desbloquea UI.
-        return queryPurchases()
+        if (!gateway.isReady || _connectionState.value !is BillingConnectionState.Connected) {
+            val connectResult = startConnection()
+            if (connectResult.isFailure) {
+                return Result.failure(
+                    connectResult.exceptionOrNull() ?: IllegalStateException("Failed to connect to billing service")
+                )
+            }
+        }
+
+        val queryResult = queryPurchases()
+        if (queryResult.isFailure) {
+            return queryResult
+        }
+
+        val records = queryResult.getOrThrow()
+        reconciliationMutex.withLock {
+            for (record in records) {
+                if (record.purchaseState is BrailuxPurchaseState.Purchased &&
+                    !record.isAcknowledged &&
+                    entitlementRepository.isPurchaseEligible(record)
+                ) {
+                    acknowledgePurchase(record.purchaseToken)
+                }
+            }
+        }
+
+        return Result.success(records)
     }
 
     override suspend fun launchPurchaseFlow(activity: Activity, request: BrailuxPurchaseRequest): Result<Unit> {
@@ -441,10 +511,50 @@ class GooglePlayBillingRepository(
     }
 
     override suspend fun acknowledgePurchase(purchaseToken: String): Result<Unit> {
-        // NO implementar todavía en Fase C
-        return Result.failure(
-            UnsupportedOperationException("Purchase acknowledgment is not supported in Phase C")
-        )
+        if (purchaseToken.isBlank()) {
+            val msg = "purchaseToken cannot be blank"
+            val error = BrailuxBillingError(BillingClient.BillingResponseCode.DEVELOPER_ERROR, msg)
+            _lastBillingError.value = error
+            _lastBillingOperation.value = BrailuxBillingOperationState.Error(BillingClient.BillingResponseCode.DEVELOPER_ERROR, msg)
+            return Result.failure(BrailuxBillingException(BillingClient.BillingResponseCode.DEVELOPER_ERROR, msg))
+        }
+
+        if (!gateway.isReady || _connectionState.value !is BillingConnectionState.Connected) {
+            val msg = "Billing service is not connected or ready"
+            val error = BrailuxBillingError(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, msg)
+            _lastBillingError.value = error
+            _lastBillingOperation.value = BrailuxBillingOperationState.Error(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, msg)
+            return Result.failure(BrailuxBillingException(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, msg))
+        }
+
+        val billingResult = gateway.acknowledgePurchase(purchaseToken)
+
+        return if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
+            _lastBillingError.value = null
+            _lastBillingOperation.value = BrailuxBillingOperationState.Success
+
+            val current = _purchases.value.toMutableMap()
+            var updated = false
+            current.forEach { (productId, record) ->
+                if (record.purchaseToken == purchaseToken && !record.isAcknowledged) {
+                    current[productId] = record.copy(isAcknowledged = true)
+                    updated = true
+                }
+            }
+            if (updated) {
+                _purchases.value = current
+            }
+
+            Result.success(Unit)
+        } else {
+            val msg = billingResult.debugMessage.ifBlank {
+                "Error acknowledging purchase (${billingResult.responseCode})"
+            }
+            val error = BrailuxBillingError(billingResult.responseCode, msg)
+            _lastBillingError.value = error
+            _lastBillingOperation.value = BrailuxBillingOperationState.Error(billingResult.responseCode, msg)
+            Result.failure(BrailuxBillingException(billingResult.responseCode, msg))
+        }
     }
 
     override fun isProductPurchased(productId: String): Boolean {

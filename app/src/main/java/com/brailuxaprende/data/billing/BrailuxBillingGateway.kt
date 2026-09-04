@@ -2,6 +2,7 @@ package com.brailuxaprende.data.billing
 
 import android.app.Activity
 import android.content.Context
+import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
 import com.android.billingclient.api.BillingFlowParams
@@ -56,6 +57,11 @@ interface BrailuxBillingGateway {
         productDetails: ProductDetails,
         offerToken: String,
     ): BillingResult
+
+    /**
+     * Confirma (acknowledge) una compra PURCHASED ante Google Play mediante su [purchaseToken].
+     */
+    suspend fun acknowledgePurchase(purchaseToken: String): BillingResult
 }
 
 /**
@@ -150,6 +156,20 @@ class DefaultBillingClientGateway(
             .build()
 
         return billingClient.launchBillingFlow(activity, billingFlowParams)
+    }
+
+    override suspend fun acknowledgePurchase(purchaseToken: String): BillingResult {
+        val params = AcknowledgePurchaseParams.newBuilder()
+            .setPurchaseToken(purchaseToken)
+            .build()
+
+        return suspendCancellableCoroutine { continuation ->
+            billingClient.acknowledgePurchase(params) { billingResult ->
+                if (continuation.isActive) {
+                    continuation.resume(billingResult)
+                }
+            }
+        }
     }
 }
 

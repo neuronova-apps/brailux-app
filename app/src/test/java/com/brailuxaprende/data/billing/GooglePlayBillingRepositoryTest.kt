@@ -8,16 +8,19 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.QueryProductDetailsResult
 import com.android.billingclient.api.UnfetchedProduct
+import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.BrailuxPremiumAccess
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
 
 class GooglePlayBillingRepositoryTest {
@@ -78,6 +81,17 @@ class GooglePlayBillingRepositoryTest {
             return queryPurchasesResult
         }
 
+        var acknowledgePurchaseResult: BillingResult =
+            BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        var acknowledgePurchaseCount: Int = 0
+        var lastAcknowledgedPurchaseToken: String? = null
+
+        override suspend fun acknowledgePurchase(purchaseToken: String): BillingResult {
+            acknowledgePurchaseCount++
+            lastAcknowledgedPurchaseToken = purchaseToken
+            return acknowledgePurchaseResult
+        }
+
         fun completeConnection(responseCode: Int, debugMessage: String = "") {
             isReadyValue = (responseCode == BillingClient.BillingResponseCode.OK)
             val result = BillingResult.newBuilder()
@@ -105,6 +119,16 @@ class GooglePlayBillingRepositoryTest {
         override fun getPurchaseTime(): Long = fakePurchaseTime
         override fun getPurchaseState(): Int = fakePurchaseState
         override fun isAcknowledged(): Boolean = fakeAcknowledged
+    }
+
+    @Before
+    fun setUp() {
+        BrailuxPremiumAccess.reset()
+    }
+
+    @After
+    fun tearDown() {
+        BrailuxPremiumAccess.reset()
     }
 
     // 1. PENDING nunca equivale a Purchased
@@ -148,7 +172,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun unknownProductPurchaseDoesNotGenerateEntitlementOrRecord() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val unknownRecords = BrailuxBillingMapper.mapPurchaseData(
             productIds = listOf("unknown_theme_gold_metallic"),
@@ -192,7 +216,7 @@ class GooglePlayBillingRepositoryTest {
     fun fullCatalogGeneratesCorrectProductDetailsQuery() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
         gateway.isReadyValue = true
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -279,7 +303,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun errorBillingResultRepresentedInConnectionState() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -298,7 +322,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun initialConnectionStateIsDisconnected() {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         assertEquals(BillingConnectionState.Disconnected, repository.connectionState.value)
     }
@@ -307,7 +331,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun connectionStateTransitionsToConnectingDuringStart() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(start = CoroutineStart.UNDISPATCHED) {
             repository.startConnection()
@@ -323,7 +347,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun setupOkTransitionsToConnected() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -338,7 +362,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun setupFailureTransitionsToUnavailableOrError() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val unavailableJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -349,7 +373,7 @@ class GooglePlayBillingRepositoryTest {
         assertEquals(BillingConnectionState.Unavailable, repository.connectionState.value)
 
         val errorGateway = FakeBrailuxBillingGateway()
-        val errorRepository = GooglePlayBillingRepository(gateway = errorGateway)
+        val errorRepository = GooglePlayBillingRepository(gateway = errorGateway, mainDispatcher = Dispatchers.Unconfined)
 
         val errorJob = launch(Dispatchers.Unconfined) {
             errorRepository.startConnection()
@@ -364,7 +388,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun disconnectionDoesNotEnterManualReconnectLoop() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -386,7 +410,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun queryPurchasesFiltersOnlyBrailuxProducts() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val mixedRawPurchases = BrailuxBillingMapper.mapPurchaseData(
             productIds = listOf(
@@ -409,7 +433,7 @@ class GooglePlayBillingRepositoryTest {
     fun purchasedDoesNotModifyOwnedBackgroundIds() = runBlocking {
         val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val purchasedRecord = BrailuxBillingMapper.mapPurchaseData(
             productIds = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
@@ -457,7 +481,7 @@ class GooglePlayBillingRepositoryTest {
 
         val gateway = FakeBrailuxBillingGateway()
         gateway.isReadyValue = true
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -476,8 +500,7 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun restorePurchasesDoesNotGrantEntitlement() = runBlocking {
         val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
-        val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val (gateway, repository) = createConnectedRepository()
 
         val restoreResult = repository.restorePurchases()
         assertTrue(restoreResult.isSuccess)
@@ -502,23 +525,27 @@ class GooglePlayBillingRepositoryTest {
         assertEquals(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, (ex as BrailuxBillingException).responseCode)
     }
 
-    // 22. acknowledgePurchase retorna fallo explícito no soportado
+    // 22. acknowledgePurchase retorna fallo si el servicio está desconectado
     @Test
-    fun acknowledgePurchaseReturnsUnsupportedFailure() = runBlocking {
+    fun acknowledgePurchaseReturnsFailureWhenDisconnected() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
         val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val result = repository.acknowledgePurchase("dummy_token")
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
+        assertTrue(result.exceptionOrNull() is BrailuxBillingException)
+        assertEquals(
+            BillingClient.BillingResponseCode.SERVICE_DISCONNECTED,
+            (result.exceptionOrNull() as BrailuxBillingException).responseCode,
+        )
     }
 
     // 23. endConnection libera recursos y resetea estado
     @Test
     fun endConnectionResetsStateToDisconnected() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val connectJob = launch(Dispatchers.Unconfined) {
             repository.startConnection()
@@ -778,7 +805,11 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun userCanceledDoesNotModifyPurchases() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         // Registrar una compra exitosa inicial
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
@@ -792,6 +823,8 @@ class GooglePlayBillingRepositoryTest {
             )
         )
         repository.onPurchasesUpdated(okResult, initialPurchases)
+        repository.lastProcessingJob?.join()
+
         assertEquals(1, repository.purchases.value.size)
         assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
 
@@ -812,12 +845,16 @@ class GooglePlayBillingRepositoryTest {
 
     // 33. USER_CANCELED no concede entitlement
     @Test
-    fun userCanceledDoesNotGrantEntitlement() {
+    fun userCanceledDoesNotGrantEntitlement() = runBlocking {
         val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
         val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
 
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         val cancelResult = BillingResult.newBuilder()
             .setResponseCode(BillingClient.BillingResponseCode.USER_CANCELED)
@@ -833,7 +870,11 @@ class GooglePlayBillingRepositoryTest {
     @Test
     fun nonOkErrorDoesNotDeleteExistingPurchases() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         // Sembrar compra existente
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
@@ -847,6 +888,7 @@ class GooglePlayBillingRepositoryTest {
             )
         )
         repository.onPurchasesUpdated(okResult, existing)
+        repository.lastProcessingJob?.join()
         assertEquals(1, repository.purchases.value.size)
 
         // Disparar error técnico (ej. ERROR o ITEM_UNAVAILABLE)
@@ -863,9 +905,13 @@ class GooglePlayBillingRepositoryTest {
 
     // 35. Error técnico queda observable
     @Test
-    fun technicalErrorRemainsObservableWithoutContaminatingConnectionState() {
+    fun technicalErrorRemainsObservableWithoutContaminatingConnectionState() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         val errorResult = BillingResult.newBuilder()
             .setResponseCode(BillingClient.BillingResponseCode.DEVELOPER_ERROR)
@@ -896,12 +942,15 @@ class GooglePlayBillingRepositoryTest {
         assertEquals(BrailuxBillingOperationState.UserCanceled, repository.lastBillingOperation.value)
     }
 
-    // 36. PURCHASED sigue sin modificar ownedBackgroundIds
+    // 36. PURCHASED concede entitlement en ownedBackgroundIds
     @Test
-    fun purchasedStateStillDoesNotModifyOwnedBackgroundIds() {
-        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+    fun purchasedStateGrantsEntitlement() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
         val purchasedList = listOf(
@@ -914,21 +963,27 @@ class GooglePlayBillingRepositoryTest {
             )
         )
         repository.onPurchasesUpdated(okResult, purchasedList)
+        repository.lastProcessingJob?.join()
 
         assertEquals(1, repository.purchases.value.size)
-        assertEquals(
-            "Regla de Entitlement: PURCHASED en PurchasesUpdatedListener no debe alterar ownedBackgroundIds",
-            initialOwned,
-            BrailuxPremiumAccess.currentState.ownedBackgroundIds,
+        assertTrue(
+            "Regla de Entitlement: PURCHASED en PurchasesUpdatedListener concede entitlement",
+            BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(
+                BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID
+            ),
         )
     }
 
     // 37. PENDING sigue sin modificar ownedBackgroundIds
     @Test
-    fun pendingStateStillDoesNotModifyOwnedBackgroundIds() {
+    fun pendingStateStillDoesNotModifyOwnedBackgroundIds() = runBlocking {
         val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
         val pendingList = listOf(
@@ -1448,12 +1503,16 @@ class GooglePlayBillingRepositoryTest {
 
     // 58. PENDING sigue sin conceder entitlement
     @Test
-    fun pendingStateContinuesToNotGrantEntitlement() {
+    fun pendingStateContinuesToNotGrantEntitlement() = runBlocking {
         val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
         val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
 
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
 
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
         repository.onPurchasesUpdated(
@@ -1471,14 +1530,23 @@ class GooglePlayBillingRepositoryTest {
         assertEquals(initialPremium, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
     }
 
-    // 59. PURCHASED recibido por listener sigue sin conceder entitlement
+    // 59. PURCHASED recibido por listener concede entitlement
     @Test
-    fun purchasedReceivedByListenerStillDoesNotGrantEntitlement() {
-        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
-        val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
-
+    fun purchasedReceivedByListenerGrantsEntitlement() = runBlocking {
+        BrailuxPremiumAccess.reset()
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        gateway.isReadyValue = true
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
+
+        val connectJob = launch(Dispatchers.Unconfined) {
+            repository.startConnection()
+        }
+        gateway.completeConnection(BillingClient.BillingResponseCode.OK)
+        connectJob.join()
 
         val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
         repository.onPurchasesUpdated(
@@ -1486,14 +1554,20 @@ class GooglePlayBillingRepositoryTest {
             listOf(
                 FakePurchase(
                     fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA),
-                    fakePurchaseToken = "tok_purchased_no_entitlement",
+                    fakePurchaseToken = "tok_purchased_entitlement",
                     fakePurchaseState = Purchase.PurchaseState.PURCHASED,
+                    fakeAcknowledged = true,
                 )
             ),
         )
+        repository.lastProcessingJob?.join()
 
-        assertEquals("ownedBackgroundIds debe permanecer intacto tras PURCHASED en Fase C", initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
-        assertEquals(initialPremium, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
+        assertTrue(
+            repository.entitlementRepository.isBackgroundOwned(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID)
+        )
+        assertTrue(
+            BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID)
+        )
     }
 
     // 60. ownedBackgroundIds permanece intacto después de launch OK
@@ -1551,9 +1625,9 @@ class GooglePlayBillingRepositoryTest {
         )
     }
 
-    // 62. acknowledgePurchase no se ejecuta automáticamente
+    // 62. acknowledgePurchase se ejecuta y tiene éxito
     @Test
-    fun acknowledgePurchaseDoesNotExecuteAutomatically() = runBlocking {
+    fun acknowledgePurchaseExecutesSuccessfully() = runBlocking {
         val (gateway, repository) = createConnectedRepository()
         val dummyActivity = object : Activity() {}
 
@@ -1568,25 +1642,13 @@ class GooglePlayBillingRepositoryTest {
             dummyActivity,
             BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA, "tok_ack_check"),
         )
+        assertEquals(0, gateway.acknowledgePurchaseCount)
 
-        // 2. onPurchasesUpdated PURCHASED tampoco invoca acknowledge
-        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
-        repository.onPurchasesUpdated(
-            okResult,
-            listOf(
-                FakePurchase(
-                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA),
-                    fakePurchaseToken = "tok_ack_token",
-                    fakePurchaseState = Purchase.PurchaseState.PURCHASED,
-                    fakeAcknowledged = false,
-                )
-            ),
-        )
-
-        // 3. Invocar acknowledge manualmente falla con UnsupportedOperationException en Fase C
+        // 2. Invocar acknowledge manualmente tiene éxito
         val ackResult = repository.acknowledgePurchase("tok_ack_token")
-        assertTrue(ackResult.isFailure)
-        assertTrue(ackResult.exceptionOrNull() is UnsupportedOperationException)
+        assertTrue(ackResult.isSuccess)
+        assertEquals(1, gateway.acknowledgePurchaseCount)
+        assertEquals("tok_ack_token", gateway.lastAcknowledgedPurchaseToken)
     }
 
     // 63. ProductDetails SDK no se persiste en DataStore
