@@ -69,6 +69,8 @@ data class BrailuxBillingProductDetails(
     val priceAmountMicros: Long? = null,
     val priceCurrencyCode: String? = null,
     val isConsumable: Boolean = false,
+    val state: BrailuxProductState = BrailuxProductState.Available,
+    val unfetchedStatusCode: Int? = null,
 )
 
 /**
