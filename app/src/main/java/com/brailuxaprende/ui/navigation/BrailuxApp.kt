@@ -85,9 +85,12 @@ import com.brailuxaprende.ui.screens.PlayScreen
 import com.brailuxaprende.ui.screens.PracticeScreen
 import com.brailuxaprende.ui.screens.ProgressScreen
 import com.brailuxaprende.ui.screens.SequenceGameScreen
+import com.brailuxaprende.data.billing.BrailuxBillingUiState
+import com.brailuxaprende.data.billing.BrailuxRestoreEvent
 import com.brailuxaprende.ui.screens.SettingsScreen
 import com.brailuxaprende.ui.screens.VowelsLessonScreen
 import com.brailuxaprende.ui.screens.WelcomeScreen
+import kotlinx.coroutines.flow.SharedFlow
 
 object BrailuxRoutes {
     const val WELCOME = "bienvenida"
@@ -176,6 +179,10 @@ fun BrailuxApp(
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean = false,
     ownedBackgroundIds: Set<String> = emptySet(),
+    billingUiState: BrailuxBillingUiState = BrailuxBillingUiState(),
+    onBuyProduct: (productId: String, offerToken: String) -> Unit = { _, _ -> },
+    onRestorePurchases: () -> Unit = {},
+    restoreEvents: SharedFlow<BrailuxRestoreEvent>? = null,
     onBackgroundChange: (String) -> Unit = {},
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit = { _, _ -> },
@@ -281,6 +288,10 @@ fun BrailuxApp(
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
             isPremiumUnlocked = isPremiumUnlocked,
             ownedBackgroundIds = ownedBackgroundIds,
+            billingUiState = billingUiState,
+            onBuyProduct = onBuyProduct,
+            onRestorePurchases = onRestorePurchases,
+            restoreEvents = restoreEvents,
             onBackgroundChange = onBackgroundChange,
             onLearningLessonCompleted = onLearningLessonCompleted,
             onRecordMemoryGame = onRecordMemoryGame,
@@ -405,6 +416,10 @@ private fun BrailuxNavHost(
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean,
     ownedBackgroundIds: Set<String> = emptySet(),
+    billingUiState: BrailuxBillingUiState = BrailuxBillingUiState(),
+    onBuyProduct: (productId: String, offerToken: String) -> Unit = { _, _ -> },
+    onRestorePurchases: () -> Unit = {},
+    restoreEvents: SharedFlow<BrailuxRestoreEvent>? = null,
     onBackgroundChange: (String) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit,
@@ -689,6 +704,10 @@ private fun BrailuxNavHost(
                 onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
                 isPremiumUnlocked = isPremiumUnlocked,
                 ownedBackgroundIds = ownedBackgroundIds,
+                billingUiState = billingUiState,
+                onBuyProduct = onBuyProduct,
+                onRestorePurchases = onRestorePurchases,
+                restoreEvents = restoreEvents,
                 onBackgroundChange = onBackgroundChange,
                 onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
                 onBack = ::goBack,

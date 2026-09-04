@@ -28,6 +28,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +50,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
+import com.brailuxaprende.data.billing.BrailuxBillingProductCatalog
+import com.brailuxaprende.data.billing.BrailuxBillingUiState
+import com.brailuxaprende.data.billing.BrailuxRestoreEvent
+import com.brailuxaprende.data.billing.BrailuxThemePurchaseStatus
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.BackgroundRotationAction
@@ -58,6 +63,7 @@ import com.brailuxaprende.data.settings.BrailuxBackgroundOption
 import com.brailuxaprende.data.settings.BrailuxBackgroundRotationPolicy
 import com.brailuxaprende.data.settings.TextSizePreference
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -66,6 +72,7 @@ import com.brailuxaprende.ui.components.BrailuxSecondaryButton
 import com.brailuxaprende.ui.components.BrailuxSectionCard
 import com.brailuxaprende.ui.components.BrailuxThemedAccent
 import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
+import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun SettingsScreen(
@@ -81,10 +88,27 @@ fun SettingsScreen(
     onBackgroundChange: (String) -> Unit,
     onAbout: () -> Unit,
     onBack: () -> Unit,
+    billingUiState: BrailuxBillingUiState = BrailuxBillingUiState(),
+    onBuyProduct: (productId: String, offerToken: String) -> Unit = { _, _ -> },
+    onRestorePurchases: () -> Unit = {},
+    restoreEvents: SharedFlow<BrailuxRestoreEvent>? = null,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val premiumMessage = stringResource(R.string.settings_background_available_with_premium)
+
+    restoreEvents?.let { events ->
+        LaunchedEffect(events) {
+            events.collect { event ->
+                val message = when (event) {
+                    BrailuxRestoreEvent.RestoreSuccess -> context.getString(R.string.settings_restore_success)
+                    BrailuxRestoreEvent.RestoreEmpty -> context.getString(R.string.settings_restore_empty)
+                    BrailuxRestoreEvent.RestoreError -> context.getString(R.string.settings_restore_error)
+                }
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -141,10 +165,13 @@ fun SettingsScreen(
                 rotationMode = preferences.backgroundRotationMode,
                 isPremiumUnlocked = isPremiumUnlocked,
                 ownedBackgroundIds = ownedBackgroundIds,
+                billingUiState = billingUiState,
                 onBackgroundChange = onBackgroundChange,
                 onLockedBackground = {
                     Toast.makeText(context, premiumMessage, Toast.LENGTH_SHORT).show()
                 },
+                onBuyProduct = onBuyProduct,
+                onRestorePurchases = onRestorePurchases,
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 560.dp),
@@ -291,8 +318,11 @@ private fun WallpaperSection(
     rotationMode: BackgroundRotationMode,
     isPremiumUnlocked: Boolean,
     ownedBackgroundIds: Set<String> = emptySet(),
+    billingUiState: BrailuxBillingUiState = BrailuxBillingUiState(),
     onBackgroundChange: (String) -> Unit,
     onLockedBackground: () -> Unit,
+    onBuyProduct: (productId: String, offerToken: String) -> Unit,
+    onRestorePurchases: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var previewBackground by remember { mutableStateOf<BrailuxBackgroundOption?>(null) }
@@ -315,27 +345,50 @@ private fun WallpaperSection(
         )
         Column(modifier = Modifier.padding(top = 8.dp)) {
             BrailuxBackgroundCatalog.backgrounds.forEach { background ->
+                val itemStatus = billingUiState.items[background.id]?.status ?: if (background.premium) {
+                    if (isPremiumUnlocked || background.id in ownedBackgroundIds) {
+                        BrailuxThemePurchaseStatus.Purchased
+                    } else {
+                        BrailuxThemePurchaseStatus.Unavailable
+                    }
+                } else {
+                    BrailuxThemePurchaseStatus.Free
+                }
                 BackgroundOptionRow(
                     background = background,
                     selected = selectedBackgroundId == background.id,
-                    isPremiumUnlocked = isPremiumUnlocked,
-                    ownedBackgroundIds = ownedBackgroundIds,
+                    itemStatus = itemStatus,
                     onSelect = {
-                        if (BrailuxBackgroundCatalog.canUse(
-                                background = background,
-                                isPremiumUnlocked = isPremiumUnlocked,
-                                ownedBackgroundIds = ownedBackgroundIds,
-                            )
+                        if (!background.premium ||
+                            itemStatus is BrailuxThemePurchaseStatus.Purchased ||
+                            itemStatus is BrailuxThemePurchaseStatus.Free
                         ) {
                             onBackgroundChange(background.id)
                         } else {
                             onLockedBackground()
                         }
                     },
+                    onBuy = { offerToken ->
+                        val productId = BrailuxBillingProductCatalog.productIdFor(background.id)
+                        if (productId != null) {
+                            onBuyProduct(productId, offerToken)
+                        }
+                    },
                     onPreview = { previewBackground = background },
                 )
                 HorizontalDivider()
             }
+        }
+
+        val restoreEnabled = !billingUiState.isRestoring && !billingUiState.isPurchasing
+        TextButton(
+            onClick = onRestorePurchases,
+            enabled = restoreEnabled,
+            modifier = Modifier
+                .align(Alignment.End)
+                .padding(top = 8.dp),
+        ) {
+            Text(text = stringResource(R.string.settings_restore_purchases))
         }
 
         if (canRotate) {
@@ -397,12 +450,27 @@ private fun WallpaperSection(
     }
 
     previewBackground?.let { background ->
+        val itemStatus = billingUiState.items[background.id]?.status ?: if (background.premium) {
+            if (isPremiumUnlocked || background.id in ownedBackgroundIds) {
+                BrailuxThemePurchaseStatus.Purchased
+            } else {
+                BrailuxThemePurchaseStatus.Unavailable
+            }
+        } else {
+            BrailuxThemePurchaseStatus.Free
+        }
         BackgroundPreviewDialog(
             background = background,
-            isPremiumUnlocked = isPremiumUnlocked,
-            ownedBackgroundIds = ownedBackgroundIds,
+            itemStatus = itemStatus,
             onUse = {
                 onBackgroundChange(background.id)
+                previewBackground = null
+            },
+            onBuy = { offerToken ->
+                val productId = BrailuxBillingProductCatalog.productIdFor(background.id)
+                if (productId != null) {
+                    onBuyProduct(productId, offerToken)
+                }
                 previewBackground = null
             },
             onDismiss = { previewBackground = null },
@@ -414,27 +482,31 @@ private fun WallpaperSection(
 private fun BackgroundOptionRow(
     background: BrailuxBackgroundOption,
     selected: Boolean,
-    isPremiumUnlocked: Boolean,
-    ownedBackgroundIds: Set<String> = emptySet(),
+    itemStatus: BrailuxThemePurchaseStatus,
     onSelect: () -> Unit,
+    onBuy: (offerToken: String) -> Unit,
     onPreview: () -> Unit,
 ) {
-    val canUse = BrailuxBackgroundCatalog.canUse(
-        background = background,
-        isPremiumUnlocked = isPremiumUnlocked,
-        ownedBackgroundIds = ownedBackgroundIds,
-    )
+    val canUse = !background.premium ||
+        itemStatus is BrailuxThemePurchaseStatus.Purchased ||
+        itemStatus is BrailuxThemePurchaseStatus.Free
     val canPreview = BrailuxBackgroundCatalog.canPreview(background)
 
     val selectionState = stringResource(
         if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
     )
-    val premiumState = when {
-        !background.premium -> null
-        canUse -> stringResource(R.string.settings_background_premium)
-        else -> stringResource(R.string.settings_background_locked)
+    val statusDescription = when (itemStatus) {
+        is BrailuxThemePurchaseStatus.Free -> null
+        is BrailuxThemePurchaseStatus.Purchased -> stringResource(R.string.settings_purchased)
+        is BrailuxThemePurchaseStatus.Pending -> stringResource(R.string.settings_pending)
+        is BrailuxThemePurchaseStatus.AvailableForPurchase -> stringResource(
+            R.string.settings_background_price_accessibility,
+            stringResource(background.nameResource),
+            itemStatus.formattedPrice,
+        )
+        is BrailuxThemePurchaseStatus.Unavailable -> stringResource(R.string.settings_unavailable)
     }
-    val state = listOfNotNull(selectionState, premiumState).joinToString(separator = ". ")
+    val state = listOfNotNull(selectionState, statusDescription).joinToString(separator = ". ")
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -468,26 +540,48 @@ private fun BackgroundOptionRow(
                     )
                 }
                 if (background.premium) {
-                    Text(
-                        text = if (canUse) {
-                            stringResource(R.string.settings_background_premium)
-                        } else {
-                            "${stringResource(R.string.settings_background_premium)} · " +
-                                stringResource(R.string.settings_background_locked)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    val premiumLabel = when (itemStatus) {
+                        is BrailuxThemePurchaseStatus.Purchased -> stringResource(R.string.settings_purchased)
+                        is BrailuxThemePurchaseStatus.Pending -> stringResource(R.string.settings_pending)
+                        is BrailuxThemePurchaseStatus.AvailableForPurchase -> itemStatus.formattedPrice
+                        is BrailuxThemePurchaseStatus.Unavailable -> stringResource(R.string.settings_unavailable)
+                        is BrailuxThemePurchaseStatus.Free -> null
+                    }
+                    if (premiumLabel != null) {
+                        Text(
+                            text = "${stringResource(R.string.settings_background_premium)} · $premiumLabel",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
-            RadioButton(selected = selected, onClick = null)
+            RadioButton(selected = selected, onClick = null, enabled = canUse)
         }
-        if (canPreview) {
-            TextButton(
-                onClick = onPreview,
-                modifier = Modifier.align(Alignment.End),
-            ) {
-                Text(text = stringResource(R.string.settings_background_preview))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 4.dp, bottom = 4.dp),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (canPreview) {
+                TextButton(onClick = onPreview) {
+                    Text(text = stringResource(R.string.settings_background_preview))
+                }
+            }
+            if (itemStatus is BrailuxThemePurchaseStatus.AvailableForPurchase) {
+                Spacer(modifier = Modifier.width(8.dp))
+                TextButton(
+                    onClick = { onBuy(itemStatus.offerToken) },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.settings_buy_with_price,
+                            itemStatus.formattedPrice,
+                        ),
+                    )
+                }
             }
         }
     }
@@ -496,16 +590,14 @@ private fun BackgroundOptionRow(
 @Composable
 private fun BackgroundPreviewDialog(
     background: BrailuxBackgroundOption,
-    isPremiumUnlocked: Boolean,
-    ownedBackgroundIds: Set<String> = emptySet(),
+    itemStatus: BrailuxThemePurchaseStatus,
     onUse: () -> Unit,
+    onBuy: (offerToken: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val canUse = BrailuxBackgroundCatalog.canUse(
-        background = background,
-        isPremiumUnlocked = isPremiumUnlocked,
-        ownedBackgroundIds = ownedBackgroundIds,
-    )
+    val canUse = !background.premium ||
+        itemStatus is BrailuxThemePurchaseStatus.Purchased ||
+        itemStatus is BrailuxThemePurchaseStatus.Free
     val drawableResource = background.drawableResource
     val themeDef = BrailuxThemeCatalog.theme(background.id) ?: BrailuxThemeCatalog.defaultTheme
     val visual = themeDef.visual
@@ -629,46 +721,83 @@ private fun BackgroundPreviewDialog(
                 }
 
                 if (background.premium) {
-                    if (canUse) {
-                        Text(
-                            text = stringResource(R.string.settings_background_premium_badge),
-                            modifier = Modifier.padding(top = 12.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = visual.primary,
-                            fontWeight = FontWeight.Bold,
-                        )
-                    } else {
-                        Text(
-                            text = "${stringResource(R.string.settings_background_premium_badge)} · " +
-                                stringResource(R.string.settings_background_requires_unlock),
-                            modifier = Modifier.padding(top = 12.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_background_locked_preview),
-                            modifier = Modifier.padding(top = 4.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    when (itemStatus) {
+                        is BrailuxThemePurchaseStatus.Purchased -> {
+                            Text(
+                                text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                    stringResource(R.string.settings_purchased),
+                                modifier = Modifier.padding(top = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = visual.primary,
+                                fontWeight = FontWeight.Bold,
+                            )
+                        }
+                        is BrailuxThemePurchaseStatus.AvailableForPurchase -> {
+                            Text(
+                                text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                    itemStatus.formattedPrice,
+                                modifier = Modifier.padding(top = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = visual.primary,
+                                fontWeight = FontWeight.Bold,
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_background_locked_preview),
+                                modifier = Modifier.padding(top = 4.dp),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        is BrailuxThemePurchaseStatus.Pending -> {
+                            Text(
+                                text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                    stringResource(R.string.settings_pending),
+                                modifier = Modifier.padding(top = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        else -> {
+                            Text(
+                                text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                    stringResource(R.string.settings_unavailable),
+                                modifier = Modifier.padding(top = 12.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
                     }
                 }
             }
         },
         confirmButton = {
-            if (canUse) {
-                TextButton(
-                    onClick = onUse,
-                ) {
-                    Text(text = stringResource(R.string.settings_background_use))
+            when (itemStatus) {
+                is BrailuxThemePurchaseStatus.Purchased, is BrailuxThemePurchaseStatus.Free -> {
+                    TextButton(onClick = onUse) {
+                        Text(text = stringResource(R.string.settings_background_use))
+                    }
                 }
-            } else {
-                TextButton(
-                    onClick = {},
-                    enabled = false,
-                ) {
-                    Text(text = stringResource(R.string.settings_background_requires_premium))
+                is BrailuxThemePurchaseStatus.AvailableForPurchase -> {
+                    TextButton(onClick = { onBuy(itemStatus.offerToken) }) {
+                        Text(
+                            text = stringResource(
+                                R.string.settings_buy_with_price,
+                                itemStatus.formattedPrice,
+                            ),
+                        )
+                    }
+                }
+                is BrailuxThemePurchaseStatus.Pending -> {
+                    TextButton(onClick = {}, enabled = false) {
+                        Text(text = stringResource(R.string.settings_pending))
+                    }
+                }
+                is BrailuxThemePurchaseStatus.Unavailable -> {
+                    TextButton(onClick = {}, enabled = false) {
+                        Text(text = stringResource(R.string.settings_unavailable))
+                    }
                 }
             }
         },
