@@ -58,7 +58,34 @@ sealed interface BrailuxPurchaseState {
 }
 
 /**
+ * Detalles de una oferta individual one-time (compra única) desacoplada del SDK de Google Play Billing.
+ *
+ * Utiliza exclusivamente campos soportados por Google Play Billing 9.1.0:
+ * - [offerToken]: Token requerido para procesar el flujo de compra.
+ * - [purchaseOptionId]: Identificador de opción de compra si existe.
+ * - [offerId]: Identificador de oferta si existe.
+ * - [formattedPrice]: Precio formateado con símbolo de divisa.
+ * - [priceAmountMicros]: Precio numérico en micro-unidades (ej: 1990000 para $1.99).
+ * - [priceCurrencyCode]: Código de divisa ISO 4217 (ej: "USD").
+ */
+data class BrailuxOneTimeOfferDetails(
+    val offerToken: String,
+    val purchaseOptionId: String?,
+    val offerId: String?,
+    val formattedPrice: String?,
+    val priceAmountMicros: Long?,
+    val priceCurrencyCode: String?,
+)
+
+/**
  * Información de producto desacoplada de las clases internas de Google Play Billing.
+ *
+ * Compatibilidad de precios:
+ * Los campos [formattedPrice], [priceAmountMicros] y [priceCurrencyCode] son una representación
+ * resumida y compatible (generalmente derivada de la oferta inicial) para visualización básica
+ * y compatibilidad hacia atrás. NO son la única fuente ni determinan la selección de oferta
+ * para el futuro flujo de compra.
+ * La fuente completa y autoritativa de ofertas disponibles se encuentra en [oneTimeOffers].
  */
 data class BrailuxBillingProductDetails(
     val productId: String,
@@ -68,6 +95,7 @@ data class BrailuxBillingProductDetails(
     val formattedPrice: String? = null,
     val priceAmountMicros: Long? = null,
     val priceCurrencyCode: String? = null,
+    val oneTimeOffers: List<BrailuxOneTimeOfferDetails> = emptyList(),
     val isConsumable: Boolean = false,
     val state: BrailuxProductState = BrailuxProductState.Available,
     val unfetchedStatusCode: Int? = null,
@@ -83,3 +111,27 @@ data class BrailuxPurchaseRecord(
     val purchaseState: BrailuxPurchaseState,
     val isAcknowledged: Boolean,
 )
+
+/**
+ * Error técnico reportado por la capa de Google Play Billing.
+ * Permite monitorear fallos técnicos de operaciones sin alterar [BillingConnectionState]
+ * cuando el error no corresponde a una falla de conexión.
+ */
+data class BrailuxBillingError(
+    val responseCode: Int,
+    val message: String,
+)
+
+/**
+ * Estado observable de la última operación técnica procesada por Google Play Billing.
+ */
+sealed interface BrailuxBillingOperationState {
+    data object Idle : BrailuxBillingOperationState
+    data object Success : BrailuxBillingOperationState
+    data object UserCanceled : BrailuxBillingOperationState
+    data class Error(
+        val responseCode: Int,
+        val message: String,
+    ) : BrailuxBillingOperationState
+}
+

@@ -37,6 +37,18 @@ interface BrailuxBillingRepository {
     val purchases: StateFlow<Map<String, BrailuxPurchaseRecord>>
 
     /**
+     * Flujo reactivo del último error técnico observable reportado por Google Play Billing.
+     * Permite observar fallos técnicos (por ejemplo en PurchasesUpdatedListener)
+     * sin alterar [connectionState] si el error no corresponde a la conexión.
+     */
+    val lastBillingError: StateFlow<BrailuxBillingError?>
+
+    /**
+     * Flujo reactivo del estado de la última operación técnica procesada por BillingClient.
+     */
+    val lastBillingOperation: StateFlow<BrailuxBillingOperationState>
+
+    /**
      * Inicia la conexión asíncrona con el servicio de Google Play Billing.
      */
     suspend fun startConnection(): Result<Unit>

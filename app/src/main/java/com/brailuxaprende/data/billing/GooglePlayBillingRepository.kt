@@ -55,6 +55,12 @@ class GooglePlayBillingRepository(
     private val _purchases = MutableStateFlow<Map<String, BrailuxPurchaseRecord>>(emptyMap())
     override val purchases: StateFlow<Map<String, BrailuxPurchaseRecord>> = _purchases.asStateFlow()
 
+    private val _lastBillingError = MutableStateFlow<BrailuxBillingError?>(null)
+    override val lastBillingError: StateFlow<BrailuxBillingError?> = _lastBillingError.asStateFlow()
+
+    private val _lastBillingOperation = MutableStateFlow<BrailuxBillingOperationState>(BrailuxBillingOperationState.Idle)
+    override val lastBillingOperation: StateFlow<BrailuxBillingOperationState> = _lastBillingOperation.asStateFlow()
+
     private val connectionMutex = Mutex()
 
     override suspend fun startConnection(): Result<Unit> = connectionMutex.withLock {
@@ -123,18 +129,51 @@ class GooglePlayBillingRepository(
             // Safe cleanup
         } finally {
             _connectionState.value = BillingConnectionState.Disconnected
+            _lastBillingOperation.value = BrailuxBillingOperationState.Idle
         }
     }
 
     override fun onPurchasesUpdated(billingResult: BillingResult, purchases: List<Purchase>?) {
-        if (billingResult.responseCode == BillingClient.BillingResponseCode.OK && purchases != null) {
-            val mappedRecords = purchases.flatMap { BrailuxBillingMapper.mapPurchase(it) }
-            if (mappedRecords.isNotEmpty()) {
-                val current = _purchases.value.toMutableMap()
-                mappedRecords.forEach { record ->
-                    current[record.productId] = record
+        when (billingResult.responseCode) {
+            BillingClient.BillingResponseCode.OK -> {
+                _lastBillingError.value = null
+                _lastBillingOperation.value = BrailuxBillingOperationState.Success
+                if (purchases != null) {
+                    val mappedRecords = purchases.flatMap { BrailuxBillingMapper.mapPurchase(it) }
+                    if (mappedRecords.isNotEmpty()) {
+                        val current = _purchases.value.toMutableMap()
+                        mappedRecords.forEach { record ->
+                            current[record.productId] = record
+                        }
+                        _purchases.value = current
+                    }
                 }
-                _purchases.value = current
+            }
+            BillingClient.BillingResponseCode.USER_CANCELED -> {
+                // El usuario canceló la compra o el diálogo de facturación:
+                // - No modificar purchases existentes.
+                // - No tratarlo como compra.
+                // - No conceder ningún entitlement.
+                // - No marcar como error fatal ni alterar connectionState.
+                _lastBillingError.value = null
+                _lastBillingOperation.value = BrailuxBillingOperationState.UserCanceled
+            }
+            else -> {
+                // Error técnico de facturación distinto de OK:
+                // - No borrar ni modificar purchases existentes.
+                // - Exponer como error técnico observable sin contaminar connectionState.
+                val errorMsg = billingResult.debugMessage.ifBlank {
+                    "Billing error on purchases update (${billingResult.responseCode})"
+                }
+                val error = BrailuxBillingError(
+                    responseCode = billingResult.responseCode,
+                    message = errorMsg,
+                )
+                _lastBillingError.value = error
+                _lastBillingOperation.value = BrailuxBillingOperationState.Error(
+                    responseCode = billingResult.responseCode,
+                    message = errorMsg,
+                )
             }
         }
         // REGLA ABSOLUTA DE ENTITLEMENT:
@@ -151,6 +190,9 @@ class GooglePlayBillingRepository(
 
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val msg = billingResult.debugMessage.ifBlank { "Error querying product details (${billingResult.responseCode})" }
+            val error = BrailuxBillingError(billingResult.responseCode, msg)
+            _lastBillingError.value = error
+            _lastBillingOperation.value = BrailuxBillingOperationState.Error(billingResult.responseCode, msg)
             return Result.failure(BrailuxBillingException(billingResult.responseCode, msg))
         }
 
@@ -172,6 +214,9 @@ class GooglePlayBillingRepository(
 
         if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
             val msg = billingResult.debugMessage.ifBlank { "Error querying purchases (${billingResult.responseCode})" }
+            val error = BrailuxBillingError(billingResult.responseCode, msg)
+            _lastBillingError.value = error
+            _lastBillingOperation.value = BrailuxBillingOperationState.Error(billingResult.responseCode, msg)
             return Result.failure(BrailuxBillingException(billingResult.responseCode, msg))
         }
 

@@ -22,6 +22,15 @@ object BrailuxBillingMapper {
     /**
      * Mapea un [ProductDetails] del SDK a un [BrailuxBillingProductDetails].
      * Si el producto no pertenece al catálogo oficial, retorna null para no contaminar el dominio.
+     *
+     * Utiliza [ProductDetails.getOneTimePurchaseOfferDetailsList] como fuente principal
+     * para mapear TODAS las ofertas one-time disponibles sin descartar ofertas adicionales.
+     * Cada oferta conserva su offerToken, purchaseOptionId, offerId, formattedPrice,
+     * priceAmountMicros y priceCurrencyCode.
+     *
+     * Los campos resumidos de compatibilidad [formattedPrice], [priceAmountMicros] y
+     * [priceCurrencyCode] se derivan de la primera oferta como resumen de presentación,
+     * sin que dicha selección represente una decisión de compra.
      */
     fun mapProductDetails(productDetails: ProductDetails): BrailuxBillingProductDetails? {
         val productId = productDetails.productId
@@ -29,40 +38,68 @@ object BrailuxBillingMapper {
             return null
         }
 
-        val offer = productDetails.oneTimePurchaseOfferDetails
+        val rawOffers = productDetails.oneTimePurchaseOfferDetailsList
+            ?: productDetails.oneTimePurchaseOfferDetails?.let { listOf(it) }
+            ?: emptyList()
+
+        val oneTimeOffers = rawOffers.map { offer ->
+            BrailuxOneTimeOfferDetails(
+                offerToken = offer.offerToken.orEmpty(),
+                purchaseOptionId = offer.purchaseOptionId,
+                offerId = offer.offerId,
+                formattedPrice = offer.formattedPrice,
+                priceAmountMicros = offer.priceAmountMicros,
+                priceCurrencyCode = offer.priceCurrencyCode,
+            )
+        }
+
+        val summaryOffer = oneTimeOffers.firstOrNull()
+
         return mapProductDetailsData(
             productId = productId,
             name = productDetails.name,
             description = productDetails.description,
-            formattedPrice = offer?.formattedPrice,
-            priceAmountMicros = offer?.priceAmountMicros,
-            priceCurrencyCode = offer?.priceCurrencyCode,
+            formattedPrice = summaryOffer?.formattedPrice,
+            priceAmountMicros = summaryOffer?.priceAmountMicros,
+            priceCurrencyCode = summaryOffer?.priceCurrencyCode,
+            oneTimeOffers = oneTimeOffers,
         )
     }
 
     /**
      * Mapea datos puros de un producto consultado exitosamente a [BrailuxBillingProductDetails].
+     * Conserva [oneTimeOffers] íntegramente. Si no se especifican los campos de precio
+     * compatibles y existen ofertas, se infieren de la primera oferta únicamente como
+     * resumen para visualización, sin asumir que será la oferta adquirida.
+     * Si no existen ofertas, [oneTimeOffers] queda vacía y los campos resumidos en null.
      */
     fun mapProductDetailsData(
         productId: String,
         name: String,
         description: String,
-        formattedPrice: String?,
-        priceAmountMicros: Long?,
-        priceCurrencyCode: String?,
+        formattedPrice: String? = null,
+        priceAmountMicros: Long? = null,
+        priceCurrencyCode: String? = null,
+        oneTimeOffers: List<BrailuxOneTimeOfferDetails> = emptyList(),
     ): BrailuxBillingProductDetails? {
         if (productId !in BrailuxBillingProductCatalog.allProductIds) {
             return null
         }
+
+        val summaryOffer = oneTimeOffers.firstOrNull()
+        val resolvedFormattedPrice = formattedPrice ?: summaryOffer?.formattedPrice
+        val resolvedPriceAmountMicros = priceAmountMicros ?: summaryOffer?.priceAmountMicros
+        val resolvedPriceCurrencyCode = priceCurrencyCode ?: summaryOffer?.priceCurrencyCode
 
         return BrailuxBillingProductDetails(
             productId = productId,
             productType = BrailuxProductType.OneTime,
             name = name,
             description = description,
-            formattedPrice = formattedPrice,
-            priceAmountMicros = priceAmountMicros,
-            priceCurrencyCode = priceCurrencyCode,
+            formattedPrice = resolvedFormattedPrice,
+            priceAmountMicros = resolvedPriceAmountMicros,
+            priceCurrencyCode = resolvedPriceCurrencyCode,
+            oneTimeOffers = oneTimeOffers,
             isConsumable = false,
             state = BrailuxProductState.Available,
             unfetchedStatusCode = null,
@@ -71,7 +108,7 @@ object BrailuxBillingMapper {
 
     /**
      * Mapea un [UnfetchedProduct] del SDK a un [BrailuxBillingProductDetails] en estado Unavailable.
-     * No inventa precio ni utiliza precios hardcodeados.
+     * No inventa precio ni utiliza precios hardcodeados. Conserva oneTimeOffers = emptyList().
      */
     fun mapUnfetchedProduct(unfetchedProduct: UnfetchedProduct): BrailuxBillingProductDetails? {
         val productId = unfetchedProduct.productId
@@ -87,6 +124,7 @@ object BrailuxBillingMapper {
 
     /**
      * Mapea datos puros de un producto no recuperado a [BrailuxBillingProductDetails] en estado Unavailable.
+     * Conserva oneTimeOffers = emptyList() sin inventar oferta, token o precio.
      */
     fun mapUnfetchedProductData(
         productId: String,
@@ -104,6 +142,7 @@ object BrailuxBillingMapper {
             formattedPrice = null,
             priceAmountMicros = null,
             priceCurrencyCode = null,
+            oneTimeOffers = emptyList(),
             isConsumable = false,
             state = BrailuxProductState.Unavailable,
             unfetchedStatusCode = statusCode,
