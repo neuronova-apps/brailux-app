@@ -57,8 +57,10 @@ import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.SystemPracticeClock
 import com.brailuxaprende.ui.components.BrailuxMenuCard
 import com.brailuxaprende.ui.components.BrailuxSectionCard
+import com.brailuxaprende.ui.components.BrailuxThemedAccent
 import com.brailuxaprende.ui.components.SeasonalBanner
 import com.brailuxaprende.ui.theme.BrailuxPreviewTheme
+import com.brailuxaprende.ui.theme.LocalBrailuxTheme
 
 @Composable
 fun HomeScreen(
@@ -159,6 +161,7 @@ private fun HomeHeader(
     seasonalResources: SeasonalThemeResources?,
     modifier: Modifier = Modifier,
 ) {
+    val theme = LocalBrailuxTheme.current
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -169,8 +172,8 @@ private fun HomeHeader(
             Surface(
                 modifier = Modifier.size(60.dp),
                 shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                color = theme.visual.surface,
+                border = BorderStroke(1.dp, theme.visual.borderColor),
                 shadowElevation = 2.dp,
             ) {
                 Image(
@@ -179,10 +182,19 @@ private fun HomeHeader(
                     modifier = Modifier.padding(5.dp),
                 )
             }
-            // Seasonal logo decoration: centered horizontally, offset upward to sit above logo
+            // Seasonal logo decoration has priority over theme header decoration
             if (seasonalResources != null) {
                 Image(
                     painter = painterResource(seasonalResources.logoDecorationResource),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(38.dp)
+                        .offset(y = (-18).dp),
+                )
+            } else if (theme.headerDecorationRes != null) {
+                Image(
+                    painter = painterResource(theme.headerDecorationRes),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
@@ -196,7 +208,7 @@ private fun HomeHeader(
                 text = stringResource(R.string.home_brand_name),
                 modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary,
+                color = theme.visual.primary,
                 fontWeight = FontWeight.Black,
             )
             Text(
@@ -209,9 +221,9 @@ private fun HomeHeader(
         Surface(
             modifier = Modifier.size(52.dp),
             shape = CircleShape,
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+            color = theme.visual.chipColor,
+            contentColor = theme.visual.iconTint,
+            border = BorderStroke(1.dp, theme.visual.primary),
         ) {
             IconButton(
                 onClick = onOpenSettings,
@@ -235,6 +247,7 @@ private fun DailyPracticeCard(
     seasonalResources: SeasonalThemeResources?,
     modifier: Modifier = Modifier,
 ) {
+    val theme = LocalBrailuxTheme.current
     val status = stringResource(
         if (completedToday) {
             R.string.home_daily_practice_completed
@@ -260,11 +273,11 @@ private fun DailyPracticeCard(
                 stateDescription = status
             },
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(containerColor = theme.visual.cardColor),
+        border = BorderStroke(2.dp, theme.visual.primary),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
-        // Wrap card content in a Box to allow layering the seasonal decoration
+        // Wrap card content in a Box to allow layering the seasonal/theme decoration
         Box {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(
@@ -275,8 +288,8 @@ private fun DailyPracticeCard(
                     Surface(
                         modifier = Modifier.size(52.dp),
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = theme.visual.chipColor,
+                        contentColor = theme.visual.iconTint,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_practice),
@@ -287,12 +300,13 @@ private fun DailyPracticeCard(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = if (seasonalResources != null) 54.dp else 0.dp),
+                            .padding(end = if (seasonalResources != null || theme.cardDecorationRes != null) 54.dp else 0.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.home_daily_practice),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
+                            color = theme.visual.onSurface,
                         )
                         Text(
                             text = stringResource(R.string.home_daily_practice_details),
@@ -305,16 +319,21 @@ private fun DailyPracticeCard(
                             modifier = Modifier.padding(top = 8.dp),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
+                            color = theme.visual.primary,
                         )
                     }
+                }
+                if (theme.accentStyle != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    BrailuxThemedAccent()
                 }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
+                        .padding(top = 14.dp),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    color = theme.visual.buttonColor,
+                    contentColor = theme.visual.onButtonColor,
                 ) {
                     Text(
                         text = buttonText,
@@ -325,10 +344,20 @@ private fun DailyPracticeCard(
                     )
                 }
             }
-            // Seasonal decoration: top-end corner, non-interactive, decorative only
+            // Decoration: top-end corner, non-interactive, decorative only
             if (seasonalResources != null) {
                 Image(
                     painter = painterResource(seasonalResources.dailyPracticeDecorationResource),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 10.dp),
+                )
+            } else if (theme.cardDecorationRes != null) {
+                Image(
+                    painter = painterResource(theme.cardDecorationRes),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
@@ -349,6 +378,7 @@ private fun DailyChallengeCard(
     seasonalResources: SeasonalThemeResources?,
     modifier: Modifier = Modifier,
 ) {
+    val theme = LocalBrailuxTheme.current
     val status = stringResource(
         if (completedToday) {
             R.string.home_daily_challenge_completed
@@ -374,11 +404,11 @@ private fun DailyChallengeCard(
                 stateDescription = status
             },
         shape = MaterialTheme.shapes.large,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+        colors = CardDefaults.cardColors(containerColor = theme.visual.cardColor),
+        border = BorderStroke(2.dp, theme.visual.primary),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
     ) {
-        // Wrap card content in a Box to allow layering the seasonal decoration
+        // Wrap card content in a Box to allow layering the seasonal/theme decoration
         Box {
             Column(modifier = Modifier.padding(18.dp)) {
                 Row(
@@ -389,8 +419,8 @@ private fun DailyChallengeCard(
                     Surface(
                         modifier = Modifier.size(52.dp),
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = theme.visual.chipColor,
+                        contentColor = theme.visual.iconTint,
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_practice),
@@ -401,12 +431,13 @@ private fun DailyChallengeCard(
                     Column(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(end = if (seasonalResources != null) 54.dp else 0.dp),
+                            .padding(end = if (seasonalResources != null || theme.cardDecorationRes != null) 54.dp else 0.dp),
                     ) {
                         Text(
                             text = stringResource(R.string.home_daily_challenge),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
+                            color = theme.visual.onSurface,
                         )
                         Text(
                             text = stringResource(R.string.home_daily_challenge_details),
@@ -419,16 +450,21 @@ private fun DailyChallengeCard(
                             modifier = Modifier.padding(top = 8.dp),
                             style = MaterialTheme.typography.labelLarge,
                             fontWeight = FontWeight.Bold,
+                            color = theme.visual.primary,
                         )
                     }
+                }
+                if (theme.accentStyle != null) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    BrailuxThemedAccent()
                 }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 16.dp),
+                        .padding(top = 14.dp),
                     shape = MaterialTheme.shapes.medium,
-                    color = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                    color = theme.visual.buttonColor,
+                    contentColor = theme.visual.onButtonColor,
                 ) {
                     Text(
                         text = buttonText,
@@ -439,10 +475,20 @@ private fun DailyChallengeCard(
                     )
                 }
             }
-            // Seasonal decoration: top-end corner, non-interactive, decorative only
+            // Decoration: top-end corner, non-interactive, decorative only
             if (seasonalResources != null) {
                 Image(
                     painter = painterResource(seasonalResources.dailyChallengeDecorationResource),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .size(68.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(top = 8.dp, end = 10.dp),
+                )
+            } else if (theme.cardDecorationRes != null) {
+                Image(
+                    painter = painterResource(theme.cardDecorationRes),
                     contentDescription = null,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier

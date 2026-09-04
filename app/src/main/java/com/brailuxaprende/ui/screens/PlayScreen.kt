@@ -34,6 +34,7 @@ import com.brailuxaprende.ui.components.BrailuxFeedbackType
 import com.brailuxaprende.ui.components.BrailuxPrimaryButton
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSectionCard
+import com.brailuxaprende.ui.theme.LocalBrailuxTheme
 
 @Composable
 fun PlayScreen(
@@ -126,6 +127,7 @@ private fun PlayGameCard(
     modifier: Modifier = Modifier,
 ) {
     val isUnlocked = status == PlayGameStatus.Available
+    val theme = LocalBrailuxTheme.current
 
     BrailuxSectionCard(modifier = modifier) {
         Row(
@@ -137,6 +139,7 @@ private fun PlayGameCard(
                 text = stringResource(game.titleResource),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
+                color = theme.visual.onSurface,
                 modifier = Modifier
                     .weight(1f)
                     .semantics { heading() },
@@ -144,13 +147,13 @@ private fun PlayGameCard(
             Surface(
                 shape = MaterialTheme.shapes.small,
                 color = if (isUnlocked) {
-                    MaterialTheme.colorScheme.primaryContainer
+                    theme.visual.chipColor
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant
+                    theme.visual.surfaceVariant
                 },
                 border = BorderStroke(
                     1.dp,
-                    if (isUnlocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                    if (isUnlocked) theme.visual.primary else theme.visual.borderColor,
                 ),
             ) {
                 Text(
@@ -161,7 +164,7 @@ private fun PlayGameCard(
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (isUnlocked) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                        theme.visual.primary
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },

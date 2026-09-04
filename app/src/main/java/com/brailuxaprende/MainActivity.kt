@@ -40,6 +40,7 @@ import com.brailuxaprende.ui.screens.AssistantViewModelFactory
 import com.brailuxaprende.ui.screens.PracticeSessionViewModel
 import com.brailuxaprende.ui.screens.PracticeSessionViewModelFactory
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
+import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeSessionKind
 import com.brailuxaprende.practice.SystemPracticeClock
@@ -143,12 +144,15 @@ class MainActivity : ComponentActivity() {
                 SeasonalTheme.NONE
             }
             val premiumState = BrailuxPremiumAccess.currentState
-            val customBackgroundVisible = BrailuxBackgroundCatalog.activeDrawableResource(
+            val seasonalThemeActive = seasonalTheme != SeasonalTheme.NONE && preferences.seasonalThemesEnabled
+            val themeDefinition = BrailuxThemeCatalog.resolveTheme(
                 selectedId = preferences.selectedBackgroundId,
                 isPremiumUnlocked = premiumState.isPremiumUnlocked,
-                highContrastEnabled = preferences.highContrastEnabled,
                 ownedBackgroundIds = premiumState.ownedBackgroundIds,
-            ) != null
+                highContrastEnabled = preferences.highContrastEnabled,
+                seasonalThemeActive = seasonalThemeActive,
+            )
+            val customBackgroundVisible = themeDefinition.backgroundRes != null
 
             BrailuxAprendeTheme(
                 appearance = preferences.appearance,
@@ -156,6 +160,7 @@ class MainActivity : ComponentActivity() {
                 textSize = preferences.textSize,
                 seasonalAccent = seasonalEvent?.accent,
                 customBackgroundVisible = customBackgroundVisible,
+                themeDefinition = themeDefinition,
             ) {
                 BrailuxApp(
                     preferences = preferences,

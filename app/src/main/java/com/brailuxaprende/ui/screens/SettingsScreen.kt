@@ -57,9 +57,15 @@ import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.BrailuxBackgroundOption
 import com.brailuxaprende.data.settings.BrailuxBackgroundRotationPolicy
 import com.brailuxaprende.data.settings.TextSizePreference
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.Icon
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSecondaryButton
 import com.brailuxaprende.ui.components.BrailuxSectionCard
+import com.brailuxaprende.ui.components.BrailuxThemedAccent
+import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
 
 @Composable
 fun SettingsScreen(
@@ -501,6 +507,8 @@ private fun BackgroundPreviewDialog(
         ownedBackgroundIds = ownedBackgroundIds,
     )
     val drawableResource = background.drawableResource
+    val themeDef = BrailuxThemeCatalog.theme(background.id) ?: BrailuxThemeCatalog.defaultTheme
+    val visual = themeDef.visual
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -508,17 +516,21 @@ private fun BackgroundPreviewDialog(
             Text(text = stringResource(background.nameResource))
         },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 if (drawableResource == null) {
                     Surface(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(320.dp),
+                            .height(180.dp),
                         shape = MaterialTheme.shapes.medium,
-                        color = MaterialTheme.colorScheme.background,
+                        color = visual.surface,
                         border = BorderStroke(
                             1.dp,
-                            MaterialTheme.colorScheme.outlineVariant,
+                            visual.borderColor,
                         ),
                     ) { }
                 } else {
@@ -528,17 +540,102 @@ private fun BackgroundPreviewDialog(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(320.dp)
+                            .height(180.dp)
                             .clip(MaterialTheme.shapes.medium),
                     )
                 }
+
+                // Sample demonstration card showing the complete theme visual styling
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = visual.cardColor,
+                    border = BorderStroke(1.5.dp, visual.borderColor),
+                    shadowElevation = 2.dp,
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(36.dp),
+                                shape = MaterialTheme.shapes.small,
+                                color = visual.chipColor,
+                                contentColor = visual.iconTint,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_learn),
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(background.nameResource),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = visual.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_theme_sample_card),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = visual.onSurface.copy(alpha = 0.75f),
+                                )
+                            }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = visual.chipColor,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_theme_sample_chip),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = visual.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+
+                        if (themeDef.accentStyle != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            BrailuxThemedAccent(
+                                accentStyle = themeDef.accentStyle,
+                                color = visual.primary,
+                                accentAlpha = visual.accentAlpha,
+                            )
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
+                            shape = MaterialTheme.shapes.small,
+                            color = visual.buttonColor,
+                            contentColor = visual.onButtonColor,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_theme_sample_button),
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+
                 if (background.premium) {
                     if (canUse) {
                         Text(
                             text = stringResource(R.string.settings_background_premium_badge),
                             modifier = Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = visual.primary,
+                            fontWeight = FontWeight.Bold,
                         )
                     } else {
                         Text(
@@ -547,6 +644,7 @@ private fun BackgroundPreviewDialog(
                             modifier = Modifier.padding(top = 12.dp),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
                         )
                         Text(
                             text = stringResource(R.string.settings_background_locked_preview),

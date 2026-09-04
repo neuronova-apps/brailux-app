@@ -13,4 +13,7 @@
     <string name="settings_background_rotation_on_open">Cambiar cada vez que abras Brailux</string>
     <string name="settings_background_rotation_periodic">Cambiar automáticamente cada 6 horas</string>
     <string name="settings_background_rotation_periodic_description">La rotación usa únicamente fondos Premium disponibles. En el modo de 6 horas, Brailux comprueba el tiempo al volver a la aplicación y no ejecuta tareas en segundo plano.</string>
+    <string name="settings_theme_sample_card">Ejemplo de tarjeta temática</string>
+    <string name="settings_theme_sample_chip">Tema</string>
+    <string name="settings_theme_sample_button">Botón temático</string>
 </resources>
