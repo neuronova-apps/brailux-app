@@ -4,6 +4,8 @@
     <string name="settings_background_use">Usar este fondo</string>
     <string name="settings_background_close">Cerrar</string>
     <string name="settings_background_requires_premium">Requiere Premium</string>
+    <string name="settings_background_premium_badge">Fondo Premium</string>
+    <string name="settings_background_requires_unlock">Requiere desbloqueo</string>
     <string name="settings_background_locked_preview">Puedes ver este fondo antes de adquirirlo. Para aplicarlo necesitas tener acceso Premium.</string>
     <string name="settings_background_rotation_title">Cambio automático de fondos</string>
     <string name="settings_background_rotation_description">Si tienes más de un fondo Premium disponible, puedes mantener uno fijo o alternarlos automáticamente.</string>

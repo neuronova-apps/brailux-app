@@ -1,16 +1,23 @@
 package com.brailuxaprende.data.settings
 
-import com.brailuxaprende.BuildConfig
-
 data class BrailuxPremiumState(
-    val isPremiumUnlocked: Boolean,
-)
+    val isPremiumUnlocked: Boolean = false,
+    val ownedBackgroundIds: Set<String> = emptySet(),
+) {
+    fun isBackgroundUnlocked(backgroundId: String): Boolean =
+        isPremiumUnlocked || ownedBackgroundIds.contains(backgroundId)
+}
 
 object BrailuxPremiumAccess {
-    fun resolveState(isDebug: Boolean = BuildConfig.DEBUG): BrailuxPremiumState =
-        BrailuxPremiumState(isPremiumUnlocked = isDebug)
+    fun resolveState(
+        isDebug: Boolean = false,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): BrailuxPremiumState = BrailuxPremiumState(
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
 
-    val currentState: BrailuxPremiumState
-        get() = resolveState()
+    val currentState: BrailuxPremiumState = resolveState()
 }
 

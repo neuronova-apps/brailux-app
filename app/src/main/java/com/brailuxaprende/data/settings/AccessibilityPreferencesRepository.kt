@@ -94,10 +94,11 @@ class AccessibilityPreferencesRepository(
     }
 
     suspend fun rotatePremiumBackgroundOnForeground(
-        isPremiumUnlocked: Boolean,
+        isPremiumUnlocked: Boolean = false,
         nowMillis: Long = System.currentTimeMillis(),
+        ownedBackgroundIds: Set<String> = emptySet(),
     ) {
-        if (!BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked)) return
+        if (!BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked, ownedBackgroundIds)) return
 
         dataStore.edit { preferences ->
             val mode = BackgroundRotationMode.fromStoredValue(
@@ -119,6 +120,7 @@ class AccessibilityPreferencesRepository(
             val nextId = BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
                 currentId = currentId,
                 isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
             ) ?: return@edit
 
             preferences[SelectedBackgroundIdKey] = nextId

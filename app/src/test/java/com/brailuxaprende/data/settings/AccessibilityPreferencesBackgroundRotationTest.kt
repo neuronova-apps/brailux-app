@@ -126,5 +126,54 @@ class AccessibilityPreferencesBackgroundRotationTest {
             repository.preferences.first().selectedBackgroundId,
         )
     }
+
+    @Test
+    fun rotationWithSubsetOfOwnedBackgroundsAlternatesOnlyThoseBackgrounds() = runBlocking {
+        val owned = setOf(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+        )
+        repository.selectBackgroundAndFix(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID)
+        repository.setBackgroundRotationMode(BackgroundRotationMode.OnAppOpen)
+
+        repository.rotatePremiumBackgroundOnForeground(
+            isPremiumUnlocked = false,
+            ownedBackgroundIds = owned,
+            nowMillis = 10_000L,
+        )
+        assertEquals(
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+            repository.preferences.first().selectedBackgroundId,
+        )
+
+        repository.rotatePremiumBackgroundOnForeground(
+            isPremiumUnlocked = false,
+            ownedBackgroundIds = owned,
+            nowMillis = 20_000L,
+        )
+        assertEquals(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            repository.preferences.first().selectedBackgroundId,
+        )
+    }
+
+    @Test
+    fun manualSelectionReturnsToFixedRotationMode() = runBlocking {
+        repository.setBackgroundRotationMode(BackgroundRotationMode.OnAppOpen)
+        assertEquals(
+            BackgroundRotationMode.OnAppOpen,
+            repository.preferences.first().backgroundRotationMode,
+        )
+
+        repository.selectBackgroundAndFix(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID)
+        assertEquals(
+            BackgroundRotationMode.Fixed,
+            repository.preferences.first().backgroundRotationMode,
+        )
+        assertEquals(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            repository.preferences.first().selectedBackgroundId,
+        )
+    }
 }
 

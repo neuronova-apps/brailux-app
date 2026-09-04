@@ -71,6 +71,7 @@ fun SettingsScreen(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onAbout: () -> Unit,
     onBack: () -> Unit,
@@ -133,6 +134,7 @@ fun SettingsScreen(
                 selectedBackgroundId = preferences.selectedBackgroundId,
                 rotationMode = preferences.backgroundRotationMode,
                 isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
                 onBackgroundChange = onBackgroundChange,
                 onLockedBackground = {
                     Toast.makeText(context, premiumMessage, Toast.LENGTH_SHORT).show()
@@ -282,12 +284,16 @@ private fun WallpaperSection(
     selectedBackgroundId: String,
     rotationMode: BackgroundRotationMode,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onLockedBackground: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var previewBackground by remember { mutableStateOf<BrailuxBackgroundOption?>(null) }
-    val canRotate = BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked)
+    val canRotate = BrailuxBackgroundRotationPolicy.canRotate(
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
 
     BrailuxSectionCard(modifier = modifier) {
         Text(
@@ -307,10 +313,12 @@ private fun WallpaperSection(
                     background = background,
                     selected = selectedBackgroundId == background.id,
                     isPremiumUnlocked = isPremiumUnlocked,
+                    ownedBackgroundIds = ownedBackgroundIds,
                     onSelect = {
-                        if (BrailuxBackgroundCatalog.canSelect(
-                                id = background.id,
+                        if (BrailuxBackgroundCatalog.canUse(
+                                background = background,
                                 isPremiumUnlocked = isPremiumUnlocked,
+                                ownedBackgroundIds = ownedBackgroundIds,
                             )
                         ) {
                             onBackgroundChange(background.id)
@@ -386,11 +394,11 @@ private fun WallpaperSection(
         BackgroundPreviewDialog(
             background = background,
             isPremiumUnlocked = isPremiumUnlocked,
+            ownedBackgroundIds = ownedBackgroundIds,
             onUse = {
                 onBackgroundChange(background.id)
                 previewBackground = null
             },
-            onLockedBackground = onLockedBackground,
             onDismiss = { previewBackground = null },
         )
     }
@@ -401,15 +409,23 @@ private fun BackgroundOptionRow(
     background: BrailuxBackgroundOption,
     selected: Boolean,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onSelect: () -> Unit,
     onPreview: () -> Unit,
 ) {
+    val canUse = BrailuxBackgroundCatalog.canUse(
+        background = background,
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
+    val canPreview = BrailuxBackgroundCatalog.canPreview(background)
+
     val selectionState = stringResource(
         if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
     )
     val premiumState = when {
         !background.premium -> null
-        isPremiumUnlocked -> stringResource(R.string.settings_background_premium)
+        canUse -> stringResource(R.string.settings_background_premium)
         else -> stringResource(R.string.settings_background_locked)
     }
     val state = listOfNotNull(selectionState, premiumState).joinToString(separator = ". ")
@@ -447,7 +463,7 @@ private fun BackgroundOptionRow(
                 }
                 if (background.premium) {
                     Text(
-                        text = if (isPremiumUnlocked) {
+                        text = if (canUse) {
                             stringResource(R.string.settings_background_premium)
                         } else {
                             "${stringResource(R.string.settings_background_premium)} · " +
@@ -460,11 +476,13 @@ private fun BackgroundOptionRow(
             }
             RadioButton(selected = selected, onClick = null)
         }
-        TextButton(
-            onClick = onPreview,
-            modifier = Modifier.align(Alignment.End),
-        ) {
-            Text(text = stringResource(R.string.settings_background_preview))
+        if (canPreview) {
+            TextButton(
+                onClick = onPreview,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text(text = stringResource(R.string.settings_background_preview))
+            }
         }
     }
 }
@@ -473,13 +491,14 @@ private fun BackgroundOptionRow(
 private fun BackgroundPreviewDialog(
     background: BrailuxBackgroundOption,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onUse: () -> Unit,
-    onLockedBackground: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val canUse = BrailuxBackgroundCatalog.canSelect(
-        id = background.id,
+    val canUse = BrailuxBackgroundCatalog.canUse(
+        background = background,
         isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
     )
     val drawableResource = background.drawableResource
 
@@ -513,35 +532,46 @@ private fun BackgroundPreviewDialog(
                             .clip(MaterialTheme.shapes.medium),
                     )
                 }
-                if (background.premium && !isPremiumUnlocked) {
-                    Text(
-                        text = stringResource(R.string.settings_background_locked_preview),
-                        modifier = Modifier.padding(top = 12.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                if (background.premium) {
+                    if (canUse) {
+                        Text(
+                            text = stringResource(R.string.settings_background_premium_badge),
+                            modifier = Modifier.padding(top = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    } else {
+                        Text(
+                            text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                stringResource(R.string.settings_background_requires_unlock),
+                            modifier = Modifier.padding(top = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_background_locked_preview),
+                            modifier = Modifier.padding(top = 4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = {
-                    if (canUse) {
-                        onUse()
-                    } else {
-                        onLockedBackground()
-                    }
-                },
-            ) {
-                Text(
-                    text = stringResource(
-                        if (canUse) {
-                            R.string.settings_background_use
-                        } else {
-                            R.string.settings_background_requires_premium
-                        },
-                    ),
-                )
+            if (canUse) {
+                TextButton(
+                    onClick = onUse,
+                ) {
+                    Text(text = stringResource(R.string.settings_background_use))
+                }
+            } else {
+                TextButton(
+                    onClick = {},
+                    enabled = false,
+                ) {
+                    Text(text = stringResource(R.string.settings_background_requires_premium))
+                }
             }
         },
         dismissButton = {

@@ -31,16 +31,20 @@ object BrailuxBackgroundRotationPolicy {
     const val PERIODIC_INTERVAL_MILLIS: Long = 6L * 60L * 60L * 1_000L
 
     fun eligiblePremiumBackgrounds(
-        isPremiumUnlocked: Boolean,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
     ): List<BrailuxBackgroundOption> {
-        if (!isPremiumUnlocked) return emptyList()
         return BrailuxBackgroundCatalog.backgrounds.filter { background ->
-            background.premium && background.available
+            background.premium && background.available &&
+                (isPremiumUnlocked || background.id in ownedBackgroundIds)
         }
     }
 
-    fun canRotate(isPremiumUnlocked: Boolean): Boolean =
-        eligiblePremiumBackgrounds(isPremiumUnlocked).size > 1
+    fun canRotate(
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): Boolean =
+        eligiblePremiumBackgrounds(isPremiumUnlocked, ownedBackgroundIds).size > 1
 
     fun shouldRotate(
         mode: BackgroundRotationMode,
@@ -56,9 +60,10 @@ object BrailuxBackgroundRotationPolicy {
 
     fun nextPremiumBackgroundId(
         currentId: String?,
-        isPremiumUnlocked: Boolean,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
     ): String? {
-        val candidates = eligiblePremiumBackgrounds(isPremiumUnlocked)
+        val candidates = eligiblePremiumBackgrounds(isPremiumUnlocked, ownedBackgroundIds)
         if (candidates.size < 2) return null
 
         val currentIndex = candidates.indexOfFirst { it.id == currentId }

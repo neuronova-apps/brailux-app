@@ -147,6 +147,7 @@ class MainActivity : ComponentActivity() {
                 selectedId = preferences.selectedBackgroundId,
                 isPremiumUnlocked = premiumState.isPremiumUnlocked,
                 highContrastEnabled = preferences.highContrastEnabled,
+                ownedBackgroundIds = premiumState.ownedBackgroundIds,
             ) != null
 
             BrailuxAprendeTheme(
@@ -185,10 +186,12 @@ class MainActivity : ComponentActivity() {
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
                     isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                    ownedBackgroundIds = premiumState.ownedBackgroundIds,
                     onBackgroundChange = { backgroundId ->
                         settingsState.requestBackgroundSelection(
                             backgroundId = backgroundId,
                             isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                            ownedBackgroundIds = premiumState.ownedBackgroundIds,
                         )
                     },
                     onLearningLessonCompleted = learningProgressState::markCompleted,
@@ -255,8 +258,10 @@ class MainActivity : ComponentActivity() {
         if (BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart()) {
             return
         }
+        val premiumState = BrailuxPremiumAccess.currentState
         settingsState.onAppForegrounded(
-            isPremiumUnlocked = BrailuxPremiumAccess.currentState.isPremiumUnlocked,
+            isPremiumUnlocked = premiumState.isPremiumUnlocked,
+            ownedBackgroundIds = premiumState.ownedBackgroundIds,
         )
     }
 

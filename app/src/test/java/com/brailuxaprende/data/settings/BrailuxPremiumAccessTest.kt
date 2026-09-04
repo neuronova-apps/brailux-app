@@ -1,26 +1,43 @@
-﻿package com.brailuxaprende.data.settings
+package com.brailuxaprende.data.settings
 
-import com.brailuxaprende.BuildConfig
-import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BrailuxPremiumAccessTest {
     @Test
-    fun debugBuildEnablesPremiumTesting() {
+    fun debugBuildDoesNotGrantAutomaticPremiumAccess() {
         val state = BrailuxPremiumAccess.resolveState(isDebug = true)
-        assertTrue(state.isPremiumUnlocked)
+        assertFalse(state.isPremiumUnlocked)
+        assertTrue(state.ownedBackgroundIds.isEmpty())
     }
 
     @Test
-    fun releaseBuildKeepsPremiumLocked() {
+    fun releaseBuildDoesNotGrantAutomaticPremiumAccess() {
         val state = BrailuxPremiumAccess.resolveState(isDebug = false)
         assertFalse(state.isPremiumUnlocked)
+        assertTrue(state.ownedBackgroundIds.isEmpty())
     }
 
     @Test
-    fun currentStateMatchesEnvironmentBuildConfig() {
-        assertEquals(BuildConfig.DEBUG, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
+    fun currentStateRemainsSecurelyLockedByDefault() {
+        val state = BrailuxPremiumAccess.currentState
+        assertFalse(state.isPremiumUnlocked)
+        assertTrue(state.ownedBackgroundIds.isEmpty())
+        assertFalse(state.isBackgroundUnlocked(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+    }
+
+    @Test
+    fun explicitTestingGrantsAccessWhenProvided() {
+        val globalPremium = BrailuxPremiumAccess.resolveState(isPremiumUnlocked = true)
+        assertTrue(globalPremium.isPremiumUnlocked)
+        assertTrue(globalPremium.isBackgroundUnlocked(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+
+        val singleOwned = BrailuxPremiumAccess.resolveState(
+            ownedBackgroundIds = setOf(BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID),
+        )
+        assertFalse(singleOwned.isPremiumUnlocked)
+        assertTrue(singleOwned.isBackgroundUnlocked(BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID))
+        assertFalse(singleOwned.isBackgroundUnlocked(BrailuxBackgroundCatalog.CREMA_ONDAS_ID))
     }
 }

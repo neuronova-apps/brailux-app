@@ -14,6 +14,54 @@ class BrailuxBackgroundRotationPolicyTest {
     }
 
     @Test
+    fun rotationRequiresAtLeastTwoUsableBackgroundsWithIndividualOwnership() {
+        val emptySet = emptySet<String>()
+        assertFalse(BrailuxBackgroundRotationPolicy.canRotate(ownedBackgroundIds = emptySet))
+
+        val singleBackground = setOf(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID)
+        assertFalse(BrailuxBackgroundRotationPolicy.canRotate(ownedBackgroundIds = singleBackground))
+        assertNull(
+            BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
+                currentId = BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+                ownedBackgroundIds = singleBackground,
+            ),
+        )
+
+        val twoBackgrounds = setOf(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+        )
+        assertTrue(BrailuxBackgroundRotationPolicy.canRotate(ownedBackgroundIds = twoBackgrounds))
+    }
+
+    @Test
+    fun rotationAlternatesExclusivelyBetweenAcquiredBackgrounds() {
+        val owned = setOf(
+            BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+        )
+
+        val nextFromCeleste = BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
+            currentId = BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID,
+            ownedBackgroundIds = owned,
+        )
+        assertEquals(BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID, nextFromCeleste)
+
+        val nextFromSalvia = BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
+            currentId = BrailuxBackgroundCatalog.SALVIA_TEXTURA_ID,
+            ownedBackgroundIds = owned,
+        )
+        assertEquals(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID, nextFromSalvia)
+
+        val candidates = BrailuxBackgroundRotationPolicy.eligiblePremiumBackgrounds(
+            ownedBackgroundIds = owned,
+        )
+        assertEquals(2, candidates.size)
+        assertFalse(candidates.any { it.id == BrailuxBackgroundCatalog.CREMA_ONDAS_ID })
+        assertFalse(candidates.any { it.id == BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID })
+    }
+
+    @Test
     fun fixedModeNeverRotates() {
         assertFalse(
             BrailuxBackgroundRotationPolicy.shouldRotate(

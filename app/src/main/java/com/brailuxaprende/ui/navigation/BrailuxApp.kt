@@ -173,6 +173,7 @@ fun BrailuxApp(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean = false,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit = {},
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit = { _, _ -> },
@@ -225,6 +226,7 @@ fun BrailuxApp(
             selectedId = preferences.selectedBackgroundId,
             isPremiumUnlocked = isPremiumUnlocked,
             highContrastEnabled = false,
+            ownedBackgroundIds = ownedBackgroundIds,
         )
     }
     // True only when the seasonal background is the one being shown (not high contrast, not custom bg)
@@ -277,6 +279,7 @@ fun BrailuxApp(
             onAppearanceChange = onAppearanceChange,
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
             isPremiumUnlocked = isPremiumUnlocked,
+            ownedBackgroundIds = ownedBackgroundIds,
             onBackgroundChange = onBackgroundChange,
             onLearningLessonCompleted = onLearningLessonCompleted,
             onRecordMemoryGame = onRecordMemoryGame,
@@ -398,6 +401,7 @@ private fun BrailuxNavHost(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit,
@@ -681,6 +685,7 @@ private fun BrailuxNavHost(
                 onAppearanceChange = onAppearanceChange,
                 onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
                 isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
                 onBackgroundChange = onBackgroundChange,
                 onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
                 onBack = ::goBack,
