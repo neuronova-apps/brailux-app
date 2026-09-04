@@ -19,14 +19,19 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -45,12 +51,21 @@ import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
+import com.brailuxaprende.data.settings.BackgroundRotationAction
+import com.brailuxaprende.data.settings.BackgroundRotationMode
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.BrailuxBackgroundOption
+import com.brailuxaprende.data.settings.BrailuxBackgroundRotationPolicy
 import com.brailuxaprende.data.settings.TextSizePreference
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material3.Icon
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSecondaryButton
 import com.brailuxaprende.ui.components.BrailuxSectionCard
+import com.brailuxaprende.ui.components.BrailuxThemedAccent
+import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
 
 @Composable
 fun SettingsScreen(
@@ -62,6 +77,7 @@ fun SettingsScreen(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onAbout: () -> Unit,
     onBack: () -> Unit,
@@ -122,7 +138,9 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
             WallpaperSection(
                 selectedBackgroundId = preferences.selectedBackgroundId,
+                rotationMode = preferences.backgroundRotationMode,
                 isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
                 onBackgroundChange = onBackgroundChange,
                 onLockedBackground = {
                     Toast.makeText(context, premiumMessage, Toast.LENGTH_SHORT).show()
@@ -270,11 +288,19 @@ fun SettingsScreen(
 @Composable
 private fun WallpaperSection(
     selectedBackgroundId: String,
+    rotationMode: BackgroundRotationMode,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onLockedBackground: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var previewBackground by remember { mutableStateOf<BrailuxBackgroundOption?>(null) }
+    val canRotate = BrailuxBackgroundRotationPolicy.canRotate(
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
+
     BrailuxSectionCard(modifier = modifier) {
         Text(
             text = stringResource(R.string.settings_wallpaper),
@@ -287,20 +313,18 @@ private fun WallpaperSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Column(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .selectableGroup(),
-        ) {
+        Column(modifier = Modifier.padding(top = 8.dp)) {
             BrailuxBackgroundCatalog.backgrounds.forEach { background ->
                 BackgroundOptionRow(
                     background = background,
                     selected = selectedBackgroundId == background.id,
                     isPremiumUnlocked = isPremiumUnlocked,
+                    ownedBackgroundIds = ownedBackgroundIds,
                     onSelect = {
-                        if (BrailuxBackgroundCatalog.canSelect(
-                                id = background.id,
+                        if (BrailuxBackgroundCatalog.canUse(
+                                background = background,
                                 isPremiumUnlocked = isPremiumUnlocked,
+                                ownedBackgroundIds = ownedBackgroundIds,
                             )
                         ) {
                             onBackgroundChange(background.id)
@@ -308,9 +332,81 @@ private fun WallpaperSection(
                             onLockedBackground()
                         }
                     },
+                    onPreview = { previewBackground = background },
                 )
+                HorizontalDivider()
             }
         }
+
+        if (canRotate) {
+            Text(
+                text = stringResource(R.string.settings_background_rotation_title),
+                modifier = Modifier
+                    .padding(top = 18.dp)
+                    .semantics { heading() },
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.settings_background_rotation_description),
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .selectableGroup(),
+            ) {
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_fixed),
+                    selected = rotationMode == BackgroundRotationMode.Fixed,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(BackgroundRotationMode.Fixed),
+                        )
+                    },
+                )
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_on_open),
+                    selected = rotationMode == BackgroundRotationMode.OnAppOpen,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(BackgroundRotationMode.OnAppOpen),
+                        )
+                    },
+                )
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_periodic),
+                    selected = rotationMode == BackgroundRotationMode.EverySixHours,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(
+                                BackgroundRotationMode.EverySixHours,
+                            ),
+                        )
+                    },
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_background_rotation_periodic_description),
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    previewBackground?.let { background ->
+        BackgroundPreviewDialog(
+            background = background,
+            isPremiumUnlocked = isPremiumUnlocked,
+            ownedBackgroundIds = ownedBackgroundIds,
+            onUse = {
+                onBackgroundChange(background.id)
+                previewBackground = null
+            },
+            onDismiss = { previewBackground = null },
+        )
     }
 }
 
@@ -319,63 +415,269 @@ private fun BackgroundOptionRow(
     background: BrailuxBackgroundOption,
     selected: Boolean,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onSelect: () -> Unit,
+    onPreview: () -> Unit,
 ) {
+    val canUse = BrailuxBackgroundCatalog.canUse(
+        background = background,
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
+    val canPreview = BrailuxBackgroundCatalog.canPreview(background)
+
     val selectionState = stringResource(
         if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
     )
     val premiumState = when {
         !background.premium -> null
-        isPremiumUnlocked -> stringResource(R.string.settings_background_premium)
+        canUse -> stringResource(R.string.settings_background_premium)
         else -> stringResource(R.string.settings_background_locked)
     }
     val state = listOfNotNull(selectionState, premiumState).joinToString(separator = ". ")
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 72.dp)
-            .semantics(mergeDescendants = true) { stateDescription = state }
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                onClick = onSelect,
-            )
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BackgroundThumbnail(background = background)
-        Column(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .semantics(mergeDescendants = true) { stateDescription = state }
+                .selectable(
+                    selected = selected,
+                    role = Role.RadioButton,
+                    onClick = onSelect,
+                )
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(background.nameResource),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            if (selected) {
+            BackgroundThumbnail(background = background)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+            ) {
                 Text(
-                    text = stringResource(R.string.settings_background_selected),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(background.nameResource),
+                    style = MaterialTheme.typography.bodyLarge,
                 )
+                if (selected) {
+                    Text(
+                        text = stringResource(R.string.settings_background_selected),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (background.premium) {
+                    Text(
+                        text = if (canUse) {
+                            stringResource(R.string.settings_background_premium)
+                        } else {
+                            "${stringResource(R.string.settings_background_premium)} · " +
+                                stringResource(R.string.settings_background_locked)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            if (background.premium) {
-                Text(
-                    text = if (isPremiumUnlocked) {
-                        stringResource(R.string.settings_background_premium)
-                    } else {
-                        "${stringResource(R.string.settings_background_premium)} · " +
-                            stringResource(R.string.settings_background_locked)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            RadioButton(selected = selected, onClick = null)
+        }
+        if (canPreview) {
+            TextButton(
+                onClick = onPreview,
+                modifier = Modifier.align(Alignment.End),
+            ) {
+                Text(text = stringResource(R.string.settings_background_preview))
             }
         }
-        RadioButton(selected = selected, onClick = null)
     }
+}
+
+@Composable
+private fun BackgroundPreviewDialog(
+    background: BrailuxBackgroundOption,
+    isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
+    onUse: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val canUse = BrailuxBackgroundCatalog.canUse(
+        background = background,
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+    )
+    val drawableResource = background.drawableResource
+    val themeDef = BrailuxThemeCatalog.theme(background.id) ?: BrailuxThemeCatalog.defaultTheme
+    val visual = themeDef.visual
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(background.nameResource))
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                if (drawableResource == null) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        color = visual.surface,
+                        border = BorderStroke(
+                            1.dp,
+                            visual.borderColor,
+                        ),
+                    ) { }
+                } else {
+                    Image(
+                        painter = painterResource(drawableResource),
+                        contentDescription = stringResource(background.nameResource),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(180.dp)
+                            .clip(MaterialTheme.shapes.medium),
+                    )
+                }
+
+                // Sample demonstration card showing the complete theme visual styling
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = visual.cardColor,
+                    border = BorderStroke(1.5.dp, visual.borderColor),
+                    shadowElevation = 2.dp,
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Surface(
+                                modifier = Modifier.size(36.dp),
+                                shape = MaterialTheme.shapes.small,
+                                color = visual.chipColor,
+                                contentColor = visual.iconTint,
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_learn),
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(8.dp),
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(background.nameResource),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = visual.onSurface,
+                                )
+                                Text(
+                                    text = stringResource(R.string.settings_theme_sample_card),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = visual.onSurface.copy(alpha = 0.75f),
+                                )
+                            }
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = visual.chipColor,
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.settings_theme_sample_chip),
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = visual.primary,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
+                            }
+                        }
+
+                        if (themeDef.accentStyle != null) {
+                            Spacer(modifier = Modifier.height(10.dp))
+                            BrailuxThemedAccent(
+                                accentStyle = themeDef.accentStyle,
+                                color = visual.primary,
+                                accentAlpha = visual.accentAlpha,
+                            )
+                        }
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
+                            shape = MaterialTheme.shapes.small,
+                            color = visual.buttonColor,
+                            contentColor = visual.onButtonColor,
+                        ) {
+                            Text(
+                                text = stringResource(R.string.settings_theme_sample_button),
+                                modifier = Modifier.padding(vertical = 8.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center,
+                            )
+                        }
+                    }
+                }
+
+                if (background.premium) {
+                    if (canUse) {
+                        Text(
+                            text = stringResource(R.string.settings_background_premium_badge),
+                            modifier = Modifier.padding(top = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = visual.primary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    } else {
+                        Text(
+                            text = "${stringResource(R.string.settings_background_premium_badge)} · " +
+                                stringResource(R.string.settings_background_requires_unlock),
+                            modifier = Modifier.padding(top = 12.dp),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_background_locked_preview),
+                            modifier = Modifier.padding(top = 4.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (canUse) {
+                TextButton(
+                    onClick = onUse,
+                ) {
+                    Text(text = stringResource(R.string.settings_background_use))
+                }
+            } else {
+                TextButton(
+                    onClick = {},
+                    enabled = false,
+                ) {
+                    Text(text = stringResource(R.string.settings_background_requires_premium))
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.settings_background_close))
+            }
+        },
+    )
 }
 
 @Composable

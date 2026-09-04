@@ -40,14 +40,39 @@ class AccessibilitySettingsState(
         scope.launch { repository.setSeasonalThemesEnabled(enabled) }
     }
 
-    fun requestBackgroundSelection(backgroundId: String, isPremiumUnlocked: Boolean) {
+    fun requestBackgroundSelection(
+        backgroundId: String,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ) {
+        val rotationMode = BackgroundRotationAction.modeFromAction(backgroundId)
+        if (rotationMode != null) {
+            if (BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked, ownedBackgroundIds)) {
+                scope.launch { repository.setBackgroundRotationMode(rotationMode) }
+            }
+            return
+        }
+
         val selectedId = BrailuxBackgroundCatalog.selectionAfterRequest(
             currentId = preferences.value.selectedBackgroundId,
             requestedId = backgroundId,
             isPremiumUnlocked = isPremiumUnlocked,
+            ownedBackgroundIds = ownedBackgroundIds,
         )
-        if (selectedId != preferences.value.selectedBackgroundId) {
-            scope.launch { repository.setSelectedBackgroundId(selectedId) }
+        if (BrailuxBackgroundCatalog.canSelect(selectedId, isPremiumUnlocked, ownedBackgroundIds)) {
+            scope.launch { repository.selectBackgroundAndFix(selectedId) }
+        }
+    }
+
+    fun onAppForegrounded(
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ) {
+        scope.launch {
+            repository.rotatePremiumBackgroundOnForeground(
+                isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
+            )
         }
     }
 }

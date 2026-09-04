@@ -35,6 +35,7 @@ import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningLessonStatus
 import com.brailuxaprende.learning.LearningPath
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
+import com.brailuxaprende.ui.theme.LocalBrailuxTheme
 
 @Composable
 fun LearnScreen(
@@ -88,6 +89,7 @@ private fun LearningLessonCard(
     status: LearningLessonStatus,
     onClick: () -> Unit,
 ) {
+    val theme = LocalBrailuxTheme.current
     val statusText = stringResource(status.labelResource())
     val isEnabled = status != LearningLessonStatus.Locked
     Card(
@@ -102,10 +104,10 @@ private fun LearningLessonCard(
             },
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = theme.visual.cardColor,
+            disabledContainerColor = theme.visual.surfaceVariant,
         ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, theme.visual.borderColor),
     ) {
         Row(
             modifier = Modifier.padding(18.dp),
@@ -113,13 +115,13 @@ private fun LearningLessonCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             val badgeColor = when (status) {
-                LearningLessonStatus.Available -> MaterialTheme.colorScheme.primaryContainer
-                LearningLessonStatus.Completed -> MaterialTheme.colorScheme.primaryContainer
-                LearningLessonStatus.Locked -> MaterialTheme.colorScheme.surfaceVariant
+                LearningLessonStatus.Available -> theme.visual.chipColor
+                LearningLessonStatus.Completed -> theme.visual.chipColor
+                LearningLessonStatus.Locked -> theme.visual.surfaceVariant
             }
             val badgeContentColor = when (status) {
-                LearningLessonStatus.Available -> MaterialTheme.colorScheme.onPrimaryContainer
-                LearningLessonStatus.Completed -> MaterialTheme.colorScheme.onPrimaryContainer
+                LearningLessonStatus.Available -> theme.visual.primary
+                LearningLessonStatus.Completed -> theme.visual.primary
                 LearningLessonStatus.Locked -> MaterialTheme.colorScheme.onSurfaceVariant
             }
             Surface(
@@ -140,7 +142,7 @@ private fun LearningLessonCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (isEnabled) {
-                        MaterialTheme.colorScheme.onSurface
+                        theme.visual.onSurface
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -150,7 +152,7 @@ private fun LearningLessonCard(
                     modifier = Modifier.padding(top = 6.dp),
                     style = MaterialTheme.typography.labelLarge,
                     color = when (status) {
-                        LearningLessonStatus.Completed -> MaterialTheme.colorScheme.primary
+                        LearningLessonStatus.Completed -> theme.visual.primary
                         LearningLessonStatus.Available -> MaterialTheme.colorScheme.onSurfaceVariant
                         LearningLessonStatus.Locked -> MaterialTheme.colorScheme.outline
                     },

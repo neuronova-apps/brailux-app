@@ -115,6 +115,16 @@ object BrailuxTheme {
         @Composable
         @ReadOnlyComposable
         get() = LocalBrailuxStatusColors.current
+
+    val visual: BrailuxThemeVisualDefinition
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalBrailuxTheme.current.visual
+
+    val current: BrailuxThemeDefinition
+        @Composable
+        @ReadOnlyComposable
+        get() = LocalBrailuxTheme.current
 }
 
 internal enum class BrailuxThemeVariant {
@@ -142,6 +152,7 @@ fun BrailuxAprendeTheme(
     textSize: TextSizePreference = TextSizePreference.Normal,
     seasonalAccent: SeasonalAccent? = null,
     customBackgroundVisible: Boolean = false,
+    themeDefinition: BrailuxThemeDefinition = BrailuxThemeCatalog.defaultTheme,
     content: @Composable () -> Unit,
 ) {
     val themeVariant = resolveThemeVariant(
@@ -154,10 +165,28 @@ fun BrailuxAprendeTheme(
         BrailuxThemeVariant.Dark -> DarkColorScheme
         BrailuxThemeVariant.HighContrast -> HighContrastColorScheme
     }
+    val effectiveThemeDefinition = if (highContrast) {
+        BrailuxThemeCatalog.highContrastTheme
+    } else {
+        themeDefinition
+    }
     val themedColorScheme = if (themeVariant == BrailuxThemeVariant.HighContrast) {
         baseColorScheme
     } else {
-        baseColorScheme.withSeasonalAccent(seasonalAccent, themeVariant == BrailuxThemeVariant.Dark)
+        val adaptedScheme = if (effectiveThemeDefinition.premium) {
+            baseColorScheme.copy(
+                primary = effectiveThemeDefinition.visual.primary,
+                secondary = effectiveThemeDefinition.visual.secondary,
+                surface = effectiveThemeDefinition.visual.surface,
+                surfaceVariant = effectiveThemeDefinition.visual.surfaceVariant,
+                onSurface = effectiveThemeDefinition.visual.onSurface,
+                onBackground = effectiveThemeDefinition.visual.onBackground,
+                outline = effectiveThemeDefinition.visual.borderColor,
+            )
+        } else {
+            baseColorScheme
+        }
+        adaptedScheme.withSeasonalAccent(seasonalAccent, themeVariant == BrailuxThemeVariant.Dark)
     }
     val colorScheme = if (customBackgroundVisible && !highContrast) {
         themedColorScheme.copy(background = Color.Transparent)
@@ -172,6 +201,7 @@ fun BrailuxAprendeTheme(
 
     CompositionLocalProvider(
         LocalDensity provides scaledDensity,
+        LocalBrailuxTheme provides effectiveThemeDefinition,
         LocalBrailuxStatusColors provides when (themeVariant) {
             BrailuxThemeVariant.Light -> RegularStatusColors
             BrailuxThemeVariant.Dark -> DarkStatusColors
@@ -188,10 +218,14 @@ fun BrailuxAprendeTheme(
 }
 
 @Composable
-fun BrailuxPreviewTheme(content: @Composable () -> Unit) {
+fun BrailuxPreviewTheme(
+    themeDefinition: BrailuxThemeDefinition = BrailuxThemeCatalog.defaultTheme,
+    content: @Composable () -> Unit,
+) {
     BrailuxAprendeTheme(
         highContrast = false,
         textSize = TextSizePreference.Normal,
+        themeDefinition = themeDefinition,
         content = content
     )
 }

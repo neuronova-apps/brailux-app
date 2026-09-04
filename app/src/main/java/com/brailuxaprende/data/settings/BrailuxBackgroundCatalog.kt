@@ -62,16 +62,39 @@ object BrailuxBackgroundCatalog {
 
     fun normalizedId(id: String?): String = option(id)?.id ?: DEFAULT_ID
 
-    fun canSelect(id: String?, isPremiumUnlocked: Boolean): Boolean {
+    fun canPreview(id: String?): Boolean = option(id)?.premium == true
+
+    fun canPreview(background: BrailuxBackgroundOption?): Boolean = background?.premium == true
+
+    fun canSelect(
+        id: String?,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): Boolean {
         val background = option(id) ?: return false
-        return background.available && (!background.premium || isPremiumUnlocked)
+        if (!background.available) return false
+        if (!background.premium) return true
+        return isPremiumUnlocked || id in ownedBackgroundIds
     }
+
+    fun canUse(
+        id: String?,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): Boolean = canSelect(id, isPremiumUnlocked, ownedBackgroundIds)
+
+    fun canUse(
+        background: BrailuxBackgroundOption?,
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): Boolean = canSelect(background?.id, isPremiumUnlocked, ownedBackgroundIds)
 
     fun selectionAfterRequest(
         currentId: String?,
         requestedId: String?,
-        isPremiumUnlocked: Boolean,
-    ): String = if (canSelect(requestedId, isPremiumUnlocked)) {
+        isPremiumUnlocked: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ): String = if (canSelect(requestedId, isPremiumUnlocked, ownedBackgroundIds)) {
         requireNotNull(option(requestedId)).id
     } else {
         normalizedId(currentId)
@@ -80,10 +103,11 @@ object BrailuxBackgroundCatalog {
     @DrawableRes
     fun activeDrawableResource(
         selectedId: String?,
-        isPremiumUnlocked: Boolean,
-        highContrastEnabled: Boolean,
+        isPremiumUnlocked: Boolean = false,
+        highContrastEnabled: Boolean = false,
+        ownedBackgroundIds: Set<String> = emptySet(),
     ): Int? {
-        if (highContrastEnabled || !canSelect(selectedId, isPremiumUnlocked)) return null
+        if (highContrastEnabled || !canSelect(selectedId, isPremiumUnlocked, ownedBackgroundIds)) return null
         return option(selectedId)?.drawableResource
     }
 }

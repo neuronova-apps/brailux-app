@@ -30,6 +30,7 @@ import com.brailuxaprende.data.seasonal.SeasonalThemeResolver
 import com.brailuxaprende.data.settings.AccessibilityPreferencesRepository
 import com.brailuxaprende.data.settings.AccessibilitySettingsState
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
+import com.brailuxaprende.data.settings.BrailuxBackgroundRotationLifecyclePolicy
 import com.brailuxaprende.data.settings.BrailuxPremiumAccess
 import com.brailuxaprende.data.settings.accessibilityPreferencesDataStore
 import com.brailuxaprende.ui.navigation.BrailuxApp
@@ -39,6 +40,7 @@ import com.brailuxaprende.ui.screens.AssistantViewModelFactory
 import com.brailuxaprende.ui.screens.PracticeSessionViewModel
 import com.brailuxaprende.ui.screens.PracticeSessionViewModelFactory
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
+import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeSessionKind
 import com.brailuxaprende.practice.SystemPracticeClock
@@ -142,11 +144,15 @@ class MainActivity : ComponentActivity() {
                 SeasonalTheme.NONE
             }
             val premiumState = BrailuxPremiumAccess.currentState
-            val customBackgroundVisible = BrailuxBackgroundCatalog.activeDrawableResource(
+            val seasonalThemeActive = seasonalTheme != SeasonalTheme.NONE && preferences.seasonalThemesEnabled
+            val themeDefinition = BrailuxThemeCatalog.resolveTheme(
                 selectedId = preferences.selectedBackgroundId,
                 isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                ownedBackgroundIds = premiumState.ownedBackgroundIds,
                 highContrastEnabled = preferences.highContrastEnabled,
-            ) != null
+                seasonalThemeActive = seasonalThemeActive,
+            )
+            val customBackgroundVisible = themeDefinition.backgroundRes != null
 
             BrailuxAprendeTheme(
                 appearance = preferences.appearance,
@@ -154,6 +160,7 @@ class MainActivity : ComponentActivity() {
                 textSize = preferences.textSize,
                 seasonalAccent = seasonalEvent?.accent,
                 customBackgroundVisible = customBackgroundVisible,
+                themeDefinition = themeDefinition,
             ) {
                 BrailuxApp(
                     preferences = preferences,
@@ -184,10 +191,12 @@ class MainActivity : ComponentActivity() {
                     onAppearanceChange = settingsState::setAppearance,
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
                     isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                    ownedBackgroundIds = premiumState.ownedBackgroundIds,
                     onBackgroundChange = { backgroundId ->
                         settingsState.requestBackgroundSelection(
                             backgroundId = backgroundId,
                             isPremiumUnlocked = premiumState.isPremiumUnlocked,
+                            ownedBackgroundIds = premiumState.ownedBackgroundIds,
                         )
                     },
                     onLearningLessonCompleted = learningProgressState::markCompleted,
@@ -247,6 +256,23 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (BrailuxBackgroundRotationLifecyclePolicy.shouldSkipRotationOnStart()) {
+            return
+        }
+        val premiumState = BrailuxPremiumAccess.currentState
+        settingsState.onAppForegrounded(
+            isPremiumUnlocked = premiumState.isPremiumUnlocked,
+            ownedBackgroundIds = premiumState.ownedBackgroundIds,
+        )
+    }
+
+    override fun onStop() {
+        BrailuxBackgroundRotationLifecyclePolicy.handleStop(isChangingConfigurations)
+        super.onStop()
     }
 }
 

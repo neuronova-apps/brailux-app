@@ -48,6 +48,7 @@ import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import com.brailuxaprende.ui.theme.BrailuxTheme
+import com.brailuxaprende.ui.theme.LocalBrailuxTheme
 
 @Composable
 fun BrailuxPrimaryButton(
@@ -57,11 +58,16 @@ fun BrailuxPrimaryButton(
     enabled: Boolean = true,
     @DrawableRes iconResource: Int? = null,
 ) {
+    val theme = LocalBrailuxTheme.current
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.heightIn(min = 56.dp),
         shape = MaterialTheme.shapes.medium,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = theme.visual.buttonColor,
+            contentColor = theme.visual.onButtonColor,
+        ),
         contentPadding = ButtonDefaults.ContentPadding,
     ) {
         if (iconResource != null) {
@@ -84,12 +90,16 @@ fun BrailuxSecondaryButton(
     enabled: Boolean = true,
     @DrawableRes iconResource: Int? = null,
 ) {
+    val theme = LocalBrailuxTheme.current
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier.heightIn(min = 56.dp),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(2.dp, MaterialTheme.colorScheme.primary),
+        colors = ButtonDefaults.outlinedButtonColors(
+            contentColor = theme.visual.buttonColor,
+        ),
+        border = BorderStroke(2.dp, theme.visual.buttonColor),
         contentPadding = ButtonDefaults.ContentPadding,
     ) {
         if (iconResource != null) {
@@ -240,12 +250,13 @@ fun BrailuxSectionCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val theme = LocalBrailuxTheme.current
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        color = theme.visual.cardColor,
+        contentColor = theme.visual.onSurface,
+        border = BorderStroke(1.dp, theme.visual.borderColor),
         shadowElevation = 2.dp,
     ) {
         Column(
@@ -265,6 +276,7 @@ fun BrailuxMenuCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val pressed by interactionSource.collectIsPressedAsState()
+    val theme = LocalBrailuxTheme.current
     Card(
         onClick = onClick,
         modifier = modifier
@@ -278,17 +290,17 @@ fun BrailuxMenuCard(
         shape = MaterialTheme.shapes.large,
         colors = CardDefaults.cardColors(
             containerColor = if (pressed) {
-                MaterialTheme.colorScheme.primaryContainer
+                theme.visual.surfaceVariant
             } else {
-                MaterialTheme.colorScheme.surface
+                theme.visual.cardColor
             },
         ),
         border = BorderStroke(
             width = if (pressed) 3.dp else 1.dp,
             color = if (pressed) {
-                MaterialTheme.colorScheme.primary
+                theme.visual.primary
             } else {
-                MaterialTheme.colorScheme.outlineVariant
+                theme.visual.borderColor
             },
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = if (pressed) 0.dp else 3.dp),
@@ -301,8 +313,8 @@ fun BrailuxMenuCard(
             Surface(
                 modifier = Modifier.size(52.dp),
                 shape = MaterialTheme.shapes.medium,
-                color = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                color = theme.visual.chipColor,
+                contentColor = theme.visual.iconTint,
             ) {
                 Icon(
                     painter = painterResource(iconResource),
@@ -315,6 +327,7 @@ fun BrailuxMenuCard(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
+                    color = theme.visual.onSurface,
                 )
                 Text(
                     text = description,

@@ -48,6 +48,8 @@ import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.TextSizePreference
+import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
+import com.brailuxaprende.ui.theme.LocalBrailuxTheme
 import com.brailuxaprende.practice.PracticeSessionSummary
 import com.brailuxaprende.practice.PracticeMode
 import com.brailuxaprende.practice.CustomPracticeConfiguration
@@ -173,6 +175,7 @@ fun BrailuxApp(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean = false,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit = {},
     onLearningLessonCompleted: (LearningLesson) -> Unit = {},
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit = { _, _ -> },
@@ -212,23 +215,23 @@ fun BrailuxApp(
     val currentRoute = currentDestination?.route
     val selectedMainRoute = selectedMainDestination(currentRoute)
 
-    // Resolve the background image to display, following the priority:
-    //   1. High contrast active  → no background image
-    //   2. Seasonal theme active → seasonal background image
-    //   3. User custom bg selected (and premium unlocked) → custom background image
-    //   4. Otherwise            → no background image (Material default)
     val seasonalResources = SeasonalThemeCatalog.resourcesFor(seasonalTheme)
+    val hasSeasonalBackground = !preferences.highContrastEnabled && seasonalResources != null
+    val seasonalThemeActive = hasSeasonalBackground && preferences.seasonalThemesEnabled
+
+    val activeTheme = BrailuxThemeCatalog.resolveTheme(
+        selectedId = preferences.selectedBackgroundId,
+        isPremiumUnlocked = isPremiumUnlocked,
+        ownedBackgroundIds = ownedBackgroundIds,
+        highContrastEnabled = preferences.highContrastEnabled,
+        seasonalThemeActive = seasonalThemeActive,
+    )
+
     val activeBackgroundResource: Int? = when {
         preferences.highContrastEnabled -> null
         seasonalResources != null -> seasonalResources.backgroundResource
-        else -> BrailuxBackgroundCatalog.activeDrawableResource(
-            selectedId = preferences.selectedBackgroundId,
-            isPremiumUnlocked = isPremiumUnlocked,
-            highContrastEnabled = false,
-        )
+        else -> activeTheme.backgroundRes
     }
-    // True only when the seasonal background is the one being shown (not high contrast, not custom bg)
-    val hasSeasonalBackground = !preferences.highContrastEnabled && seasonalResources != null
 
     Box(modifier = Modifier.fillMaxSize()) {
         if (activeBackgroundResource != null) {
@@ -277,6 +280,7 @@ fun BrailuxApp(
             onAppearanceChange = onAppearanceChange,
             onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
             isPremiumUnlocked = isPremiumUnlocked,
+            ownedBackgroundIds = ownedBackgroundIds,
             onBackgroundChange = onBackgroundChange,
             onLearningLessonCompleted = onLearningLessonCompleted,
             onRecordMemoryGame = onRecordMemoryGame,
@@ -305,6 +309,7 @@ private fun BrailuxBottomBar(
     selectedRoute: String?,
     onNavigate: (String) -> Unit,
 ) {
+    val theme = LocalBrailuxTheme.current
     NavigationBar {
         bottomDestinations.forEach { destination ->
             val selected = selectedRoute == destination.route
@@ -326,19 +331,19 @@ private fun BrailuxBottomBar(
                             modifier = Modifier.fillMaxSize(),
                             shape = CircleShape,
                             color = if (selected) {
-                                MaterialTheme.colorScheme.primaryContainer
+                                theme.visual.chipColor
                             } else {
-                                MaterialTheme.colorScheme.surface
+                                theme.visual.surface
                             },
                             contentColor = if (selected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
+                                theme.visual.primary
                             } else {
                                 MaterialTheme.colorScheme.onSurfaceVariant
                             },
                             border = if (selected) {
-                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                                BorderStroke(2.dp, theme.visual.primary)
                             } else {
-                                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                                BorderStroke(1.dp, theme.visual.borderColor)
                             },
                         ) {
                             Icon(
@@ -354,7 +359,7 @@ private fun BrailuxBottomBar(
                                 text = stringResource(R.string.nav_selected_mark),
                                 modifier = Modifier.align(Alignment.TopEnd),
                                 style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = theme.visual.primary,
                             )
                         }
                     }
@@ -367,6 +372,7 @@ private fun BrailuxBottomBar(
                         } else {
                             MaterialTheme.typography.labelMedium
                         },
+                        color = if (selected) theme.visual.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 },
                 alwaysShowLabel = true,
@@ -398,6 +404,7 @@ private fun BrailuxNavHost(
     onAppearanceChange: (AppearancePreference) -> Unit,
     onSeasonalThemesEnabledChange: (Boolean) -> Unit,
     isPremiumUnlocked: Boolean,
+    ownedBackgroundIds: Set<String> = emptySet(),
     onBackgroundChange: (String) -> Unit,
     onLearningLessonCompleted: (LearningLesson) -> Unit,
     onRecordMemoryGame: (sessionId: String, moves: Int) -> Unit,
@@ -681,6 +688,7 @@ private fun BrailuxNavHost(
                 onAppearanceChange = onAppearanceChange,
                 onSeasonalThemesEnabledChange = onSeasonalThemesEnabledChange,
                 isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
                 onBackgroundChange = onBackgroundChange,
                 onAbout = { navController.navigate(BrailuxRoutes.ABOUT) },
                 onBack = ::goBack,

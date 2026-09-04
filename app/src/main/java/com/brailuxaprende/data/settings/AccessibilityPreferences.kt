@@ -8,6 +8,7 @@ data class AccessibilityPreferences(
     val appearance: AppearancePreference = AppearancePreference.Light,
     val seasonalThemesEnabled: Boolean = true,
     val selectedBackgroundId: String = BrailuxBackgroundCatalog.DEFAULT_ID,
+    val backgroundRotationMode: BackgroundRotationMode = BackgroundRotationMode.Fixed,
 )
 
 enum class AppearancePreference(internal val storedValue: String) {

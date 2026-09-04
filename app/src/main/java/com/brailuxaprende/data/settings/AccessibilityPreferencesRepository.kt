@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
@@ -21,6 +22,8 @@ internal const val TextSizeKeyName = "text_size"
 internal const val AppearanceKeyName = "appearance"
 internal const val SeasonalThemesEnabledKeyName = "seasonal_themes_enabled"
 internal const val SelectedBackgroundIdKeyName = "selected_background_id"
+internal const val BackgroundRotationModeKeyName = "background_rotation_mode"
+internal const val BackgroundLastRotationAtKeyName = "background_last_rotation_at"
 
 val Context.accessibilityPreferencesDataStore: DataStore<Preferences> by preferencesDataStore(
     name = DataStoreName,
@@ -64,8 +67,64 @@ class AccessibilityPreferencesRepository(
     }
 
     suspend fun setSelectedBackgroundId(backgroundId: String) {
+        selectBackgroundAndFix(backgroundId)
+    }
+
+    suspend fun selectBackgroundAndFix(backgroundId: String) {
         dataStore.edit { preferences ->
-            preferences[SelectedBackgroundIdKey] = BrailuxBackgroundCatalog.normalizedId(backgroundId)
+            preferences[SelectedBackgroundIdKey] =
+                BrailuxBackgroundCatalog.normalizedId(backgroundId)
+            preferences[BackgroundRotationModeKey] = BackgroundRotationMode.Fixed.storedValue
+            preferences.remove(BackgroundLastRotationAtKey)
+        }
+    }
+
+    suspend fun setBackgroundRotationMode(
+        mode: BackgroundRotationMode,
+        nowMillis: Long = System.currentTimeMillis(),
+    ) {
+        dataStore.edit { preferences ->
+            preferences[BackgroundRotationModeKey] = mode.storedValue
+            if (mode == BackgroundRotationMode.EverySixHours) {
+                preferences[BackgroundLastRotationAtKey] = nowMillis
+            } else {
+                preferences.remove(BackgroundLastRotationAtKey)
+            }
+        }
+    }
+
+    suspend fun rotatePremiumBackgroundOnForeground(
+        isPremiumUnlocked: Boolean = false,
+        nowMillis: Long = System.currentTimeMillis(),
+        ownedBackgroundIds: Set<String> = emptySet(),
+    ) {
+        if (!BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked, ownedBackgroundIds)) return
+
+        dataStore.edit { preferences ->
+            val mode = BackgroundRotationMode.fromStoredValue(
+                preferences[BackgroundRotationModeKey],
+            )
+            val lastRotationAt = preferences[BackgroundLastRotationAtKey] ?: 0L
+            if (!BrailuxBackgroundRotationPolicy.shouldRotate(
+                    mode = mode,
+                    lastRotationAtMillis = lastRotationAt,
+                    nowMillis = nowMillis,
+                )
+            ) {
+                return@edit
+            }
+
+            val currentId = BrailuxBackgroundCatalog.normalizedId(
+                preferences[SelectedBackgroundIdKey],
+            )
+            val nextId = BrailuxBackgroundRotationPolicy.nextPremiumBackgroundId(
+                currentId = currentId,
+                isPremiumUnlocked = isPremiumUnlocked,
+                ownedBackgroundIds = ownedBackgroundIds,
+            ) ?: return@edit
+
+            preferences[SelectedBackgroundIdKey] = nextId
+            preferences[BackgroundLastRotationAtKey] = nowMillis
         }
     }
 
@@ -77,6 +136,8 @@ class AccessibilityPreferencesRepository(
         val AppearanceKey = stringPreferencesKey(AppearanceKeyName)
         val SeasonalThemesEnabledKey = booleanPreferencesKey(SeasonalThemesEnabledKeyName)
         val SelectedBackgroundIdKey = stringPreferencesKey(SelectedBackgroundIdKeyName)
+        val BackgroundRotationModeKey = stringPreferencesKey(BackgroundRotationModeKeyName)
+        val BackgroundLastRotationAtKey = longPreferencesKey(BackgroundLastRotationAtKeyName)
     }
 }
 
@@ -90,6 +151,9 @@ private fun Preferences.toAccessibilityPreferences(): AccessibilityPreferences =
         seasonalThemesEnabled = valueNamed(SeasonalThemesEnabledKeyName) as? Boolean ?: true,
         selectedBackgroundId = BrailuxBackgroundCatalog.normalizedId(
             valueNamed(SelectedBackgroundIdKeyName) as? String,
+        ),
+        backgroundRotationMode = BackgroundRotationMode.fromStoredValue(
+            valueNamed(BackgroundRotationModeKeyName) as? String,
         ),
     )
 
