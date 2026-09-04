@@ -39,6 +39,25 @@ class GooglePlayBillingRepositoryTest {
             BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build() to emptyList()
         var queryPurchasesCount: Int = 0
 
+        var launchBillingFlowResult: BillingResult =
+            BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        var launchBillingFlowCount: Int = 0
+        var lastLaunchedActivity: Activity? = null
+        var lastLaunchedProductDetails: ProductDetails? = null
+        var lastLaunchedOfferToken: String? = null
+
+        override fun launchBillingFlow(
+            activity: Activity,
+            productDetails: ProductDetails,
+            offerToken: String,
+        ): BillingResult {
+            launchBillingFlowCount++
+            lastLaunchedActivity = activity
+            lastLaunchedProductDetails = productDetails
+            lastLaunchedOfferToken = offerToken
+            return launchBillingFlowResult
+        }
+
         override fun startConnection(listener: BillingClientStateListener) {
             startConnectionCount++
             connectionListener = listener
@@ -466,24 +485,28 @@ class GooglePlayBillingRepositoryTest {
         assertEquals(initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
     }
 
-    // 21. launchPurchaseFlow retorna fallo explícito no soportado
+    // 21. launchPurchaseFlow retorna fallo explícito cuando el servicio está desconectado
     @Test
-    fun launchPurchaseFlowReturnsUnsupportedFailure() = runBlocking {
+    fun launchPurchaseFlowFailsWhenServiceDisconnected() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        gateway.isReadyValue = false
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val dummyActivity = object : Activity() {}
-        val result = repository.launchPurchaseFlow(dummyActivity, BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO)
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_1")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
+        val ex = result.exceptionOrNull()
+        assertTrue(ex is BrailuxBillingException)
+        assertEquals(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, (ex as BrailuxBillingException).responseCode)
     }
 
     // 22. acknowledgePurchase retorna fallo explícito no soportado
     @Test
     fun acknowledgePurchaseReturnsUnsupportedFailure() = runBlocking {
         val gateway = FakeBrailuxBillingGateway()
-        val repository = GooglePlayBillingRepository(gateway = gateway)
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
 
         val result = repository.acknowledgePurchase("dummy_token")
 
@@ -926,4 +949,730 @@ class GooglePlayBillingRepositoryTest {
             BrailuxPremiumAccess.currentState.ownedBackgroundIds,
         )
     }
+
+    private fun createConnectedRepository(
+        gateway: FakeBrailuxBillingGateway = FakeBrailuxBillingGateway(),
+    ): Pair<FakeBrailuxBillingGateway, GooglePlayBillingRepository> {
+        val repository = GooglePlayBillingRepository(gateway = gateway, mainDispatcher = Dispatchers.Unconfined)
+        runBlocking {
+            val connectJob = launch(Dispatchers.Unconfined) {
+                repository.startConnection()
+            }
+            gateway.completeConnection(BillingClient.BillingResponseCode.OK)
+            connectJob.join()
+        }
+        return gateway to repository
+    }
+
+    private fun seedProductDetails(
+        repository: GooglePlayBillingRepository,
+        gateway: FakeBrailuxBillingGateway,
+        productDetails: ProductDetails,
+    ) = runBlocking {
+        gateway.queryProductDetailsResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to QueryProductDetailsResult.create(listOf(productDetails), emptyList())
+        repository.queryProductDetails(setOf(productDetails.productId))
+    }
+
+    // 38. request requiere productId válido
+    @Test
+    fun requestRequiresValidProductId() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+        val request = BrailuxPurchaseRequest("invalid_product_id", "tok_valid")
+
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isFailure)
+        val ex = result.exceptionOrNull()
+        assertTrue(ex is BrailuxBillingException)
+        assertEquals(BillingClient.BillingResponseCode.DEVELOPER_ERROR, (ex as BrailuxBillingException).responseCode)
+        assertEquals(0, gateway.launchBillingFlowCount)
+    }
+
+    // 39. request requiere offerToken no vacío ni en blanco
+    @Test
+    fun requestRequiresNonBlankOfferToken() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val emptyResult = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, ""),
+        )
+        assertTrue(emptyResult.isFailure)
+        assertEquals(BillingClient.BillingResponseCode.DEVELOPER_ERROR, (emptyResult.exceptionOrNull() as BrailuxBillingException).responseCode)
+
+        val blankResult = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "   "),
+        )
+        assertTrue(blankResult.isFailure)
+        assertEquals(BillingClient.BillingResponseCode.DEVELOPER_ERROR, (blankResult.exceptionOrNull() as BrailuxBillingException).responseCode)
+
+        assertEquals(0, gateway.launchBillingFlowCount)
+    }
+
+    // 40. producto desconocido no lanza Billing
+    @Test
+    fun unknownProductDoesNotLaunchBilling() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+        val request = BrailuxPurchaseRequest("unknown_custom_theme_diamond", "tok_test")
+
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isFailure)
+        assertEquals(0, gateway.launchBillingFlowCount)
+    }
+
+    // 41. producto sin ProductDetails cacheado no lanza Billing
+    @Test
+    fun productWithoutCachedProductDetailsDoesNotLaunchBilling() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_123")
+
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isFailure)
+        val ex = result.exceptionOrNull()
+        assertTrue(ex is BrailuxBillingException)
+        assertEquals(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, (ex as BrailuxBillingException).responseCode)
+        assertEquals(0, gateway.launchBillingFlowCount)
+    }
+
+    // 42. offerToken inexistente no lanza Billing
+    @Test
+    fun nonExistentOfferTokenDoesNotLaunchBilling() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "offer_alpha")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "offer_beta_unknown")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isFailure)
+        val ex = result.exceptionOrNull()
+        assertTrue(ex is BrailuxBillingException)
+        assertEquals(BillingClient.BillingResponseCode.DEVELOPER_ERROR, (ex as BrailuxBillingException).responseCode)
+        assertEquals(0, gateway.launchBillingFlowCount)
+    }
+
+    // 43. offerToken correcto sí construye parámetros válidos y lanza Billing
+    @Test
+    fun validOfferTokenBuildsValidParametersAndLaunchesBilling() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "offer_alpha_exact")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "offer_alpha_exact")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertEquals(1, gateway.launchBillingFlowCount)
+    }
+
+    // 44. ProductDetails correcto se usa en BillingFlowParams
+    @Test
+    fun correctProductDetailsIsPassedToGateway() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "offer_crema")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "offer_crema")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertEquals(details, gateway.lastLaunchedProductDetails)
+        assertEquals(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, gateway.lastLaunchedProductDetails?.productId)
+    }
+
+    // 45. offerToken seleccionado se conserva exactamente
+    @Test
+    fun selectedOfferTokenIsPreservedExactly() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA,
+            offers = listOf(TestOfferDetails(offerToken = "token_exact_preserved_987")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA, "token_exact_preserved_987")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertEquals("token_exact_preserved_987", gateway.lastLaunchedOfferToken)
+    }
+
+    // 46. no se selecciona automáticamente la primera oferta
+    @Test
+    fun firstOfferIsNotAutomaticallySelected() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA,
+            offers = listOf(
+                TestOfferDetails(offerToken = "offer_1_standard"),
+                TestOfferDetails(offerToken = "offer_2_discount"),
+            ),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA, "offer_2_discount")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertEquals("offer_2_discount", gateway.lastLaunchedOfferToken)
+        assertFalse("No debe elegir automáticamente la primera oferta", gateway.lastLaunchedOfferToken == "offer_1_standard")
+    }
+
+    // 47. producto con 2 ofertas permite seleccionar explícitamente la segunda
+    @Test
+    fun productWithMultipleOffersAllowsExplicitSelectionOfSecondOffer() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(
+                TestOfferDetails(offerToken = "tok_opt_a", purchaseOptionId = "opt_a"),
+                TestOfferDetails(offerToken = "tok_opt_b", purchaseOptionId = "opt_b"),
+            ),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_opt_b"),
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals("tok_opt_b", gateway.lastLaunchedOfferToken)
+    }
+
+    // 48. launchBillingFlow OK no marca producto como Purchased
+    @Test
+    fun launchBillingFlowOkDoesNotMarkProductAsPurchased() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_ok")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_ok")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertFalse(
+            "launchBillingFlow OK jamás debe marcar el producto como adquirido",
+            repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+        )
+        assertNull(repository.purchases.value[BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO])
+    }
+
+    // 49. launch OK deja estado PurchaseFlowLaunched
+    @Test
+    fun launchOkLeavesStatePurchaseFlowLaunched() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "tok_flow")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val request = BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_flow")
+        val result = repository.launchPurchaseFlow(dummyActivity, request)
+
+        assertTrue(result.isSuccess)
+        assertEquals(BrailuxBillingOperationState.PurchaseFlowLaunched, repository.lastBillingOperation.value)
+        assertNull(repository.lastBillingError.value)
+    }
+
+    // 50. USER_CANCELED no concede entitlement
+    @Test
+    fun launchUserCanceledDoesNotGrantEntitlement() = runBlocking {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
+
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.USER_CANCELED)
+            .setDebugMessage("User cancelled")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA,
+            offers = listOf(TestOfferDetails(offerToken = "tok_cancel")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA, "tok_cancel"),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(BrailuxBillingOperationState.UserCanceled, repository.lastBillingOperation.value)
+        assertEquals(initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+        assertEquals(initialPremium, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
+    }
+
+    // 51. ITEM_ALREADY_OWNED no concede entitlement directo
+    @Test
+    fun itemAlreadyOwnedDoesNotGrantDirectEntitlement() = runBlocking {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED)
+            .setDebugMessage("Item already owned")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA,
+            offers = listOf(TestOfferDetails(offerToken = "tok_owned")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA, "tok_owned"),
+        )
+
+        assertTrue(result.isFailure)
+        val ex = result.exceptionOrNull() as BrailuxBillingException
+        assertEquals(BillingClient.BillingResponseCode.ITEM_ALREADY_OWNED, ex.responseCode)
+        assertEquals("ownedBackgroundIds debe permanecer intacto ante ITEM_ALREADY_OWNED", initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+    }
+
+    // 52. ITEM_UNAVAILABLE no concede entitlement
+    @Test
+    fun itemUnavailableDoesNotGrantEntitlement() = runBlocking {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE)
+            .setDebugMessage("Item unavailable")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_unavail")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_unavail"),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+    }
+
+    // 53. BILLING_UNAVAILABLE queda representado
+    @Test
+    fun billingUnavailableIsProperlyRepresented() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.BILLING_UNAVAILABLE)
+            .setDebugMessage("Billing unavailable")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "tok_b_unavail")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_b_unavail"),
+        )
+
+        assertTrue(result.isFailure)
+        val op = repository.lastBillingOperation.value
+        assertTrue(op is BrailuxBillingOperationState.Error)
+        assertEquals(BillingClient.BillingResponseCode.BILLING_UNAVAILABLE, (op as BrailuxBillingOperationState.Error).responseCode)
+        assertEquals(BillingClient.BillingResponseCode.BILLING_UNAVAILABLE, repository.lastBillingError.value?.responseCode)
+    }
+
+    // 54. DEVELOPER_ERROR queda representado
+    @Test
+    fun developerErrorIsProperlyRepresented() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.DEVELOPER_ERROR)
+            .setDebugMessage("Developer error")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA,
+            offers = listOf(TestOfferDetails(offerToken = "tok_dev_err")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA, "tok_dev_err"),
+        )
+
+        assertTrue(result.isFailure)
+        val op = repository.lastBillingOperation.value
+        assertTrue(op is BrailuxBillingOperationState.Error)
+        assertEquals(BillingClient.BillingResponseCode.DEVELOPER_ERROR, (op as BrailuxBillingOperationState.Error).responseCode)
+    }
+
+    // 55. SERVICE_DISCONNECTED queda representado
+    @Test
+    fun serviceDisconnectedIsProperlyRepresented() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED)
+            .setDebugMessage("Service disconnected")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA,
+            offers = listOf(TestOfferDetails(offerToken = "tok_disc")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA, "tok_disc"),
+        )
+
+        assertTrue(result.isFailure)
+        val op = repository.lastBillingOperation.value
+        assertTrue(op is BrailuxBillingOperationState.Error)
+        assertEquals(BillingClient.BillingResponseCode.SERVICE_DISCONNECTED, (op as BrailuxBillingOperationState.Error).responseCode)
+    }
+
+    // 56. SERVICE_UNAVAILABLE queda representado
+    @Test
+    fun serviceUnavailableIsProperlyRepresented() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE)
+            .setDebugMessage("Service unavailable")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_srv_unavail")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_srv_unavail"),
+        )
+
+        assertTrue(result.isFailure)
+        val op = repository.lastBillingOperation.value
+        assertTrue(op is BrailuxBillingOperationState.Error)
+        assertEquals(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE, (op as BrailuxBillingOperationState.Error).responseCode)
+    }
+
+    // 57. ERROR no borra purchases existentes
+    @Test
+    fun launchErrorDoesNotDeleteExistingPurchases() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Sembrar compra previa
+        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                    fakePurchaseToken = "tok_existing_preserved",
+                )
+            ),
+        )
+        assertEquals(1, repository.purchases.value.size)
+
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.ERROR)
+            .setDebugMessage("Launch error")
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_err")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_err"),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals("La compra previa no debe ser borrada por error de lanzamiento", 1, repository.purchases.value.size)
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+    }
+
+    // 58. PENDING sigue sin conceder entitlement
+    @Test
+    fun pendingStateContinuesToNotGrantEntitlement() {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
+
+        val gateway = FakeBrailuxBillingGateway()
+        val repository = GooglePlayBillingRepository(gateway = gateway)
+
+        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA),
+                    fakePurchaseToken = "tok_pending_guard",
+                    fakePurchaseState = Purchase.PurchaseState.PENDING,
+                )
+            ),
+        )
+
+        assertEquals(initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+        assertEquals(initialPremium, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
+    }
+
+    // 59. PURCHASED recibido por listener sigue sin conceder entitlement
+    @Test
+    fun purchasedReceivedByListenerStillDoesNotGrantEntitlement() {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val initialPremium = BrailuxPremiumAccess.currentState.isPremiumUnlocked
+
+        val gateway = FakeBrailuxBillingGateway()
+        val repository = GooglePlayBillingRepository(gateway = gateway)
+
+        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA),
+                    fakePurchaseToken = "tok_purchased_no_entitlement",
+                    fakePurchaseState = Purchase.PurchaseState.PURCHASED,
+                )
+            ),
+        )
+
+        assertEquals("ownedBackgroundIds debe permanecer intacto tras PURCHASED en Fase C", initialOwned, BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+        assertEquals(initialPremium, BrailuxPremiumAccess.currentState.isPremiumUnlocked)
+    }
+
+    // 60. ownedBackgroundIds permanece intacto después de launch OK
+    @Test
+    fun ownedBackgroundIdsRemainsIntactAfterLaunchOk() = runBlocking {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_ok_check")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_ok_check"),
+        )
+
+        assertTrue(result.isSuccess)
+        assertEquals(
+            "Regla de Oro: ownedBackgroundIds debe permanecer exactamente igual tras launch OK",
+            initialOwned,
+            BrailuxPremiumAccess.currentState.ownedBackgroundIds,
+        )
+    }
+
+    // 61. ownedBackgroundIds permanece intacto después de error
+    @Test
+    fun ownedBackgroundIdsRemainsIntactAfterLaunchError() = runBlocking {
+        val initialOwned = BrailuxPremiumAccess.currentState.ownedBackgroundIds
+        val (gateway, repository) = createConnectedRepository()
+        gateway.launchBillingFlowResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.ERROR)
+            .build()
+
+        val dummyActivity = object : Activity() {}
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "tok_err_check")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        val result = repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_err_check"),
+        )
+
+        assertTrue(result.isFailure)
+        assertEquals(
+            "Regla de Oro: ownedBackgroundIds debe permanecer exactamente igual tras error",
+            initialOwned,
+            BrailuxPremiumAccess.currentState.ownedBackgroundIds,
+        )
+    }
+
+    // 62. acknowledgePurchase no se ejecuta automáticamente
+    @Test
+    fun acknowledgePurchaseDoesNotExecuteAutomatically() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA,
+            offers = listOf(TestOfferDetails(offerToken = "tok_ack_check")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        // 1. Launch OK no invoca acknowledge
+        repository.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA, "tok_ack_check"),
+        )
+
+        // 2. onPurchasesUpdated PURCHASED tampoco invoca acknowledge
+        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA),
+                    fakePurchaseToken = "tok_ack_token",
+                    fakePurchaseState = Purchase.PurchaseState.PURCHASED,
+                    fakeAcknowledged = false,
+                )
+            ),
+        )
+
+        // 3. Invocar acknowledge manualmente falla con UnsupportedOperationException en Fase C
+        val ackResult = repository.acknowledgePurchase("tok_ack_token")
+        assertTrue(ackResult.isFailure)
+        assertTrue(ackResult.exceptionOrNull() is UnsupportedOperationException)
+    }
+
+    // 63. ProductDetails SDK no se persiste en DataStore
+    @Test
+    fun productDetailsSdkIsNotPersistedInDataStore() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val details = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_volatile")),
+        )
+        seedProductDetails(repository, gateway, details)
+
+        // Comprobar que tras endConnection, el cache se limpia y no se guarda nada permanentemente
+        repository.endConnection()
+
+        // Reconectar con gateway nuevo sin ProductDetails
+        val gateway2 = FakeBrailuxBillingGateway()
+        val repository2 = GooglePlayBillingRepository(gateway = gateway2, mainDispatcher = Dispatchers.Unconfined)
+        val connectJob = launch(Dispatchers.Unconfined) {
+            repository2.startConnection()
+        }
+        gateway2.completeConnection(BillingClient.BillingResponseCode.OK)
+        connectJob.join()
+
+        val result = repository2.launchPurchaseFlow(
+            dummyActivity,
+            BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_volatile"),
+        )
+        // Falla porque el nuevo repositorio no tiene cache heredado ni persistido
+        assertTrue(result.isFailure)
+        assertEquals(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, (result.exceptionOrNull() as BrailuxBillingException).responseCode)
+    }
+
+    // 64. Cache de ProductDetails es volátil, reemplaza válidos, elimina unfetched y se limpia en endConnection
+    @Test
+    fun productDetailsCacheReplacesRetrievedRemovesUnfetchedAndClearsOnDisconnect() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+        val dummyActivity = object : Activity() {}
+
+        val detailsCeleste = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+            offers = listOf(TestOfferDetails(offerToken = "tok_celeste_1")),
+        )
+        val detailsCrema = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "tok_crema_1")),
+        )
+
+        // 1. Primera consulta: ambos productos disponibles
+        gateway.queryProductDetailsResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build() to
+            QueryProductDetailsResult.create(listOf(detailsCeleste, detailsCrema), emptyList())
+        repository.queryProductDetails(setOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // Ambos lanzan exitosamente
+        assertTrue(repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_celeste_1")).isSuccess)
+        assertTrue(repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_crema_1")).isSuccess)
+
+        // 2. Segunda consulta: celeste deja de estar disponible y crema se actualiza
+        val detailsCremaActualizado = ProductDetailsTestHelper.createOneTimeProductDetails(
+            productId = BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS,
+            offers = listOf(TestOfferDetails(offerToken = "tok_crema_v2")),
+        )
+        gateway.queryProductDetailsResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build() to
+            QueryProductDetailsResult.create(listOf(detailsCremaActualizado), emptyList())
+
+        // Consultamos celeste y crema: celeste no vino en productDetailsList
+        repository.queryProductDetails(setOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // Celeste debe haber sido eliminado del cache: no se puede comprar con token viejo
+        val celesteLaunch = repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO, "tok_celeste_1"))
+        assertTrue("Celeste fue eliminado del cache por no estar disponible", celesteLaunch.isFailure)
+        assertEquals(BillingClient.BillingResponseCode.ITEM_UNAVAILABLE, (celesteLaunch.exceptionOrNull() as BrailuxBillingException).responseCode)
+
+        // Crema debe haberse actualizado a v2
+        assertTrue(repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_crema_v2")).isSuccess)
+
+        // 3. endConnection limpia completamente el cache
+        repository.endConnection()
+        val connectJob = launch(Dispatchers.Unconfined) { repository.startConnection() }
+        gateway.completeConnection(BillingClient.BillingResponseCode.OK)
+        connectJob.join()
+
+        val cremaPostDisconnect = repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_crema_v2"))
+        assertTrue("Cache debe estar vacío tras endConnection", cremaPostDisconnect.isFailure)
+    }
 }
+

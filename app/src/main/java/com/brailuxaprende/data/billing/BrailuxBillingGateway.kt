@@ -1,10 +1,13 @@
 package com.brailuxaprende.data.billing
 
+import android.app.Activity
 import android.content.Context
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClientStateListener
+import com.android.billingclient.api.BillingFlowParams
 import com.android.billingclient.api.BillingResult
 import com.android.billingclient.api.PendingPurchasesParams
+import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
@@ -44,6 +47,15 @@ interface BrailuxBillingGateway {
      * Consulta asíncrona de compras existentes INAPP devolviendo [BillingResult] y la lista de [Purchase].
      */
     suspend fun queryPurchases(): Pair<BillingResult, List<Purchase>>
+
+    /**
+     * Lanza el flujo de compra de Google Play Billing para un producto y oferta específicos.
+     */
+    fun launchBillingFlow(
+        activity: Activity,
+        productDetails: ProductDetails,
+        offerToken: String,
+    ): BillingResult
 }
 
 /**
@@ -122,4 +134,22 @@ class DefaultBillingClientGateway(
             }
         }
     }
+
+    override fun launchBillingFlow(
+        activity: Activity,
+        productDetails: ProductDetails,
+        offerToken: String,
+    ): BillingResult {
+        val productDetailsParams = BillingFlowParams.ProductDetailsParams.newBuilder()
+            .setProductDetails(productDetails)
+            .setOfferToken(offerToken)
+            .build()
+
+        val billingFlowParams = BillingFlowParams.newBuilder()
+            .setProductDetailsParamsList(listOf(productDetailsParams))
+            .build()
+
+        return billingClient.launchBillingFlow(activity, billingFlowParams)
+    }
 }
+

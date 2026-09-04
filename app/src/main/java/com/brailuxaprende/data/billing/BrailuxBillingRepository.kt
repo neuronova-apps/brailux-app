@@ -74,9 +74,18 @@ interface BrailuxBillingRepository {
     suspend fun syncBillingData(): Result<Unit>
 
     /**
-     * Inicia el flujo de compra de Google Play para el producto especificado.
+     * Inicia el flujo de compra de Google Play para el producto y oferta especificados en [request].
      */
-    suspend fun launchPurchaseFlow(activity: Activity, productId: String): Result<Unit>
+    suspend fun launchPurchaseFlow(activity: Activity, request: BrailuxPurchaseRequest): Result<Unit>
+
+    /**
+     * Sobrecarga de conveniencia que construye [BrailuxPurchaseRequest] con selección explícita de oferta.
+     */
+    suspend fun launchPurchaseFlow(
+        activity: Activity,
+        productId: String,
+        offerToken: String,
+    ): Result<Unit> = launchPurchaseFlow(activity, BrailuxPurchaseRequest(productId, offerToken))
 
     /**
      * Restaura y reconcilia compras existentes con el estado local.

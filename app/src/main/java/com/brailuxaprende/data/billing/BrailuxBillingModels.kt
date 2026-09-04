@@ -123,15 +123,30 @@ data class BrailuxBillingError(
 )
 
 /**
+ * Solicitud explícita de compra para Google Play Billing.
+ *
+ * Exige tanto el [productId] del producto en el catálogo oficial como el [offerToken]
+ * específico de la oferta seleccionada, garantizando que ninguna oferta sea
+ * elegida de forma implícita o automática.
+ */
+data class BrailuxPurchaseRequest(
+    val productId: String,
+    val offerToken: String,
+)
+
+/**
  * Estado observable de la última operación técnica procesada por Google Play Billing.
  */
 sealed interface BrailuxBillingOperationState {
     data object Idle : BrailuxBillingOperationState
     data object Success : BrailuxBillingOperationState
+    data object LaunchingPurchase : BrailuxBillingOperationState
+    data object PurchaseFlowLaunched : BrailuxBillingOperationState
     data object UserCanceled : BrailuxBillingOperationState
     data class Error(
         val responseCode: Int,
         val message: String,
     ) : BrailuxBillingOperationState
 }
+
 
