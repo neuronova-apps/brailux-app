@@ -45,6 +45,10 @@ import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+    private companion object {
+        var skipNextBackgroundRotation = false
+    }
+
     private val assistantViewModel by viewModels<AssistantViewModel> {
         AssistantViewModelFactory(BrailuxAiService())
     }
@@ -247,6 +251,24 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (skipNextBackgroundRotation) {
+            skipNextBackgroundRotation = false
+            return
+        }
+        settingsState.onAppForegrounded(
+            isPremiumUnlocked = BrailuxPremiumAccess.currentState.isPremiumUnlocked,
+        )
+    }
+
+    override fun onStop() {
+        if (isChangingConfigurations) {
+            skipNextBackgroundRotation = true
+        }
+        super.onStop()
     }
 }
 

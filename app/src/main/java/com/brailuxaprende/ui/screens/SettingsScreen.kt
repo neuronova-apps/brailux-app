@@ -19,14 +19,19 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +40,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -45,8 +51,11 @@ import androidx.compose.ui.unit.dp
 import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.data.settings.AppearancePreference
+import com.brailuxaprende.data.settings.BackgroundRotationAction
+import com.brailuxaprende.data.settings.BackgroundRotationMode
 import com.brailuxaprende.data.settings.BrailuxBackgroundCatalog
 import com.brailuxaprende.data.settings.BrailuxBackgroundOption
+import com.brailuxaprende.data.settings.BrailuxBackgroundRotationPolicy
 import com.brailuxaprende.data.settings.TextSizePreference
 import com.brailuxaprende.ui.components.BrailuxScreenHeader
 import com.brailuxaprende.ui.components.BrailuxSecondaryButton
@@ -122,6 +131,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
             WallpaperSection(
                 selectedBackgroundId = preferences.selectedBackgroundId,
+                rotationMode = preferences.backgroundRotationMode,
                 isPremiumUnlocked = isPremiumUnlocked,
                 onBackgroundChange = onBackgroundChange,
                 onLockedBackground = {
@@ -270,11 +280,15 @@ fun SettingsScreen(
 @Composable
 private fun WallpaperSection(
     selectedBackgroundId: String,
+    rotationMode: BackgroundRotationMode,
     isPremiumUnlocked: Boolean,
     onBackgroundChange: (String) -> Unit,
     onLockedBackground: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var previewBackground by remember { mutableStateOf<BrailuxBackgroundOption?>(null) }
+    val canRotate = BrailuxBackgroundRotationPolicy.canRotate(isPremiumUnlocked)
+
     BrailuxSectionCard(modifier = modifier) {
         Text(
             text = stringResource(R.string.settings_wallpaper),
@@ -287,11 +301,7 @@ private fun WallpaperSection(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Column(
-            modifier = Modifier
-                .padding(top = 8.dp)
-                .selectableGroup(),
-        ) {
+        Column(modifier = Modifier.padding(top = 8.dp)) {
             BrailuxBackgroundCatalog.backgrounds.forEach { background ->
                 BackgroundOptionRow(
                     background = background,
@@ -308,9 +318,81 @@ private fun WallpaperSection(
                             onLockedBackground()
                         }
                     },
+                    onPreview = { previewBackground = background },
                 )
+                HorizontalDivider()
             }
         }
+
+        if (canRotate) {
+            Text(
+                text = stringResource(R.string.settings_background_rotation_title),
+                modifier = Modifier
+                    .padding(top = 18.dp)
+                    .semantics { heading() },
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.settings_background_rotation_description),
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Column(
+                modifier = Modifier
+                    .padding(top = 8.dp)
+                    .selectableGroup(),
+            ) {
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_fixed),
+                    selected = rotationMode == BackgroundRotationMode.Fixed,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(BackgroundRotationMode.Fixed),
+                        )
+                    },
+                )
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_on_open),
+                    selected = rotationMode == BackgroundRotationMode.OnAppOpen,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(BackgroundRotationMode.OnAppOpen),
+                        )
+                    },
+                )
+                SelectionOptionRow(
+                    label = stringResource(R.string.settings_background_rotation_periodic),
+                    selected = rotationMode == BackgroundRotationMode.EverySixHours,
+                    onSelect = {
+                        onBackgroundChange(
+                            BackgroundRotationAction.actionFor(
+                                BackgroundRotationMode.EverySixHours,
+                            ),
+                        )
+                    },
+                )
+            }
+            Text(
+                text = stringResource(R.string.settings_background_rotation_periodic_description),
+                modifier = Modifier.padding(top = 4.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    previewBackground?.let { background ->
+        BackgroundPreviewDialog(
+            background = background,
+            isPremiumUnlocked = isPremiumUnlocked,
+            onUse = {
+                onBackgroundChange(background.id)
+                previewBackground = null
+            },
+            onLockedBackground = onLockedBackground,
+            onDismiss = { previewBackground = null },
+        )
     }
 }
 
@@ -320,6 +402,7 @@ private fun BackgroundOptionRow(
     selected: Boolean,
     isPremiumUnlocked: Boolean,
     onSelect: () -> Unit,
+    onPreview: () -> Unit,
 ) {
     val selectionState = stringResource(
         if (selected) R.string.settings_state_selected else R.string.settings_state_not_selected,
@@ -331,51 +414,142 @@ private fun BackgroundOptionRow(
     }
     val state = listOfNotNull(selectionState, premiumState).joinToString(separator = ". ")
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 72.dp)
-            .semantics(mergeDescendants = true) { stateDescription = state }
-            .selectable(
-                selected = selected,
-                role = Role.RadioButton,
-                onClick = onSelect,
-            )
-            .padding(horizontal = 4.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        BackgroundThumbnail(background = background)
-        Column(
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 12.dp),
+                .fillMaxWidth()
+                .heightIn(min = 72.dp)
+                .semantics(mergeDescendants = true) { stateDescription = state }
+                .selectable(
+                    selected = selected,
+                    role = Role.RadioButton,
+                    onClick = onSelect,
+                )
+                .padding(horizontal = 4.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = stringResource(background.nameResource),
-                style = MaterialTheme.typography.bodyLarge,
-            )
-            if (selected) {
+            BackgroundThumbnail(background = background)
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 12.dp),
+            ) {
                 Text(
-                    text = stringResource(R.string.settings_background_selected),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = stringResource(background.nameResource),
+                    style = MaterialTheme.typography.bodyLarge,
                 )
+                if (selected) {
+                    Text(
+                        text = stringResource(R.string.settings_background_selected),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (background.premium) {
+                    Text(
+                        text = if (isPremiumUnlocked) {
+                            stringResource(R.string.settings_background_premium)
+                        } else {
+                            "${stringResource(R.string.settings_background_premium)} · " +
+                                stringResource(R.string.settings_background_locked)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
-            if (background.premium) {
-                Text(
-                    text = if (isPremiumUnlocked) {
-                        stringResource(R.string.settings_background_premium)
-                    } else {
-                        "${stringResource(R.string.settings_background_premium)} · " +
-                            stringResource(R.string.settings_background_locked)
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            RadioButton(selected = selected, onClick = null)
         }
-        RadioButton(selected = selected, onClick = null)
+        TextButton(
+            onClick = onPreview,
+            modifier = Modifier.align(Alignment.End),
+        ) {
+            Text(text = stringResource(R.string.settings_background_preview))
+        }
     }
+}
+
+@Composable
+private fun BackgroundPreviewDialog(
+    background: BrailuxBackgroundOption,
+    isPremiumUnlocked: Boolean,
+    onUse: () -> Unit,
+    onLockedBackground: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val canUse = BrailuxBackgroundCatalog.canSelect(
+        id = background.id,
+        isPremiumUnlocked = isPremiumUnlocked,
+    )
+    val drawableResource = background.drawableResource
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(text = stringResource(background.nameResource))
+        },
+        text = {
+            Column {
+                if (drawableResource == null) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp),
+                        shape = MaterialTheme.shapes.medium,
+                        color = MaterialTheme.colorScheme.background,
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant,
+                        ),
+                    ) { }
+                } else {
+                    Image(
+                        painter = painterResource(drawableResource),
+                        contentDescription = stringResource(background.nameResource),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(320.dp)
+                            .clip(MaterialTheme.shapes.medium),
+                    )
+                }
+                if (background.premium && !isPremiumUnlocked) {
+                    Text(
+                        text = stringResource(R.string.settings_background_locked_preview),
+                        modifier = Modifier.padding(top = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    if (canUse) {
+                        onUse()
+                    } else {
+                        onLockedBackground()
+                    }
+                },
+            ) {
+                Text(
+                    text = stringResource(
+                        if (canUse) {
+                            R.string.settings_background_use
+                        } else {
+                            R.string.settings_background_requires_premium
+                        },
+                    ),
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(R.string.settings_background_close))
+            }
+        },
+    )
 }
 
 @Composable

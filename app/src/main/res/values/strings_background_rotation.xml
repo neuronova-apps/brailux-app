@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_background_preview">Vista previa</string>
+    <string name="settings_background_use">Usar este fondo</string>
+    <string name="settings_background_close">Cerrar</string>
+    <string name="settings_background_requires_premium">Requiere Premium</string>
+    <string name="settings_background_locked_preview">Puedes ver este fondo antes de adquirirlo. Para aplicarlo necesitas tener acceso Premium.</string>
+    <string name="settings_background_rotation_title">Cambio automático de fondos</string>
+    <string name="settings_background_rotation_description">Si tienes más de un fondo Premium disponible, puedes mantener uno fijo o alternarlos automáticamente.</string>
+    <string name="settings_background_rotation_fixed">Mantener el fondo elegido</string>
+    <string name="settings_background_rotation_on_open">Cambiar cada vez que abras Brailux</string>
+    <string name="settings_background_rotation_periodic">Cambiar automáticamente cada 6 horas</string>
+    <string name="settings_background_rotation_periodic_description">La rotación usa únicamente fondos Premium disponibles. En el modo de 6 horas, Brailux comprueba el tiempo al volver a la aplicación y no ejecuta tareas en segundo plano.</string>
+</resources>
