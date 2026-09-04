@@ -284,11 +284,8 @@ class GooglePlayBillingRepository(
 
         val mappedRecords = purchasesList.flatMap { BrailuxBillingMapper.mapPurchase(it) }
 
-        val current = _purchases.value.toMutableMap()
-        mappedRecords.forEach { record ->
-            current[record.productId] = record
-        }
-        _purchases.value = current
+        // El snapshot técnico de compras activas/pendientes de Google Play reemplaza autoritativamente _purchases
+        _purchases.value = mappedRecords.associateBy { it.productId }
 
         // Reconciliación autoritativa: reemplaza el conjunto activo con las compras actualmente válidas de Google Play
         reconciliationMutex.withLock {

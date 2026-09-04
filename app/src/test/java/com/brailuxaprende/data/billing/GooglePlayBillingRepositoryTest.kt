@@ -1736,5 +1736,389 @@ class GooglePlayBillingRepositoryTest {
         val cremaPostDisconnect = repository.launchPurchaseFlow(dummyActivity, BrailuxPurchaseRequest(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS, "tok_crema_v2"))
         assertTrue("Cache debe estar vacío tras endConnection", cremaPostDisconnect.isFailure)
     }
+
+    // 65. query exitosa reemplaza purchases anteriores
+    @Test
+    fun successfulQueryReplacesPreviousPurchases() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // 1. Sembrar compras iniciales: celeste y crema
+        val initialPurchases = listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_init",
+            ),
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                fakePurchaseToken = "tok_crema_init",
+            ),
+        )
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to initialPurchases
+
+        val firstResult = repository.queryPurchases()
+        assertTrue(firstResult.isSuccess)
+        assertEquals(2, repository.purchases.value.size)
+        assertTrue(repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+        assertTrue(repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // 2. Nueva consulta exitosa devuelve celeste y salvia (reemplazo de snapshot)
+        val updatedPurchases = listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_updated",
+            ),
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA),
+                fakePurchaseToken = "tok_salvia_new",
+            ),
+        )
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to updatedPurchases
+
+        val secondResult = repository.queryPurchases()
+        assertTrue(secondResult.isSuccess)
+
+        // _purchases debe contener exactamente celeste y salvia, sin conservar crema
+        assertEquals(2, repository.purchases.value.size)
+        assertEquals(
+            setOf(
+                BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO,
+                BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA,
+            ),
+            repository.purchases.value.keys,
+        )
+        assertFalse(repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+    }
+
+    // 66. purchase desaparecida de query exitosa se elimina de _purchases
+    @Test
+    fun missingPurchaseInSuccessfulQueryIsRemovedFromPurchases() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // 1. Estado inicial con celeste y crema
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_1",
+            ),
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                fakePurchaseToken = "tok_crema_1",
+            ),
+        )
+        repository.queryPurchases()
+        assertTrue(repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // 2. Consulta donde desaparece crema
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_1",
+            ),
+        )
+        val result = repository.queryPurchases()
+        assertTrue(result.isSuccess)
+
+        // Crema desaparecida debe ser eliminada de _purchases
+        assertFalse("El producto desaparecido debe eliminarse de _purchases", repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+        assertNull(repository.purchases.value[BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS])
+        assertEquals(1, repository.purchases.value.size)
+    }
+
+    // 67. isProductPurchased devuelve false para producto desaparecido
+    @Test
+    fun isProductPurchasedReturnsFalseForDisappearedProduct() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Inicialmente crema está PURCHASED
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                fakePurchaseToken = "tok_crema",
+            ),
+        )
+        repository.queryPurchases()
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // Nueva consulta exitosa ya no devuelve crema (devuelve solo celeste)
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste",
+            ),
+        )
+        repository.queryPurchases()
+
+        assertFalse("isProductPurchased debe ser false para producto desaparecido de query", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+        assertTrue("isProductPurchased debe ser true para producto presente", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+    }
+
+    // 68. query exitosa vacía deja _purchases vacío
+    @Test
+    fun successfulEmptyQueryLeavesPurchasesEmpty() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Inicial con compras
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA),
+                fakePurchaseToken = "tok_lavanda",
+            ),
+        )
+        repository.queryPurchases()
+        assertEquals(1, repository.purchases.value.size)
+
+        // Consulta exitosa vacía (0 purchases)
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to emptyList()
+
+        val result = repository.queryPurchases()
+        assertTrue(result.isSuccess)
+        assertTrue("_purchases debe quedar vacío ante consulta exitosa vacía", repository.purchases.value.isEmpty())
+        assertEquals(emptyMap<String, BrailuxPurchaseRecord>(), repository.purchases.value)
+    }
+
+    // 69. query exitosa vacía deja ownedBackgroundIds vacío
+    @Test
+    fun successfulEmptyQueryLeavesOwnedBackgroundIdsEmpty() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Inicial con entitlement concedido
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste",
+            ),
+        )
+        repository.queryPurchases()
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+
+        // Consulta exitosa vacía
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to emptyList()
+
+        val result = repository.queryPurchases()
+        assertTrue(result.isSuccess)
+        assertTrue("ownedBackgroundIds debe quedar vacío tras query exitosa vacía", BrailuxPremiumAccess.currentState.ownedBackgroundIds.isEmpty())
+        assertTrue("ownedBackgroundIds en repo debe ser vacío", repository.entitlementRepository.ownedBackgroundIds.value.isEmpty())
+        assertFalse(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+    }
+
+    // 70. query fallida conserva _purchases anterior
+    @Test
+    fun failedQueryPreservesPreviousPurchases() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Sembrar compra previa
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA),
+                fakePurchaseToken = "tok_salvia_valid",
+            ),
+        )
+        repository.queryPurchases()
+        assertEquals(1, repository.purchases.value.size)
+
+        // Query fallida
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.SERVICE_UNAVAILABLE)
+            .setDebugMessage("Network error")
+            .build() to emptyList()
+
+        val result = repository.queryPurchases()
+        assertTrue(result.isFailure)
+        assertEquals("Query fallida debe conservar _purchases anterior", 1, repository.purchases.value.size)
+        assertTrue(repository.purchases.value.containsKey(BrailuxBillingProductCatalog.PRODUCT_ID_SALVIA_TEXTURA))
+    }
+
+    // 71. query fallida conserva isProductPurchased anterior
+    @Test
+    fun failedQueryPreservesPreviousIsProductPurchased() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Sembrar compra
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                fakePurchaseToken = "tok_crema_persist",
+            ),
+        )
+        repository.queryPurchases()
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+
+        // Query fallida
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.ERROR)
+            .setDebugMessage("Transient error")
+            .build() to emptyList()
+
+        val result = repository.queryPurchases()
+        assertTrue(result.isFailure)
+        assertTrue("isProductPurchased anterior debe conservarse intacto tras query fallida", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+    }
+
+    // 72. query fallida conserva entitlement anterior
+    @Test
+    fun failedQueryPreservesPreviousEntitlements() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // Sembrar compra y entitlement
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_LAVANDA_NIEBLA),
+                fakePurchaseToken = "tok_lavanda_entitlement",
+            ),
+        )
+        repository.queryPurchases()
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID))
+
+        // Query fallida
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.BILLING_UNAVAILABLE)
+            .setDebugMessage("Service down")
+            .build() to emptyList()
+
+        val result = repository.queryPurchases()
+        assertTrue(result.isFailure)
+        assertTrue(
+            "Entitlement anterior debe conservarse intacto ante query fallida",
+            BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID),
+        )
+        assertTrue(
+            repository.entitlementRepository.isBackgroundOwned(BrailuxBackgroundCatalog.LAVANDA_NIEBLA_ID),
+        )
+    }
+
+    // 73. onPurchasesUpdated sigue siendo incremental y no borra compras ajenas
+    @Test
+    fun onPurchasesUpdatedRemainsIncrementalAndDoesNotDeleteOtherPurchases() = runBlocking {
+        val gateway = FakeBrailuxBillingGateway()
+        gateway.isReadyValue = true
+        val repository = GooglePlayBillingRepository(
+            gateway = gateway,
+            mainDispatcher = Dispatchers.Unconfined,
+            coroutineScope = this,
+        )
+
+        val connectJob = launch(Dispatchers.Unconfined) {
+            repository.startConnection()
+        }
+        gateway.completeConnection(BillingClient.BillingResponseCode.OK)
+        connectJob.join()
+
+        // 1. Primera compra recibida: celeste
+        val okResult = BillingResult.newBuilder().setResponseCode(BillingClient.BillingResponseCode.OK).build()
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                    fakePurchaseToken = "tok_celeste_incr",
+                    fakeAcknowledged = true,
+                ),
+            ),
+        )
+        repository.lastProcessingJob?.join()
+        assertEquals(1, repository.purchases.value.size)
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+
+        // 2. Segunda compra recibida: crema (onPurchasesUpdated solo trae la nueva compra)
+        repository.onPurchasesUpdated(
+            okResult,
+            listOf(
+                FakePurchase(
+                    fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                    fakePurchaseToken = "tok_crema_incr",
+                    fakeAcknowledged = true,
+                ),
+            ),
+        )
+        repository.lastProcessingJob?.join()
+
+        // Comportamiento incremental: _purchases debe contener AMBAS compras
+        assertEquals(2, repository.purchases.value.size)
+        assertTrue("Celeste debe seguir estando comprado", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+        assertTrue("Crema debe estar comprado", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CREMA_ONDAS_ID))
+    }
+
+    // 74. reconciliación y _purchases quedan consistentes después de revocación simulada
+    @Test
+    fun reconciliationAndPurchasesRemainConsistentAfterSimulatedRevocation() = runBlocking {
+        val (gateway, repository) = createConnectedRepository()
+
+        // 1. Estado inicial: celeste y crema adquiridos y con entitlement
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_revocable",
+            ),
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS),
+                fakePurchaseToken = "tok_crema_revocable",
+            ),
+        )
+        repository.queryPurchases()
+
+        // Verificar estado previo consistente
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+        assertTrue(repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+        assertTrue(BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CREMA_ONDAS_ID))
+
+        // 2. Simular revocación/reembolso de crema en Google Play: queryPurchases ahora solo devuelve celeste
+        gateway.queryPurchasesResult = BillingResult.newBuilder()
+            .setResponseCode(BillingClient.BillingResponseCode.OK)
+            .build() to listOf(
+            FakePurchase(
+                fakeProducts = listOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO),
+                fakePurchaseToken = "tok_celeste_revocable",
+            ),
+        )
+        val queryResult = repository.queryPurchases()
+        assertTrue(queryResult.isSuccess)
+
+        // 3. Verificar consistencia total entre _purchases y ownedBackgroundIds
+        // Crema revocada:
+        assertFalse("isProductPurchased para crema debe ser false tras revocación", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CREMA_ONDAS))
+        assertFalse("ownedBackgroundIds no debe contener crema tras revocación", BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CREMA_ONDAS_ID))
+        assertFalse("entitlementRepository no debe contener crema tras revocación", repository.entitlementRepository.isBackgroundOwned(BrailuxBackgroundCatalog.CREMA_ONDAS_ID))
+
+        // Celeste conservada:
+        assertTrue("isProductPurchased para celeste debe ser true", repository.isProductPurchased(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO))
+        assertTrue("ownedBackgroundIds debe contener celeste", BrailuxPremiumAccess.currentState.ownedBackgroundIds.contains(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+        assertTrue("entitlementRepository debe contener celeste", repository.entitlementRepository.isBackgroundOwned(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID))
+
+        // _purchases y ownedBackgroundIds exactamente sincronizados
+        assertEquals(setOf(BrailuxBillingProductCatalog.PRODUCT_ID_CELESTE_GEOMETRICO), repository.purchases.value.keys)
+        assertEquals(setOf(BrailuxBackgroundCatalog.CELESTE_GEOMETRICO_ID), BrailuxPremiumAccess.currentState.ownedBackgroundIds)
+    }
 }
 
