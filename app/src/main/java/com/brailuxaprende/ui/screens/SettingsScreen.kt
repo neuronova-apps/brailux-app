@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -566,7 +567,10 @@ private fun BackgroundOptionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (canPreview) {
-                TextButton(onClick = onPreview) {
+                TextButton(
+                    onClick = onPreview,
+                    modifier = Modifier.testTag("background_preview_${background.id}"),
+                ) {
                     Text(text = stringResource(R.string.settings_background_preview))
                 }
             }

@@ -1,10 +1,10 @@
 package com.brailuxaprende.ui.screens
 
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasAnySibling
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onLast
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -280,7 +280,6 @@ class SettingsScreenBillingIntegrationTest {
 
         val targetOption = requireNotNull(BrailuxBackgroundCatalog.option(targetBackgroundId))
         val targetBackgroundName = context.getString(targetOption.nameResource)
-        val previewButtonText = context.getString(R.string.settings_background_preview)
 
         // Localize the specific real background by its name first
         composeRule.onNodeWithText(targetBackgroundName)
@@ -288,17 +287,15 @@ class SettingsScreenBillingIntegrationTest {
             .assertIsDisplayed()
 
         // Deterministically click the preview button of this specific background row
-        composeRule.onNode(
-            hasText(previewButtonText) and
-                hasAnyAncestor(hasAnySibling(hasText(targetBackgroundName))),
-        )
+        composeRule.onNodeWithTag("background_preview_${targetBackgroundId}")
             .performScrollTo()
             .assertIsDisplayed()
             .performClick()
 
         // Confirm dialog opened and contains the buy action for this specific theme
         val dialogBuyButtonText = context.getString(R.string.settings_buy_with_price, samplePrice)
-        composeRule.onNodeWithText(dialogBuyButtonText)
+        composeRule.onAllNodesWithText(dialogBuyButtonText)
+            .onLast()
             .assertIsDisplayed()
             .performClick()
 
