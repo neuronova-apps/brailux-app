@@ -33,13 +33,13 @@ val isSigningConfigured: Boolean = if (keystorePropertiesFile.exists() && keysto
 }
 
 android {
-    namespace = "com.brailuxaprende"
+    namespace = "com.neuronovaapps.brailux"
     compileSdk {
         version = release(37)
     }
 
     defaultConfig {
-        applicationId = "com.brailuxaprende"
+        applicationId = "com.neuronovaapps.brailux"
         minSdk = 24
         targetSdk = 37
         versionCode = 1

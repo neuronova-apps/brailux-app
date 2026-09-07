@@ -23,6 +23,44 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395715538994:android:fd38c2c26b6a7e555e4c2b",
+        "android_client_info": {
+          "package_name": "com.neuronovaapps.brailux"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyQ9sgHBsgY0u-qTMpAz_aoUyOKTqpeNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:395715538994:android:b435d2322d0da4fb5e4c2b",
+        "android_client_info": {
+          "package_name": "com.quizbible"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAyQ9sgHBsgY0u-qTMpAz_aoUyOKTqpeNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

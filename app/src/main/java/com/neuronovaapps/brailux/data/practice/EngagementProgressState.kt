@@ -1,0 +1,70 @@
+package com.neuronovaapps.brailux.data.practice
+
+import com.neuronovaapps.brailux.practice.EngagementProgress
+import com.neuronovaapps.brailux.practice.EngagementReward
+import com.neuronovaapps.brailux.practice.EngagementSession
+import com.neuronovaapps.brailux.practice.PracticeClock
+import com.neuronovaapps.brailux.practice.PracticeMode
+import com.neuronovaapps.brailux.practice.PracticeSessionKind
+import com.neuronovaapps.brailux.practice.PracticeSessionSummary
+import com.neuronovaapps.brailux.practice.SystemPracticeClock
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class EngagementProgressState(
+    private val repository: EngagementProgressRepository,
+    private val scope: CoroutineScope,
+    private val clock: PracticeClock = SystemPracticeClock,
+) {
+    val progress: StateFlow<EngagementProgress> = repository.progress.stateIn(
+        scope = scope,
+        started = SharingStarted.Eagerly,
+        initialValue = EngagementProgress(),
+    )
+
+    init {
+        scope.launch {
+            try {
+                repository.syncAchievements(clock.today())
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    fun recordSession(
+        summary: PracticeSessionSummary,
+        kind: PracticeSessionKind,
+        onRecorded: (EngagementReward?) -> Unit = {},
+    ) {
+        scope.launch {
+            try {
+                val update = repository.recordSession(
+                    session = summary.toEngagementSession(kind),
+                    date = clock.today(),
+                )
+                onRecorded(update.reward)
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (_: Exception) {
+                onRecorded(null)
+            }
+        }
+    }
+}
+
+internal fun PracticeSessionSummary.toEngagementSession(
+    kind: PracticeSessionKind,
+): EngagementSession = EngagementSession(
+    id = sessionId,
+    kind = kind,
+    exercisesCompleted = exercisesCompleted,
+    firstAttemptCorrect = firstAttemptCorrect,
+    errors = errors,
+    hintsUsed = hintsUsed,
+    mode = mode ?: PracticeMode.SignToCharacter,
+    longestFirstAttemptCorrectStreak = longestFirstAttemptCorrectStreak,
+)

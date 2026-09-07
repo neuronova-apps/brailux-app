@@ -9,7 +9,7 @@ Brailux Aprende usara una arquitectura sencilla, local y facil de mantener. La a
 - Android con Kotlin.
 - Jetpack Compose habilitado.
 - Una sola Activity: `MainActivity`.
-- `applicationId` y `namespace`: `com.brailuxaprende`.
+- `applicationId` y `namespace`: `com.neuronovaapps.brailux`.
 - Version minima de Android: `minSdk = 24`.
 
 ## Capas previstas
@@ -65,7 +65,7 @@ La interfaz debe incluir semantica para TalkBack. Cada punto Braille debe poder 
 Esta estructura se propone para etapas posteriores. No es necesario crear estas carpetas hasta que exista codigo para ellas.
 
 ```text
-app/src/main/java/com/brailuxaprende/
+app/src/main/java/com/neuronovaapps/brailux/
 - braille/
 - data/
 - ui/components/
