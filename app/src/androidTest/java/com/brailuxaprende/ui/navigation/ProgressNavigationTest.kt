@@ -1,7 +1,11 @@
 package com.brailuxaprende.ui.navigation
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -125,7 +129,15 @@ class ProgressNavigationTest {
         assertProgressValue(R.string.progress_sessions_label, "2")
         assertProgressValue(R.string.progress_exercises_label, "12")
         assertProgressValue(R.string.progress_first_attempt_label, "9")
-        assertProgressValue(R.string.progress_accuracy_label, "75%")
+        val level1AccuracyDescription = context.getString(
+            R.string.progress_level_accuracy_accessibility,
+            context.getString(R.string.progress_level_1_title),
+            75,
+        )
+        composeRule.onAllNodesWithContentDescription(level1AccuracyDescription)
+            .onFirst()
+            .performScrollTo()
+            .assertIsDisplayed()
         composeRule.onNodeWithText(context.getString(R.string.progress_level_2_title))
             .performScrollTo()
             .assertIsDisplayed()
@@ -147,17 +159,28 @@ class ProgressNavigationTest {
             .performScrollTo()
             .performClick()
 
-        composeRule.onNodeWithText(context.getString(R.string.progress_achievements_title))
+        composeRule.onNode(
+            hasText(context.getString(R.string.progress_achievements_title)) and isHeading(),
+        ).performScrollTo().assertIsDisplayed()
+        val firstStepDescription = context.getString(
+            R.string.progress_achievement_accessibility,
+            context.getString(R.string.achievement_first_step_title),
+            context.getString(R.string.achievement_first_step_description),
+            context.getString(R.string.progress_achievement_unlocked),
+        )
+        composeRule.onNodeWithContentDescription(firstStepDescription)
             .performScrollTo()
             .assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(
-            "${context.getString(R.string.achievement_first_step_title)}. " +
-                "${context.getString(R.string.achievement_first_step_description)}. Estado: Obtenido.",
-        ).performScrollTo().assertIsDisplayed()
-        composeRule.onNodeWithContentDescription(
-            "${context.getString(R.string.achievement_consistency_title)}. " +
-                "${context.getString(R.string.achievement_consistency_description)}. Estado: Pendiente.",
-        ).performScrollTo().assertIsDisplayed()
+        val consistencyDescription = context.getString(
+            R.string.progress_achievement_progress_accessibility,
+            context.getString(R.string.achievement_consistency_title),
+            context.getString(R.string.achievement_consistency_description),
+            context.getString(R.string.progress_achievement_in_progress),
+            context.getString(R.string.badge_progress_days, 3, 3),
+        )
+        composeRule.onNodeWithContentDescription(consistencyDescription)
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 
     private fun assertProgressValue(labelResId: Int, value: String) {

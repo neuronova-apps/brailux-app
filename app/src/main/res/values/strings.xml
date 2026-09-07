@@ -521,6 +521,17 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="settings_background_locked">Bloqueado</string>
     <string name="settings_background_available_with_premium">Disponible con Premium</string>
     <string name="settings_background_selected">Fondo seleccionado</string>
+    <string name="settings_buy">Comprar</string>
+    <string name="settings_buy_with_price">Comprar · %1$s</string>
+    <string name="settings_purchased">Comprado</string>
+    <string name="settings_pending">Pendiente</string>
+    <string name="settings_unavailable">No disponible</string>
+    <string name="settings_restore_purchases">Restaurar compras</string>
+    <string name="settings_restore_success">Compras restauradas</string>
+    <string name="settings_restore_empty">No se encontraron compras anteriores</string>
+    <string name="settings_restore_error">No se pudo conectar con Google Play</string>
+    <string name="settings_try_again">Intentar nuevamente</string>
+    <string name="settings_background_price_accessibility">%1$s por %2$s</string>
     <string name="settings_accessibility">Accesibilidad</string>
     <string name="settings_interaction">Interacción</string>
     <string name="settings_personalization">Personalización</string>

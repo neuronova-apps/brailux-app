@@ -41,10 +41,14 @@ import com.brailuxaprende.ui.screens.PracticeSessionViewModel
 import com.brailuxaprende.ui.screens.PracticeSessionViewModelFactory
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import com.brailuxaprende.ui.theme.BrailuxThemeCatalog
+import com.brailuxaprende.data.billing.BrailuxBillingCoordinator
+import com.brailuxaprende.data.billing.BrailuxPremiumEntitlementRepository
+import com.brailuxaprende.data.billing.GooglePlayBillingRepository
 import com.brailuxaprende.practice.PracticeDate
 import com.brailuxaprende.practice.PracticeSessionKind
 import com.brailuxaprende.practice.SystemPracticeClock
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val assistantViewModel by viewModels<AssistantViewModel> {
@@ -57,6 +61,25 @@ class MainActivity : ComponentActivity() {
             repository = PracticeSessionRepository(
                 applicationContext.accessibilityPreferencesDataStore,
             ),
+        )
+    }
+    private val premiumEntitlementRepository by lazy {
+        BrailuxPremiumEntitlementRepository(
+            dataStore = applicationContext.accessibilityPreferencesDataStore,
+        )
+    }
+    private val playBillingRepository by lazy {
+        GooglePlayBillingRepository(
+            context = applicationContext,
+            entitlementRepository = premiumEntitlementRepository,
+            coroutineScope = lifecycleScope,
+        )
+    }
+    private val billingCoordinator by lazy {
+        BrailuxBillingCoordinator(
+            billingRepository = playBillingRepository,
+            entitlementRepository = premiumEntitlementRepository,
+            coroutineScope = lifecycleScope,
         )
     }
     private val settingsState by lazy {
@@ -112,6 +135,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        lifecycleScope.launch {
+            billingCoordinator.initialize()
+        }
         setContent {
             val preferences by settingsState.preferences.collectAsState()
             val practiceProgress by practiceProgressState.progress.collectAsState()
@@ -143,7 +169,8 @@ class MainActivity : ComponentActivity() {
             } else {
                 SeasonalTheme.NONE
             }
-            val premiumState = BrailuxPremiumAccess.currentState
+            val premiumState by BrailuxPremiumAccess.state.collectAsState()
+            val billingUiState by billingCoordinator.uiState.collectAsState()
             val seasonalThemeActive = seasonalTheme != SeasonalTheme.NONE && preferences.seasonalThemesEnabled
             val themeDefinition = BrailuxThemeCatalog.resolveTheme(
                 selectedId = preferences.selectedBackgroundId,
@@ -192,6 +219,18 @@ class MainActivity : ComponentActivity() {
                     onSeasonalThemesEnabledChange = settingsState::setSeasonalThemesEnabled,
                     isPremiumUnlocked = premiumState.isPremiumUnlocked,
                     ownedBackgroundIds = premiumState.ownedBackgroundIds,
+                    billingUiState = billingUiState,
+                    onBuyProduct = { productId, offerToken ->
+                        lifecycleScope.launch {
+                            billingCoordinator.launchPurchase(this@MainActivity, productId, offerToken)
+                        }
+                    },
+                    onRestorePurchases = {
+                        lifecycleScope.launch {
+                            billingCoordinator.restorePurchases()
+                        }
+                    },
+                    restoreEvents = billingCoordinator.restoreEvents,
                     onBackgroundChange = { backgroundId ->
                         settingsState.requestBackgroundSelection(
                             backgroundId = backgroundId,
@@ -273,6 +312,11 @@ class MainActivity : ComponentActivity() {
     override fun onStop() {
         BrailuxBackgroundRotationLifecyclePolicy.handleStop(isChangingConfigurations)
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        billingCoordinator.destroy()
+        super.onDestroy()
     }
 }
 

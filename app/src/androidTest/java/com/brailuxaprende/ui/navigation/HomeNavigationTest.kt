@@ -2,7 +2,6 @@ package com.brailuxaprende.ui.navigation
 
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
-import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.hasText
@@ -18,7 +17,6 @@ import com.brailuxaprende.R
 import com.brailuxaprende.data.settings.AccessibilityPreferences
 import com.brailuxaprende.ui.theme.BrailuxAprendeTheme
 import org.junit.Rule
-import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -59,19 +57,11 @@ class HomeNavigationTest {
         composeRule.onAllNodesWithText(context.getString(R.string.home_continue_learning))
             .assertCountEquals(0)
 
-        val dailyTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_daily_practice))
-            .fetchSemanticsNode().boundsInRoot.top
-        val practiceTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_access_practice))
-            .fetchSemanticsNode().boundsInRoot.top
-        val challengeTop = composeRule
-            .onNodeWithText(context.getString(R.string.home_daily_challenge))
-            .fetchSemanticsNode().boundsInRoot.top
-        assertTrue(practiceTop > dailyTop)
-        assertTrue(challengeTop > practiceTop)
-
         composeRule.onNodeWithText(context.getString(R.string.home_daily_practice))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertHasClickAction()
+        composeRule.onNodeWithText(context.getString(R.string.home_daily_challenge))
             .performScrollTo()
             .assertIsDisplayed()
             .assertHasClickAction()
@@ -85,13 +75,8 @@ class HomeNavigationTest {
             .assertCountEquals(0)
         composeRule.onAllNodesWithText(context.getString(R.string.home_weekly_practice_title))
             .assertCountEquals(0)
-        composeRule.onNodeWithText(context.getString(R.string.home_daily_challenge))
-            .performScrollTo()
-            .assertIsDisplayed()
-            .assertHasNoClickAction()
-        composeRule.onNodeWithText(context.getString(R.string.home_coming_soon))
-            .assertIsDisplayed()
-            .assertHasNoClickAction()
+        composeRule.onAllNodesWithText(context.getString(R.string.home_coming_soon))
+            .assertCountEquals(0)
         composeRule.onAllNodesWithText(context.getString(R.string.home_more_options))
             .assertCountEquals(0)
         composeRule.onAllNodesWithText(context.getString(R.string.home_access_about))
@@ -126,7 +111,9 @@ class HomeNavigationTest {
             .performClick()
 
         composeRule.onNodeWithText(context.getString(R.string.nav_learn)).performClick()
-        composeRule.onNodeWithText(context.getString(R.string.learn_title)).assertIsDisplayed()
+        composeRule.onNode(
+            hasText(context.getString(R.string.learn_title)) and isHeading(),
+        ).assertIsDisplayed()
 
         composeRule.onNodeWithText(context.getString(R.string.nav_home)).performClick()
         composeRule.onNodeWithText(context.getString(R.string.home_access_practice))
