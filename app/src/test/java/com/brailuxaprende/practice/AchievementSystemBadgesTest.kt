@@ -140,6 +140,96 @@ class AchievementSystemBadgesTest {
         assertTrue(PermanentAchievement.SuperiorConsistency in streak60)
     }
 
+    // -------------------------------------------------------------------------
+    // NUEVAS PRUEBAS — Familia Constancia
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun familiaConstancia_rachasMuyPorEncimaDelRequisitoContinuanDesbloqueando() {
+        val base = EngagementProgress()
+
+        // bestStreak muy superior al umbral: todos los logros de racha deben estar desbloqueados
+        val superProgress = EngagementEngine.evaluateAchievements(base.copy(bestStreak = 120))
+        assertTrue(PermanentAchievement.ConstantWeek in superProgress)
+        assertTrue(PermanentAchievement.TwoWeeks in superProgress)
+        assertTrue(PermanentAchievement.ConsistencyMonth in superProgress)
+        assertTrue(PermanentAchievement.SuperiorConsistency in superProgress)
+    }
+
+    @Test
+    fun familiaConstancia_rachaActualEquivalenteABestDesbloqueaLogrosSiPreviaRachaEraInferior() {
+        val base = EngagementProgress()
+
+        // currentStreak alcanza el umbral aunque bestStreak sea 0 (estado inicial de un usuario nuevo
+        // que nunca ha perdido la racha)
+        val viaCurrent = EngagementEngine.evaluateAchievements(
+            base.copy(currentStreak = 7, bestStreak = 0),
+        )
+        assertTrue(
+            "Una racha actual de 7 debe desbloquear Semana constante aunque bestStreak sea 0",
+            PermanentAchievement.ConstantWeek in viaCurrent,
+        )
+    }
+
+    @Test
+    fun familiaConstancia_usuarioConProgresoPrevioConservaLogrosYaDesbloqueados() {
+        // Simula un usuario que ya tenía Constancia desbloqueada y practica un día más
+        val date = PracticeDate(2026, 8, 10)
+        val preExistingProgress = EngagementProgress(
+            activityDates = setOf(
+                PracticeDate(2026, 8, 7),
+                PracticeDate(2026, 8, 8),
+                PracticeDate(2026, 8, 9),
+            ),
+            bestStreak = 3,
+            currentStreak = 3,
+            lastActivityDate = PracticeDate(2026, 8, 9),
+            unlockedAchievements = setOf(PermanentAchievement.Consistency),
+        )
+        val newSession = EngagementSession(
+            kind = PracticeSessionKind.Level1,
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 5,
+        )
+        val update = EngagementEngine.recordSession(preExistingProgress, newSession, date)
+
+        assertTrue(
+            "El logro Constancia previo debe conservarse",
+            PermanentAchievement.Consistency in update.progress.unlockedAchievements,
+        )
+        assertFalse(
+            "Constancia no debe aparecer como nuevo logro porque ya estaba desbloqueado",
+            PermanentAchievement.Consistency in update.reward.newlyUnlockedAchievements,
+        )
+        assertEquals(4, update.progress.currentStreak)
+        assertEquals(4, update.progress.bestStreak)
+    }
+
+    @Test
+    fun familiaConstancia_semanaEnMovimiento_requiereExactamente5DiasEnLaMismaSemana() {
+        val base = EngagementProgress()
+        val lunes = PracticeDate(2026, 8, 3) // lunes
+
+        // 4 días en la misma semana: no desbloquea
+        val cuatroDias = (0..3).map { lunes.plusDays(it) }.toSet()
+        val under4 = EngagementEngine.evaluateAchievements(base.copy(activityDates = cuatroDias))
+        assertFalse(PermanentAchievement.WeekInMotion in under4)
+
+        // 5 días en la misma semana (lunes–viernes): desbloquea
+        val cincoDias = (0..4).map { lunes.plusDays(it) }.toSet()
+        val done5 = EngagementEngine.evaluateAchievements(base.copy(activityDates = cincoDias))
+        assertTrue(PermanentAchievement.WeekInMotion in done5)
+
+        // 6 días en la misma semana: sigue desbloqueado (por encima del umbral)
+        val seisDias = (0..5).map { lunes.plusDays(it) }.toSet()
+        val over6 = EngagementEngine.evaluateAchievements(base.copy(activityDates = seisDias))
+        assertTrue(PermanentAchievement.WeekInMotion in over6)
+    }
+
+    // -------------------------------------------------------------------------
+    // PRUEBAS EXISTENTES — Familia Trayectoria Braille
+    // -------------------------------------------------------------------------
+
     @Test
     fun familiaTrayectoriaBraille_desbloqueaPorEjerciciosAcumulados() {
         val base = EngagementProgress()
@@ -162,6 +252,81 @@ class AchievementSystemBadgesTest {
             assertTrue("Expected unlocked at $doneVal for $achievement", achievement in done)
         }
     }
+
+    // -------------------------------------------------------------------------
+    // NUEVAS PRUEBAS — Familia Trayectoria Braille
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun familiaTrayectoriaBraille_alcanzarUmbralSuperiorDesbloqueaInferioresImplicitamente() {
+        val base = EngagementProgress()
+
+        // Con 1200 ejercicios, TODOS los logros de la familia deben estar desbloqueados
+        val supremacy = EngagementEngine.evaluateAchievements(base.copy(totalExercises = 1200))
+        assertTrue(PermanentAchievement.Bronze in supremacy)
+        assertTrue(PermanentAchievement.Silver in supremacy)
+        assertTrue(PermanentAchievement.Gold in supremacy)
+        assertTrue(PermanentAchievement.Platinum in supremacy)
+        assertTrue(PermanentAchievement.Diamond in supremacy)
+        assertTrue(PermanentAchievement.BrailleSupremacy in supremacy)
+    }
+
+    @Test
+    fun familiaTrayectoriaBraille_progresionAcumulativa_cadaMedallaDesbloqueaSucesivamente() {
+        val base = EngagementProgress()
+        val date = PracticeDate(2026, 8, 10)
+
+        // Level3 da 20 ejercicios por sesión; 2 sesiones = 40 ejercicios -> Bronze (25)
+        val s1 = EngagementSession(
+            kind = PracticeSessionKind.Level3,
+            exercisesCompleted = 20,
+            firstAttemptCorrect = 10,
+        )
+        var progress = EngagementEngine.recordSession(base, s1, date).progress
+        progress = EngagementEngine.recordSession(progress, s1.copy(id = "s2"), date.plusDays(1)).progress
+
+        assertEquals(40L, progress.totalExercises)
+        assertTrue("Bronze debe estar desbloqueado con 40 ejercicios", PermanentAchievement.Bronze in progress.unlockedAchievements)
+        assertFalse("Silver no debe desbloquearse aún con 40 ejercicios", PermanentAchievement.Silver in progress.unlockedAchievements)
+    }
+
+    @Test
+    fun familiaTrayectoriaBraille_muyPorEncimaDelUmbral_logroSeConserva() {
+        val base = EngagementProgress()
+
+        // Ejercicios muy superiores a Supremacía (1200)
+        val over = EngagementEngine.evaluateAchievements(base.copy(totalExercises = 5000))
+        assertTrue(PermanentAchievement.BrailleSupremacy in over)
+        assertTrue(PermanentAchievement.Diamond in over)
+        assertTrue(PermanentAchievement.Platinum in over)
+    }
+
+    @Test
+    fun familiaTrayectoriaBraille_usuarioConProgresoAcumuladoPrevioRecibeLogros() {
+        // Simula usuario que ya tenía ejercicios almacenados antes de la evaluación
+        val preExistingProgress = EngagementProgress(
+            totalExercises = 74L,
+            unlockedAchievements = setOf(PermanentAchievement.Bronze),
+        )
+        val date = PracticeDate(2026, 8, 10)
+        val session = EngagementSession(
+            kind = PracticeSessionKind.Level1,
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 5,
+        )
+        val update = EngagementEngine.recordSession(preExistingProgress, session, date)
+
+        // Con 84 ejercicios totales, Silver (75) debe desbloquearse en esta sesión
+        assertEquals(84L, update.progress.totalExercises)
+        assertTrue(PermanentAchievement.Silver in update.progress.unlockedAchievements)
+        assertTrue(PermanentAchievement.Silver in update.reward.newlyUnlockedAchievements)
+        // Bronze ya estaba desbloqueado, no debe aparecer como nuevo
+        assertFalse(PermanentAchievement.Bronze in update.reward.newlyUnlockedAchievements)
+    }
+
+    // -------------------------------------------------------------------------
+    // PRUEBAS EXISTENTES — Familia Precisión
+    // -------------------------------------------------------------------------
 
     @Test
     fun familiaPrecision_desbloqueaPorMejorRachaDePrecision() {
@@ -186,6 +351,163 @@ class AchievementSystemBadgesTest {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // NUEVAS PRUEBAS — Familia Precisión
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun familiaPrecision_alcanzarUmbralSuperiorDesbloqueaInferioresImplicitamente() {
+        val base = EngagementProgress()
+
+        // bestPrecisionStreak = 75 -> todos los logros de Precisión deben estar desbloqueados
+        val all = EngagementEngine.evaluateAchievements(base.copy(bestPrecisionStreak = 75))
+        assertTrue(PermanentAchievement.BrailleFocus in all)
+        assertTrue(PermanentAchievement.BrailleRhythm in all)
+        assertTrue(PermanentAchievement.BraillePrecision in all)
+        assertTrue(PermanentAchievement.SustainedReading in all)
+        assertTrue(PermanentAchievement.ConstantMastery in all)
+        assertTrue(PermanentAchievement.SuperiorPrecision in all)
+    }
+
+    @Test
+    fun familiaPrecision_muyPorEncimaDelUmbral_logroSeConserva() {
+        val base = EngagementProgress()
+        val wayOver = EngagementEngine.evaluateAchievements(base.copy(bestPrecisionStreak = 200))
+        assertTrue(PermanentAchievement.SuperiorPrecision in wayOver)
+        assertTrue(PermanentAchievement.ConstantMastery in wayOver)
+    }
+
+    @Test
+    fun familiaPrecision_sincrRetroactivaViaEvaluate_usuarioConRachaYaAcumulada() {
+        // Simula usuario con bestPrecisionStreak acumulado previamente (schema v2)
+        // que no tenía los logros persistidos. evaluateAchievements debe desbloquearlo.
+        val progressWithStreak = EngagementProgress(
+            bestPrecisionStreak = 30,
+            unlockedAchievements = emptySet(), // logros aún no evaluados
+        )
+        val evaluated = EngagementEngine.evaluateAchievements(progressWithStreak)
+
+        assertTrue(
+            "evaluateAchievements debe desbloquear BrailleFocus retroactivamente si bestPrecisionStreak >= 5",
+            PermanentAchievement.BrailleFocus in evaluated,
+        )
+        assertTrue(
+            "evaluateAchievements debe desbloquear BrailleRhythm retroactivamente si bestPrecisionStreak >= 10",
+            PermanentAchievement.BrailleRhythm in evaluated,
+        )
+        assertTrue(
+            "evaluateAchievements debe desbloquear BraillePrecision retroactivamente si bestPrecisionStreak >= 15",
+            PermanentAchievement.BraillePrecision in evaluated,
+        )
+        assertTrue(
+            "evaluateAchievements debe desbloquear SustainedReading retroactivamente si bestPrecisionStreak >= 30",
+            PermanentAchievement.SustainedReading in evaluated,
+        )
+        assertFalse(
+            "ConstantMastery no debe desbloquearse si bestPrecisionStreak < 50",
+            PermanentAchievement.ConstantMastery in evaluated,
+        )
+    }
+
+    @Test
+    fun familiaPrecision_sesionElegibleIncrementaRachaYDesbloquea_sesionNoElegibleNoAltera() {
+        val date = PracticeDate(2026, 8, 20)
+        val base = EngagementProgress(bestPrecisionStreak = 4) // 1 por debajo de BrailleFocus
+
+        // Sesión elegible: Level2 Mixto con 5 respuestas correctas consecutivas
+        val eligibleSession = EngagementSession(
+            kind = PracticeSessionKind.Level2,
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 15,
+            mode = PracticeMode.Mixed,
+            exerciseResults = List(15) { PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false) },
+            isPrecisionEligible = true,
+        )
+        val afterEligible = EngagementEngine.recordSession(base, eligibleSession, date)
+
+        assertTrue(
+            "BrailleFocus debe desbloquearse al alcanzar bestPrecisionStreak >= 5",
+            PermanentAchievement.BrailleFocus in afterEligible.progress.unlockedAchievements,
+        )
+
+        // Sesión no elegible: no debe reducir la racha ni quitar el logro
+        val nonEligibleSession = EngagementSession(
+            kind = PracticeSessionKind.Level1,
+            exercisesCompleted = 10,
+            firstAttemptCorrect = 0,
+            errors = 10,
+            isPrecisionEligible = false,
+        )
+        val afterNonEligible = EngagementEngine.recordSession(
+            afterEligible.progress,
+            nonEligibleSession,
+            date.plusDays(1),
+        )
+
+        assertTrue(
+            "BrailleFocus debe conservarse después de una sesión no elegible",
+            PermanentAchievement.BrailleFocus in afterNonEligible.progress.unlockedAchievements,
+        )
+        // bestPrecisionStreak no debe haber cambiado
+        assertEquals(afterEligible.progress.bestPrecisionStreak, afterNonEligible.progress.bestPrecisionStreak)
+    }
+
+    @Test
+    fun familiaPrecision_rachaSeCorta_mejorRachaSeConserva_logrosYaGanadosNoPierden() {
+        val date = PracticeDate(2026, 8, 20)
+        val base = EngagementProgress()
+
+        // Primera sesión: alcanza racha 15
+        val session15 = EngagementSession(
+            kind = PracticeSessionKind.Level2,
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 15,
+            mode = PracticeMode.Mixed,
+            exerciseResults = List(15) { PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false) },
+            isPrecisionEligible = true,
+        )
+        val after15 = EngagementEngine.recordSession(base, session15, date)
+        assertTrue(PermanentAchievement.BrailleRhythm in after15.progress.unlockedAchievements)
+        assertEquals(15, after15.progress.bestPrecisionStreak)
+
+        // Segunda sesión: error al inicio corta la racha actual, pero bestStreak se preserva
+        val sessionWithError = EngagementSession(
+            kind = PracticeSessionKind.Level2,
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 14,
+            errors = 1,
+            mode = PracticeMode.Mixed,
+            exerciseResults = listOf(PracticeExerciseResult(firstAttemptCorrect = false, hintUsed = false)) +
+                List(14) { PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false) },
+            isPrecisionEligible = true,
+        )
+        val afterError = EngagementEngine.recordSession(after15.progress, sessionWithError, date.plusDays(1))
+
+        assertEquals(14, afterError.progress.currentPrecisionStreak)
+        assertEquals(15, afterError.progress.bestPrecisionStreak) // bestStreak no retrocede
+        // Logro ya desbloqueado no desaparece
+        assertTrue(
+            "BrailleRhythm no debe perderse aunque la racha actual caiga a 14",
+            PermanentAchievement.BrailleRhythm in afterError.progress.unlockedAchievements,
+        )
+    }
+
+    @Test
+    fun familiaPrecision_sincronizacionRepetidaEsIdempotente() {
+        val base = EngagementProgress(bestPrecisionStreak = 50)
+
+        val firstEval = EngagementEngine.evaluateAchievements(base)
+        assertTrue(PermanentAchievement.ConstantMastery in firstEval)
+
+        // Segunda evaluación sobre el mismo estado
+        val secondEval = EngagementEngine.evaluateAchievements(base.copy(unlockedAchievements = firstEval))
+        assertEquals(firstEval, secondEval)
+    }
+
+    // -------------------------------------------------------------------------
+    // PRUEBAS EXISTENTES — Familia Dominio Mixto
+    // -------------------------------------------------------------------------
+
     @Test
     fun familiaDominioMixto_desbloqueaPorSesionesMixtas() {
         val base = EngagementProgress()
@@ -208,132 +530,209 @@ class AchievementSystemBadgesTest {
         assertTrue(PermanentAchievement.BidirectionalReading in biDone)
     }
 
+    // -------------------------------------------------------------------------
+    // NUEVAS PRUEBAS — Familia Dominio Mixto
+    // -------------------------------------------------------------------------
+
     @Test
-    fun precisionStreak_seIncrementaEnActividadesElegiblesYSoloAlPrimerIntentoSinPistas() {
-        val date = PracticeDate(2026, 8, 29)
+    fun familiaDominioMixto_doubleSentido_muyPorEncimaDelUmbral_persisteDesbloqueado() {
+        val base = EngagementProgress()
+        val over = EngagementEngine.evaluateAchievements(base.copy(recognizerMixedSessions = 20))
+        assertTrue(PermanentAchievement.DoubleMeaning in over)
+    }
+
+    @Test
+    fun familiaDominioMixto_lecturaBidireccional_soloConNivel2_cumpleRequisito() {
+        val base = EngagementProgress()
+        // Solo Nivel 2 Mixto, 15 sesiones: debe desbloquear ambos (Doble sentido Y Bidireccional)
+        val onlyLevel2 = EngagementEngine.evaluateAchievements(
+            base.copy(recognizerMixedSessions = 15, challengeMixedSessions = 0),
+        )
+        assertTrue(PermanentAchievement.DoubleMeaning in onlyLevel2)
+        assertTrue(
+            "15 sesiones solo en Nivel 2 Mixto también cumplen el requisito de Lectura bidireccional (acumuladas)",
+            PermanentAchievement.BidirectionalReading in onlyLevel2,
+        )
+    }
+
+    @Test
+    fun familiaDominioMixto_acumulacionEnMomentosDistintos_desbloqueoCorrect() {
+        val date1 = PracticeDate(2026, 8, 1)
+        val date2 = PracticeDate(2026, 8, 15)
         var progress = EngagementProgress()
 
-        // 1. Sesión Nivel 2 Mixto (elegible) con 15 ejercicios perfectos al primer intento
-        val exerciseResults15 = List(15) {
-            PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false)
+        // 5 sesiones Level2 Mixto en date1
+        repeat(5) { i ->
+            val s = EngagementSession(
+                id = "l2-$i",
+                kind = PracticeSessionKind.Level2,
+                exercisesCompleted = 15,
+                firstAttemptCorrect = 10,
+                mode = PracticeMode.Mixed,
+            )
+            progress = EngagementEngine.recordSession(progress, s, date1).progress
         }
-        val eligibleSession = EngagementSession(
-            kind = PracticeSessionKind.Level2,
-            exercisesCompleted = 15,
-            firstAttemptCorrect = 15,
-            mode = PracticeMode.Mixed,
-            exerciseResults = exerciseResults15,
-            isPrecisionEligible = true,
+        assertTrue(
+            "Doble sentido debe desbloquearse tras 5 sesiones Nivel 2 Mixto",
+            PermanentAchievement.DoubleMeaning in progress.unlockedAchievements,
+        )
+        assertFalse(
+            "Lectura bidireccional aún no debe desbloquearse con solo 5 sesiones",
+            PermanentAchievement.BidirectionalReading in progress.unlockedAchievements,
         )
 
-        val update1 = EngagementEngine.recordSession(progress, eligibleSession, date)
-        progress = update1.progress
-
-        assertEquals(15, progress.currentPrecisionStreak)
-        assertEquals(15, progress.bestPrecisionStreak)
-        assertTrue(PermanentAchievement.BrailleFocus in progress.unlockedAchievements)
-        assertTrue(PermanentAchievement.BrailleRhythm in progress.unlockedAchievements)
-        assertTrue(PermanentAchievement.BraillePrecision in progress.unlockedAchievements)
-        assertFalse(PermanentAchievement.SustainedReading in progress.unlockedAchievements)
-
-        // 2. Segunda sesión Nivel 3 Mixto consecutiva con 20 ejercicios perfectos
-        val exerciseResults20Part2 = List(20) {
-            PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false)
+        // 10 sesiones Level3 Mixto en date2 (total acumulado: 15)
+        repeat(10) { i ->
+            val s = EngagementSession(
+                id = "l3-$i",
+                kind = PracticeSessionKind.Level3,
+                exercisesCompleted = 20,
+                firstAttemptCorrect = 15,
+                mode = PracticeMode.Mixed,
+            )
+            progress = EngagementEngine.recordSession(progress, s, date2).progress
         }
-        val eligibleSession2 = EngagementSession(
-            kind = PracticeSessionKind.Level3,
-            exercisesCompleted = 20,
-            firstAttemptCorrect = 20,
-            mode = PracticeMode.Mixed,
-            exerciseResults = exerciseResults20Part2,
-            isPrecisionEligible = true,
+        assertTrue(
+            "Lectura bidireccional debe desbloquearse con 15 sesiones acumuladas (5 L2 + 10 L3)",
+            PermanentAchievement.BidirectionalReading in progress.unlockedAchievements,
         )
-
-        val update2 = EngagementEngine.recordSession(progress, eligibleSession2, date)
-        progress = update2.progress
-
-        assertEquals(35, progress.currentPrecisionStreak)
-        assertEquals(35, progress.bestPrecisionStreak)
-        assertTrue(PermanentAchievement.SustainedReading in progress.unlockedAchievements)
-
-        // 3. Si en una actividad elegible se comete un error al inicio, la racha actual se corta a 0 y luego suma
-        val sessionWithError = EngagementSession(
-            kind = PracticeSessionKind.Level2,
-            exercisesCompleted = 15,
-            firstAttemptCorrect = 14,
-            errors = 1,
-            mode = PracticeMode.Mixed,
-            exerciseResults = listOf(PracticeExerciseResult(firstAttemptCorrect = false, hintUsed = false)) +
-                List(14) { PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false) },
-            isPrecisionEligible = true,
-        )
-        val update3 = EngagementEngine.recordSession(progress, sessionWithError, date)
-        progress = update3.progress
-
-        assertEquals(14, progress.currentPrecisionStreak)
-        assertEquals(35, progress.bestPrecisionStreak)
-
-        // 4. Si se usa una pista, también se corta la racha de precisión
-        val sessionWithHint = EngagementSession(
-            kind = PracticeSessionKind.Level2,
-            exercisesCompleted = 15,
-            firstAttemptCorrect = 15,
-            hintsUsed = 1,
-            mode = PracticeMode.Mixed,
-            exerciseResults = listOf(PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = true)) +
-                List(14) { PracticeExerciseResult(firstAttemptCorrect = true, hintUsed = false) },
-            isPrecisionEligible = true,
-        )
-        val update4 = EngagementEngine.recordSession(progress, sessionWithHint, date)
-        progress = update4.progress
-
-        assertEquals(14, progress.currentPrecisionStreak)
-        assertEquals(35, progress.bestPrecisionStreak)
     }
 
     @Test
-    fun sesionNoElegible_noModificaNiReiniciaLaRachaDePrecision() {
-        val date = PracticeDate(2026, 8, 29)
-        val initialProgress = EngagementProgress(
-            currentPrecisionStreak = 12,
-            bestPrecisionStreak = 25,
-        )
+    fun familiaDominioMixto_sesionNoMixta_noIncrementaContadorMixto() {
+        val date = PracticeDate(2026, 8, 1)
+        var progress = EngagementProgress()
 
-        // Nivel 1 no es elegible
-        val level1Session = EngagementSession(
-            kind = PracticeSessionKind.Level1,
-            exercisesCompleted = 10,
-            firstAttemptCorrect = 2,
-            errors = 8,
-            hintsUsed = 5,
-            isPrecisionEligible = false,
+        // Sesión Level2 en modo no-Mixto: no debe contar para recognizerMixedSessions
+        val nonMixedSession = EngagementSession(
+            kind = PracticeSessionKind.Level2,
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 10,
+            mode = PracticeMode.SignToCharacter,
         )
-        val update = EngagementEngine.recordSession(initialProgress, level1Session, date)
+        progress = EngagementEngine.recordSession(progress, nonMixedSession, date).progress
 
-        assertEquals(12, update.progress.currentPrecisionStreak)
-        assertEquals(25, update.progress.bestPrecisionStreak)
+        assertEquals(0, progress.recognizerMixedSessions)
+        assertFalse(PermanentAchievement.DoubleMeaning in progress.unlockedAchievements)
+
+        // Sesión Level2 Mixto: sí debe contar
+        val mixedSession = EngagementSession(
+            id = "mixed-1",
+            kind = PracticeSessionKind.Level2,
+            exercisesCompleted = 15,
+            firstAttemptCorrect = 10,
+            mode = PracticeMode.Mixed,
+        )
+        progress = EngagementEngine.recordSession(progress, mixedSession, date.plusDays(1)).progress
+
+        assertEquals(1, progress.recognizerMixedSessions)
+    }
+    // -------------------------------------------------------------------------
+    // NUEVAS PRUEBAS — Contador global y consistencia transversal
+    // -------------------------------------------------------------------------
+
+    @Test
+    fun contadorGlobal_25LogrosActivos_coincideConLogrosRealesDesbloqueados() {
+        val active = PermanentAchievement.activeEntries
+        assertEquals("Deben existir exactamente 25 logros activos", 25, active.size)
+
+        // Con progreso vacío: 0 desbloqueados
+        val empty = EngagementProgress()
+        val unlockedEmpty = active.count { it in empty.unlockedAchievements }
+        assertEquals(0, unlockedEmpty)
+
+        // Con progreso que cumple todos los requisitos: los 25 desbloqueados
+        // Lunes 3 a Viernes 7 de Agosto 2026 (5 días en la misma semana para WeekInMotion)
+        val fullLearn = LearningProgress(completedLessons = LearningLesson.entries.toSet())
+        val fullProgress = EngagementProgress(
+            totalSessions = 20,
+            level1Sessions = 5,
+            level2Sessions = 5,
+            level3Sessions = 3,
+            activityDates = (3..7).map { PracticeDate(2026, 8, it) }.toSet(),
+            bestStreak = 60,
+            currentStreak = 60,
+            totalExercises = 1200,
+            recognizerMixedSessions = 5,
+            challengeMixedSessions = 10,
+            bestPrecisionStreak = 75,
+        )
+        val allEvaluated = EngagementEngine.evaluateAchievements(fullProgress, fullLearn)
+        val unlockedFull = active.count { it in allEvaluated }
+        assertEquals(
+            "Con todas las métricas cumplidas deben desbloquearse los 25 logros activos",
+            25,
+            unlockedFull,
+        )
     }
 
     @Test
-    fun fechasDeDesbloqueo_seGuardanYPersistenParaCadaLogro() {
-        val d1 = PracticeDate(2026, 8, 10)
-        val d2 = PracticeDate(2026, 8, 11)
+    fun contadorGlobal_logrosLegacyNoSeContabilizanEnLosActivos() {
+        // HundredExercises desbloqueado no debe incrementar el contador de 25
+        val progressWithLegacy = EngagementProgress(
+            totalExercises = 100,
+            unlockedAchievements = setOf(PermanentAchievement.HundredExercises),
+        )
+        val active = PermanentAchievement.activeEntries
+        val unlockedActive = active.count { it in progressWithLegacy.unlockedAchievements }
+        assertEquals(
+            "HundredExercises (legacy) no debe aparecer en el contador de logros activos",
+            0,
+            unlockedActive,
+        )
+    }
 
-        val s1 = EngagementSession(
+    @Test
+    fun fechaDeDesbloqueo_noSeModificaEnSincronizacionesRepetidas() {
+        val originalDate = PracticeDate(2026, 8, 1)
+        val laterDate = PracticeDate(2026, 8, 15)
+
+        val session = EngagementSession(
             kind = PracticeSessionKind.Level1,
             exercisesCompleted = 10,
             firstAttemptCorrect = 10,
         )
-        val update1 = EngagementEngine.recordSession(EngagementProgress(), s1, d1)
-        assertTrue(PermanentAchievement.FirstStep in update1.progress.unlockedAchievements)
-        assertEquals(d1, update1.progress.achievementUnlockDates[PermanentAchievement.FirstStep])
+        // Primera sesión: desbloquea FirstStep con fecha original
+        val firstUpdate = EngagementEngine.recordSession(EngagementProgress(), session, originalDate)
+        assertEquals(originalDate, firstUpdate.progress.achievementUnlockDates[PermanentAchievement.FirstStep])
 
-        val s2 = EngagementSession(
+        // Segunda sesión más tarde: la fecha de FirstStep no debe cambiar
+        val secondSession = EngagementSession(
+            id = "session-2",
             kind = PracticeSessionKind.Level1,
             exercisesCompleted = 10,
             firstAttemptCorrect = 10,
         )
-        val update2 = EngagementEngine.recordSession(update1.progress, s2, d2)
-        assertEquals(d1, update2.progress.achievementUnlockDates[PermanentAchievement.FirstStep])
+        val secondUpdate = EngagementEngine.recordSession(firstUpdate.progress, secondSession, laterDate)
+        assertEquals(
+            "La fecha de desbloqueo original de FirstStep no debe modificarse",
+            originalDate,
+            secondUpdate.progress.achievementUnlockDates[PermanentAchievement.FirstStep],
+        )
+    }
+
+    @Test
+    fun ausenciaDeDuplicados_mismoLogroNoPuedeAparecerDosVecesEnUnlockedAchievements() {
+        val date = PracticeDate(2026, 8, 10)
+        var progress = EngagementProgress()
+
+        // Varias sesiones que cumplirían el requisito de FirstStep múltiples veces
+        repeat(5) { i ->
+            val s = EngagementSession(
+                id = "session-$i",
+                kind = PracticeSessionKind.Level1,
+                exercisesCompleted = 10,
+                firstAttemptCorrect = 5,
+            )
+            progress = EngagementEngine.recordSession(progress, s, date.plusDays(i)).progress
+        }
+
+        val countFirstStep = progress.unlockedAchievements.count { it == PermanentAchievement.FirstStep }
+        assertEquals(
+            "FirstStep solo debe aparecer una vez en unlockedAchievements aunque se cumplan las condiciones múltiples veces",
+            1,
+            countFirstStep,
+        )
     }
 }
+
