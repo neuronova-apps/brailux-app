@@ -1,7 +1,35 @@
+import java.io.File
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.services)
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+val isSigningConfigured: Boolean = if (keystorePropertiesFile.exists() && keystorePropertiesFile.isFile) {
+    keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
+    val storeFilePath = keystoreProperties.getProperty("storeFile")?.trim()
+    val storePassword = keystoreProperties.getProperty("storePassword")?.trim()
+    val keyAlias = keystoreProperties.getProperty("keyAlias")?.trim()
+    val keyPassword = keystoreProperties.getProperty("keyPassword")?.trim()
+
+    val hasAllRequiredProperties = !storeFilePath.isNullOrBlank() &&
+        !storePassword.isNullOrBlank() &&
+        !keyAlias.isNullOrBlank() &&
+        !keyPassword.isNullOrBlank()
+
+    if (hasAllRequiredProperties) {
+        val targetFile = File(storeFilePath!!)
+        val resolvedStoreFile = if (targetFile.isAbsolute) targetFile else rootProject.file(storeFilePath)
+        resolvedStoreFile.exists() && resolvedStoreFile.isFile
+    } else {
+        false
+    }
+} else {
+    false
 }
 
 android {
@@ -20,10 +48,26 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (isSigningConfigured) {
+            create("release") {
+                val storeFilePath = keystoreProperties.getProperty("storeFile").trim()
+                val targetFile = File(storeFilePath)
+                storeFile = if (targetFile.isAbsolute) targetFile else rootProject.file(storeFilePath)
+                storePassword = keystoreProperties.getProperty("storePassword").trim()
+                keyAlias = keystoreProperties.getProperty("keyAlias").trim()
+                keyPassword = keystoreProperties.getProperty("keyPassword").trim()
+            }
+        }
+    }
+
     buildTypes {
         release {
             optimization {
                 enable = false
+            }
+            if (isSigningConfigured) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
     }
