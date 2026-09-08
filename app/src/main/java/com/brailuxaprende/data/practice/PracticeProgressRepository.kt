@@ -106,14 +106,38 @@ data class PracticeProgress(
 
     val dailyChallengeAccuracyPercentage: Int
         get() = calculateAccuracyPercentage(dailyChallengeFirstAttemptCorrect, dailyChallengeTotalExercises)
+
+    val totalEducationalExercises: Int
+        get() = level1TotalExercises + level2TotalExercises + level3TotalExercises +
+                customTotalExercises + dailyTotalExercises + dailyChallengeTotalExercises
+
+    val totalEducationalSessions: Int
+        get() = level1CompletedSessions + level2CompletedSessions + level3CompletedSessions +
+                customCompletedSessions + dailyCompletedSessions + dailyChallengeCompletedSessions
+
+    val totalEducationalFirstAttemptCorrect: Int
+        get() = level1FirstAttemptCorrect + level2FirstAttemptCorrect + level3FirstAttemptCorrect +
+                customFirstAttemptCorrect + dailyFirstAttemptCorrect + dailyChallengeFirstAttemptCorrect
+
+    val overallAccuracyPercentage: Int?
+        get() = if (totalEducationalExercises > 0) {
+            calculateAccuracyPercentage(totalEducationalFirstAttemptCorrect, totalEducationalExercises)
+        } else null
 }
 
 internal fun calculateAccuracyPercentage(firstAttemptCorrect: Int, totalExercises: Int): Int {
     if (totalExercises <= 0) return 0
 
     val safeCorrectAnswers = firstAttemptCorrect.coerceIn(0, totalExercises)
-    return (safeCorrectAnswers.toLong() * 100 / totalExercises).toInt()
+    return Math.round(safeCorrectAnswers.toDouble() * 100.0 / totalExercises.toDouble()).toInt()
 }
+
+fun formatStatAccuracy(firstAttemptCorrect: Int, totalExercises: Int): String =
+    if (totalExercises <= 0) "-- %" else "${calculateAccuracyPercentage(firstAttemptCorrect, totalExercises)} %"
+
+fun formatStatAccuracyAccessibility(firstAttemptCorrect: Int, totalExercises: Int): String =
+    if (totalExercises <= 0) "sin datos" else "${calculateAccuracyPercentage(firstAttemptCorrect, totalExercises)} por ciento"
+
 
 data class PracticeProgressRecord(
     val practiceProgress: PracticeProgress,

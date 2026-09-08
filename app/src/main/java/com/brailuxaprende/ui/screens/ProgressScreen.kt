@@ -1,5 +1,6 @@
 package com.brailuxaprende.ui.screens
 
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -44,6 +45,7 @@ import com.brailuxaprende.R
 import com.brailuxaprende.data.learn.LearningProgress
 import com.brailuxaprende.data.play.GameProgress
 import com.brailuxaprende.data.practice.PracticeProgress
+import com.brailuxaprende.data.practice.calculateAccuracyPercentage
 import com.brailuxaprende.learning.LearningLesson
 import com.brailuxaprende.learning.LearningPath
 import com.brailuxaprende.practice.AchievementFamily
@@ -118,15 +120,17 @@ fun ProgressScreen(
                     }
                 }
                 ProgressTab.Statistics -> {
-                    PracticeProgressSection(progress)
+                    YourProgressCard(
+                        progress = progress,
+                        engagementProgress = engagementProgress,
+                        currentDate = currentDate,
+                    )
                     ProgressSpacer()
-                    ProgressContentCard {
-                        GameProgressSection(gameProgress)
-                    }
+                    PracticeStatsCard(progress = progress)
                     ProgressSpacer()
-                    ProgressContentCard {
-                        LearningProgressSection(learningProgress)
-                    }
+                    RoutinesStatsCard(progress = progress)
+                    ProgressSpacer()
+                    PlayStatsCard(gameProgress = gameProgress)
                 }
                 ProgressTab.Achievements -> {
                     PermanentAchievementsTabContent(
@@ -336,234 +340,340 @@ private fun DailyMiniAchievementSection(
 }
 
 @Composable
-private fun PracticeProgressSection(progress: PracticeProgress) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .widthIn(max = 560.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.progress_practice_title),
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-        )
-        PracticeLevelCard(
-            title = stringResource(R.string.progress_level_1_title),
-            completedSessions = progress.level1CompletedSessions,
+private fun YourProgressCard(
+    progress: PracticeProgress,
+    engagementProgress: EngagementProgress,
+    currentDate: PracticeDate,
+) {
+    val totalExercises = progress.totalEducationalExercises
+    val totalSessions = progress.totalEducationalSessions
+    val accuracy = progress.overallAccuracyPercentage
+    val streak = engagementProgress.displayedStreak(currentDate).coerceAtLeast(0)
+
+    val accuracyText = if (accuracy != null) {
+        stringResource(R.string.progress_percentage_value, accuracy)
+    } else {
+        stringResource(R.string.progress_stats_no_accuracy)
+    }
+
+    val accuracyAccessibility = if (accuracy != null) {
+        stringResource(R.string.progress_stats_accuracy_accessibility, accuracy)
+    } else {
+        stringResource(R.string.progress_stats_no_accuracy_accessibility)
+    }
+
+    val streakText = pluralStringResource(R.plurals.progress_streak_days, streak, streak)
+
+    ProgressContentCard {
+        SectionTitle(R.string.progress_stats_your_progress_title)
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            StatSummaryItem(
+                value = totalExercises.toString(),
+                label = stringResource(R.string.progress_stats_exercises_label),
+                accessibilityDescription = stringResource(
+                    R.string.progress_stats_metric_accessibility,
+                    stringResource(R.string.progress_stats_exercises_label),
+                    totalExercises.toString(),
+                ),
+                modifier = Modifier.weight(1f),
+            )
+            StatSummaryItem(
+                value = totalSessions.toString(),
+                label = stringResource(R.string.progress_stats_sessions_label),
+                accessibilityDescription = stringResource(
+                    R.string.progress_stats_metric_accessibility,
+                    stringResource(R.string.progress_stats_sessions_label),
+                    totalSessions.toString(),
+                ),
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            StatSummaryItem(
+                value = accuracyText,
+                label = stringResource(R.string.progress_stats_accuracy_label),
+                accessibilityDescription = stringResource(
+                    R.string.progress_stats_metric_accessibility,
+                    stringResource(R.string.progress_stats_accuracy_label),
+                    accuracyAccessibility,
+                ),
+                modifier = Modifier.weight(1f),
+            )
+            StatSummaryItem(
+                value = streakText,
+                label = stringResource(R.string.progress_stats_streak_label),
+                accessibilityDescription = stringResource(
+                    R.string.progress_stats_metric_accessibility,
+                    stringResource(R.string.progress_stats_streak_label),
+                    streakText,
+                ),
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PracticeStatsCard(progress: PracticeProgress) {
+    ProgressContentCard {
+        SectionTitle(R.string.progress_stats_practice_title)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Explorador
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_explorer),
+            accessibilityTitle = stringResource(R.string.progress_level_1_title),
+            completedCount = progress.level1CompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_sessions,
             totalExercises = progress.level1TotalExercises,
             firstAttemptCorrect = progress.level1FirstAttemptCorrect,
-            errors = progress.level1Errors,
+            showDivider = true,
         )
-        PracticeLevelCard(
-            title = stringResource(R.string.progress_level_2_title),
-            completedSessions = progress.level2CompletedSessions,
+
+        // Reconocedor
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_recognizer),
+            accessibilityTitle = stringResource(R.string.progress_level_2_title),
+            completedCount = progress.level2CompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_sessions,
             totalExercises = progress.level2TotalExercises,
             firstAttemptCorrect = progress.level2FirstAttemptCorrect,
-            errors = progress.level2Errors,
-            hintsUsed = progress.level2HintsUsed,
+            showDivider = true,
         )
-        PracticeLevelCard(
-            title = stringResource(R.string.progress_level_3_title),
-            completedSessions = progress.level3CompletedSessions,
+
+        // Desafío
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_challenge),
+            accessibilityTitle = stringResource(R.string.progress_level_3_title),
+            completedCount = progress.level3CompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_sessions,
             totalExercises = progress.level3TotalExercises,
             firstAttemptCorrect = progress.level3FirstAttemptCorrect,
-            errors = progress.level3Errors,
+            showDivider = true,
         )
-        PracticeLevelCard(
-            title = stringResource(R.string.progress_level_4_title),
-            completedSessions = progress.customCompletedSessions,
+
+        // Personalizada
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_custom),
+            accessibilityTitle = stringResource(R.string.progress_level_4_title),
+            completedCount = progress.customCompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_sessions,
             totalExercises = progress.customTotalExercises,
             firstAttemptCorrect = progress.customFirstAttemptCorrect,
-            errors = progress.customErrors,
-            hintsUsed = progress.customHintsUsed,
+            showDivider = false,
         )
-        PracticeLevelCard(
-            title = stringResource(R.string.progress_daily_challenge_title),
-            completedSessions = progress.dailyChallengeCompletedSessions,
+    }
+}
+
+@Composable
+private fun RoutinesStatsCard(progress: PracticeProgress) {
+    ProgressContentCard {
+        SectionTitle(R.string.progress_stats_routines_title)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Práctica diaria
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_daily_practice),
+            accessibilityTitle = stringResource(R.string.progress_stats_daily_practice),
+            completedCount = progress.dailyCompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_completed_fem,
+            totalExercises = progress.dailyTotalExercises,
+            firstAttemptCorrect = progress.dailyFirstAttemptCorrect,
+            showDivider = true,
+        )
+
+        // Desafío del día
+        ActivityStatRow(
+            title = stringResource(R.string.progress_stats_daily_challenge),
+            accessibilityTitle = stringResource(R.string.progress_stats_daily_challenge),
+            completedCount = progress.dailyChallengeCompletedSessions,
+            countUnitPlural = R.plurals.progress_stat_completed_masc,
             totalExercises = progress.dailyChallengeTotalExercises,
             firstAttemptCorrect = progress.dailyChallengeFirstAttemptCorrect,
-            errors = progress.dailyChallengeErrors,
+            showDivider = false,
         )
     }
 }
 
 @Composable
-private fun PracticeLevelCard(
-    title: String,
-    completedSessions: Int,
-    totalExercises: Int,
-    firstAttemptCorrect: Int,
-    errors: Int? = null,
-    hintsUsed: Int? = null,
+private fun PlayStatsCard(gameProgress: GameProgress) {
+    ProgressContentCard {
+        SectionTitle(R.string.progress_stats_play_title)
+        Spacer(modifier = Modifier.height(6.dp))
+
+        // Memoria
+        GameStatRow(
+            title = stringResource(R.string.progress_stats_game_memory),
+            completedGames = gameProgress.memoryCompletedGames,
+            showDivider = true,
+        )
+
+        // Secuencia
+        GameStatRow(
+            title = stringResource(R.string.progress_stats_game_sequence),
+            completedGames = gameProgress.sequenceCompletedGames,
+            showDivider = true,
+        )
+
+        // Orden
+        GameStatRow(
+            title = stringResource(R.string.progress_stats_game_order),
+            completedGames = gameProgress.orderCompletedGames,
+            showDivider = false,
+        )
+    }
+}
+
+@Composable
+private fun StatSummaryItem(
+    value: String,
+    label: String,
+    accessibilityDescription: String,
+    modifier: Modifier = Modifier,
 ) {
-    val accuracy = accuracyPercentage(firstAttemptCorrect, totalExercises)
-    val accuracyText = stringResource(R.string.progress_percentage_value, accuracy)
-    val accuracyAccessibility = stringResource(
-        R.string.progress_level_accuracy_accessibility,
-        title,
-        accuracy,
-    )
-
-    BrailuxSectionCard(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = title,
-            modifier = Modifier.semantics { heading() },
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-        ProgressValue(
-            label = stringResource(R.string.progress_sessions_label),
-            value = completedSessions.coerceAtLeast(0).toString(),
-            modifier = Modifier.padding(top = 12.dp),
-        )
-        ProgressValue(
-            label = stringResource(R.string.progress_exercises_label),
-            value = totalExercises.coerceAtLeast(0).toString(),
-        )
-        ProgressValue(
-            label = stringResource(R.string.progress_first_attempt_label),
-            value = firstAttemptCorrect.coerceIn(0, totalExercises.coerceAtLeast(0)).toString(),
-        )
-        if (errors != null) {
-            ProgressValue(
-                label = stringResource(R.string.progress_errors_label),
-                value = errors.coerceAtLeast(0).toString(),
-            )
-        }
-        if (hintsUsed != null) {
-            ProgressValue(
-                label = stringResource(R.string.progress_hints_used_label),
-                value = hintsUsed.coerceAtLeast(0).toString(),
-            )
-        }
-        ProgressValue(
-            label = stringResource(R.string.progress_accuracy_label),
-            value = accuracyText,
-            accessibilityText = accuracyAccessibility,
-        )
-        AccessibleProgressBar(
-            progress = accuracy / 100f,
-            description = accuracyAccessibility,
-        )
-    }
-}
-
-@Composable
-private fun GameProgressSection(progress: GameProgress) {
-    SectionTitle(R.string.progress_play_title)
-    ProgressValue(
-        label = stringResource(R.string.progress_play_total_games, progress.totalGamesCompleted),
-        value = progress.totalGamesCompleted.toString(),
-        modifier = Modifier.padding(top = 4.dp),
-    )
-    ProgressValue(
-        label = stringResource(R.string.play_game_memory_title),
-        value = stringResource(R.string.progress_play_memory_games, progress.memoryCompletedGames),
-    )
-    if (progress.memoryBestMoves != null && progress.memoryBestMoves > 0) {
-        ProgressValue(
-            label = stringResource(R.string.progress_play_best_memory, progress.memoryBestMoves),
-            value = "${progress.memoryBestMoves}",
-        )
-    }
-    ProgressValue(
-        label = stringResource(R.string.play_game_sequence_title),
-        value = stringResource(R.string.progress_play_sequence_games, progress.sequenceCompletedGames),
-    )
-    if (progress.sequenceBestLength > 0) {
-        ProgressValue(
-            label = stringResource(R.string.progress_play_best_sequence, progress.sequenceBestLength),
-            value = "${progress.sequenceBestLength}",
-        )
-    }
-    ProgressValue(
-        label = stringResource(R.string.play_game_order_title),
-        value = stringResource(R.string.progress_play_order_games, progress.orderCompletedGames),
-    )
-    if (progress.orderBestErrors != null) {
-        ProgressValue(
-            label = stringResource(R.string.progress_play_best_order, progress.orderBestErrors),
-            value = "${progress.orderBestErrors}",
-        )
-    }
-}
-
-@Composable
-private fun LearningProgressSection(progress: LearningProgress) {
-    val totalLessons = LearningPath.lessons.size
-    val completedCount = LearningPath.completedCount(progress.completedLessons)
-    val percentage = LearningPath.progressPercentage(progress.completedLessons)
-    val summaryAccessibility = stringResource(
-        R.string.progress_learning_summary_accessibility,
-        completedCount,
-        totalLessons,
-        percentage,
-    )
-
-    SectionTitle(R.string.progress_learning_title)
-    ProgressValue(
-        label = stringResource(R.string.progress_learning_completed_label),
-        value = stringResource(
-            R.string.progress_learning_completed_value,
-            completedCount,
-            totalLessons,
-        ),
-    )
-    ProgressValue(
-        label = stringResource(R.string.progress_learning_percentage_label),
-        value = stringResource(R.string.progress_percentage_value, percentage),
-    )
-    AccessibleProgressBar(
-        progress = percentage / 100f,
-        description = summaryAccessibility,
-    )
-    Spacer(modifier = Modifier.height(12.dp))
-    LearningPath.lessons.forEachIndexed { index, lesson ->
-        val status = LearningPath.statusFor(lesson, progress.completedLessons)
-        val statusText = stringResource(status.labelResource())
-        LearningProgressItem(
-            lesson = lesson,
-            status = statusText,
-            showDivider = index != LearningPath.lessons.lastIndex,
-        )
-    }
-}
-
-@Composable
-private fun LearningProgressItem(
-    lesson: LearningLesson,
-    status: String,
-    showDivider: Boolean,
-) {
-    val title = stringResource(lesson.titleResource())
-    val accessibilityText = stringResource(
-        R.string.progress_learning_accessibility,
-        title,
-        status,
-    )
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 10.dp)
-            .clearAndSetSemantics { contentDescription = accessibilityText },
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.Top,
+    Column(
+        modifier = modifier
+            .clearAndSetSemantics { contentDescription = accessibilityDescription },
+        horizontalAlignment = Alignment.Start,
     ) {
         Text(
-            text = title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
+            text = value,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
-            text = status,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
+            text = label,
+            modifier = Modifier.padding(top = 2.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    if (showDivider) HorizontalDivider()
+}
+
+@Composable
+private fun ActivityStatRow(
+    title: String,
+    accessibilityTitle: String = title,
+    completedCount: Int,
+    @PluralsRes countUnitPlural: Int,
+    totalExercises: Int,
+    firstAttemptCorrect: Int,
+    showDivider: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val countText = pluralStringResource(
+        countUnitPlural,
+        completedCount.coerceAtLeast(0),
+        completedCount.coerceAtLeast(0),
+    )
+    val accuracyText = if (totalExercises > 0) {
+        val percentage = calculateAccuracyPercentage(firstAttemptCorrect, totalExercises)
+        stringResource(R.string.progress_percentage_value, percentage)
+    } else {
+        stringResource(R.string.progress_stats_no_accuracy)
+    }
+
+    val accuracyAccessibility = if (totalExercises > 0) {
+        val percentage = calculateAccuracyPercentage(firstAttemptCorrect, totalExercises)
+        stringResource(R.string.progress_stats_accuracy_accessibility, percentage)
+    } else {
+        stringResource(R.string.progress_stats_no_accuracy_accessibility)
+    }
+
+    val rowValue = stringResource(R.string.progress_stats_row_format, countText, accuracyText)
+    val rowAccessibility = stringResource(
+        R.string.progress_stats_activity_accessibility,
+        accessibilityTitle,
+        countText,
+        accuracyAccessibility,
+    )
+
+    StatRowItem(
+        title = title,
+        value = rowValue,
+        accessibilityText = rowAccessibility,
+        showDivider = showDivider,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun GameStatRow(
+    title: String,
+    completedGames: Int,
+    showDivider: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val gamesText = pluralStringResource(
+        R.plurals.progress_stat_games,
+        completedGames.coerceAtLeast(0),
+        completedGames.coerceAtLeast(0),
+    )
+    val rowAccessibility = stringResource(
+        R.string.progress_stats_game_accessibility,
+        title,
+        gamesText,
+    )
+
+    StatRowItem(
+        title = title,
+        value = gamesText,
+        accessibilityText = rowAccessibility,
+        showDivider = showDivider,
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun StatRowItem(
+    title: String,
+    value: String,
+    accessibilityText: String,
+    showDivider: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clearAndSetSemantics { contentDescription = accessibilityText }
+            .padding(vertical = 8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = value,
+                modifier = Modifier.padding(start = 12.dp),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Normal,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+    if (showDivider) {
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+            thickness = 0.5.dp,
+        )
+    }
 }
 
 @Composable

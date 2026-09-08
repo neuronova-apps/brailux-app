@@ -347,6 +347,57 @@ Puntos 4, 5 y 6 a la derecha.</string>
     <string name="progress_level_2_title">Reconocedor Braille</string>
     <string name="progress_level_3_title">Desafío Braille</string>
     <string name="progress_level_4_title">Práctica personalizada</string>
+
+    <!-- Estadísticas Compactas -->
+    <string name="progress_stats_your_progress_title">Tu progreso</string>
+    <string name="progress_stats_practice_title">Práctica</string>
+    <string name="progress_stats_routines_title">Rutinas</string>
+    <string name="progress_stats_play_title">Juega</string>
+
+    <string name="progress_stats_exercises_label">Ejercicios</string>
+    <string name="progress_stats_sessions_label">Sesiones</string>
+    <string name="progress_stats_accuracy_label">Precisión</string>
+    <string name="progress_stats_streak_label">Racha</string>
+
+    <string name="progress_stats_explorer">Explorador</string>
+    <string name="progress_stats_recognizer">Reconocedor</string>
+    <string name="progress_stats_challenge">Desafío</string>
+    <string name="progress_stats_custom">Personalizada</string>
+    <string name="progress_stats_daily_practice">Práctica diaria</string>
+    <string name="progress_stats_daily_challenge">Desafío del día</string>
+
+    <string name="progress_stats_game_memory">Memoria</string>
+    <string name="progress_stats_game_sequence">Secuencia</string>
+    <string name="progress_stats_game_order">Orden</string>
+
+    <string name="progress_stats_no_accuracy">-- %</string>
+    <string name="progress_stats_no_accuracy_accessibility">sin datos</string>
+    <string name="progress_stats_accuracy_accessibility">%1$d por ciento</string>
+    <string name="progress_stats_row_format">%1$s · %2$s</string>
+    <string name="progress_stats_activity_accessibility">%1$s. %2$s. Precisión %3$s.</string>
+    <string name="progress_stats_game_accessibility">%1$s. %2$s.</string>
+    <string name="progress_stats_metric_accessibility">%1$s: %2$s.</string>
+
+    <plurals name="progress_stat_sessions">
+        <item quantity="one">%1$d sesión</item>
+        <item quantity="other">%1$d sesiones</item>
+    </plurals>
+
+    <plurals name="progress_stat_completed_fem">
+        <item quantity="one">%1$d completada</item>
+        <item quantity="other">%1$d completadas</item>
+    </plurals>
+
+    <plurals name="progress_stat_completed_masc">
+        <item quantity="one">%1$d completado</item>
+        <item quantity="other">%1$d completados</item>
+    </plurals>
+
+    <plurals name="progress_stat_games">
+        <item quantity="one">%1$d partida</item>
+        <item quantity="other">%1$d partidas</item>
+    </plurals>
+
     <string name="progress_no_level_1_practice">Aún no has completado una sesión de Explorador Braille.</string>
     <string name="progress_start_practice">Comenzar a practicar</string>
     <string name="progress_sessions_label">Sesiones completadas</string>
