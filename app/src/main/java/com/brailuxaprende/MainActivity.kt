@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.lifecycleScope
+import com.brailuxaprende.ai.AndroidNetworkChecker
 import com.brailuxaprende.ai.BrailuxAiService
 import com.brailuxaprende.data.learn.LearningProgressRepository
 import com.brailuxaprende.data.learn.LearningProgressState
@@ -45,7 +46,10 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     private val assistantViewModel by viewModels<AssistantViewModel> {
-        AssistantViewModelFactory(BrailuxAiService())
+        AssistantViewModelFactory(
+            aiClient = BrailuxAiService(),
+            networkChecker = AndroidNetworkChecker(applicationContext),
+        )
     }
     private val practiceSessionViewModel by viewModels<PracticeSessionViewModel> {
         PracticeSessionViewModelFactory(
@@ -156,6 +160,7 @@ class MainActivity : ComponentActivity() {
                     assistantState = assistantUiState,
                     onAssistantInputChange = assistantViewModel::updateInput,
                     onAssistantSend = assistantViewModel::send,
+                    onAssistantRetry = assistantViewModel::retry,
                     learningProgress = learningProgress,
                     practiceProgress = practiceProgress,
                     engagementProgress = engagementProgress,

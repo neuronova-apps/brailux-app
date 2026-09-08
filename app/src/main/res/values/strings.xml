@@ -79,9 +79,20 @@
     <string name="assistant_title">Asistente Brailux</string>
     <string name="assistant_description">Asistente especializado en el aprendizaje y la práctica del sistema Braille.</string>
     <string name="assistant_empty_conversation">Escribe una pregunta sobre Braille para comenzar.</string>
-    <string name="assistant_user_label">Tú</string>
-    <string name="assistant_label">Asistente Brailux</string>
+    <string name="assistant_privacy_notice">El Asistente Brailux requiere conexión a Internet. El texto que envíes se procesa mediante servicios de inteligencia artificial para generar una respuesta.</string>
+    <string name="assistant_user_label">Tu mensaje</string>
+    <string name="assistant_label">Respuesta del Asistente Brailux</string>
+    <string name="assistant_user_message_accessibility">Tu mensaje: %1$s</string>
+    <string name="assistant_response_accessibility">Respuesta del Asistente Brailux: %1$s</string>
     <string name="assistant_loading">El Asistente Brailux está preparando una respuesta.</string>
+    <string name="assistant_offline_message">No hay conexión a Internet.</string>
+    <string name="assistant_service_error_message">El Asistente no está disponible temporalmente. Inténtalo nuevamente.</string>
+    <string name="assistant_temporal_error_message">No se pudo conectar con el Asistente. Inténtalo nuevamente.</string>
+    <string name="assistant_generic_error_message">Ocurrió un problema al generar la respuesta.</string>
+    <string name="assistant_max_length_error">La consulta no puede superar los 500 caracteres.</string>
+    <string name="assistant_char_counter">%1$d / %2$d</string>
+    <string name="assistant_retry">Reintentar</string>
+    <string name="assistant_retry_accessibility">Reintentar la consulta</string>
     <string name="assistant_input_label">Tu pregunta</string>
     <string name="assistant_input_placeholder">Escribe una pregunta sobre Braille</string>
     <string name="assistant_send">Enviar</string>
@@ -509,7 +520,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
         <item>Práctica diaria.</item>
         <item>Seguimiento local del progreso.</item>
         <item>XP, constancia y logros.</item>
-        <item>Funcionamiento sin conexión.</item>
+        <item>Funciones principales de aprendizaje y práctica sin conexión.</item>
     </string-array>
     <string name="about_section_accessibility">Accesibilidad y personalización</string>
     <string-array name="about_accessibility_features">
@@ -525,7 +536,7 @@ Puntos 4, 5 y 6 a la derecha.</string>
         <item>Estados que no dependen únicamente del color.</item>
     </string-array>
     <string name="about_section_privacy">Privacidad y datos</string>
-    <string name="about_privacy_description">El progreso y las preferencias se guardan localmente en el dispositivo. Brailux funciona sin conexión y no requiere una cuenta.</string>
+    <string name="about_privacy_description">Las funciones principales de aprendizaje, práctica y progreso funcionan localmente en el dispositivo. El Asistente Brailux es una función opcional que requiere conexión a Internet.</string>
     <string name="about_privacy_policy">Política de privacidad</string>
     <string name="about_section_terms">Términos y condiciones</string>
     <string name="about_terms">Consultar términos y condiciones</string>

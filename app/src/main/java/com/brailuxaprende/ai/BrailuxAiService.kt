@@ -54,24 +54,38 @@ fun interface BrailuxAiClient {
     suspend fun preguntar(mensaje: String): String
 }
 
-class BrailuxAiService : BrailuxAiClient {
+internal object BrailuxDiagnosticLogger {
+    fun d(tag: String, message: String) {
+        if (com.brailuxaprende.BuildConfig.DEBUG) {
+            runCatching { Log.d(tag, message) }
+        }
+    }
+
+    fun e(tag: String, message: String, error: Throwable? = null) {
+        if (com.brailuxaprende.BuildConfig.DEBUG) {
+            runCatching {
+                if (error != null) {
+                    Log.e(tag, message, error)
+                } else {
+                    Log.e(tag, message)
+                }
+            }
+        }
+    }
+}
+
+class BrailuxAiService(
+    private val modelName: String = "gemini-2.5-flash-lite",
+) : BrailuxAiClient {
 
     private val model = Firebase.ai(
         backend = GenerativeBackend.googleAI()
     ).generativeModel(
-        modelName = "gemini-3.5-flash-lite",
+        modelName = modelName,
         systemInstruction = content {
             text(BRAILUX_SYSTEM_INSTRUCTIONS)
         }
     )
-
-    suspend fun probarConexion(): String {
-        val response = model.generateContent(
-            "Responde exactamente: Brailux IA conectada"
-        )
-
-        return response.text ?: "Sin respuesta"
-    }
 
     override suspend fun preguntar(mensaje: String): String {
         val mensajeLimpio = mensaje.trim()
@@ -79,16 +93,64 @@ class BrailuxAiService : BrailuxAiClient {
             return EMPTY_MESSAGE_RESPONSE
         }
 
+        BrailuxDiagnosticLogger.d(
+            "BrailuxDiagnostic",
+            "BrailuxAiService.preguntar(): Inicio de consulta. Longitud: ${mensajeLimpio.length} chars, Modelo: $modelName",
+        )
+
         return try {
-            model.generateContent(mensajeLimpio).text
+            val responseText = model.generateContent(mensajeLimpio).text
                 ?.trim()
                 ?.takeIf(String::isNotEmpty)
-                ?: EMPTY_MODEL_RESPONSE
+                ?: throw IllegalStateException("Respuesta vacía del servicio de IA")
+            BrailuxDiagnosticLogger.d(
+                "BrailuxDiagnostic",
+                "BrailuxAiService.preguntar(): Consulta exitosa. Longitud respuesta: ${responseText.length} chars",
+            )
+            responseText
         } catch (error: CancellationException) {
             throw error
         } catch (error: Exception) {
-            Log.e("BRAILUX_AI", "Error real al consultar Gemini", error)
-            REQUEST_ERROR_RESPONSE
+            val errorClass = error.javaClass.name
+            val rawMsg = error.message.orEmpty()
+            val causeClass = error.cause?.javaClass?.name
+            val causeMsg = error.cause?.message.orEmpty()
+
+            val isAppCheckFailure = errorClass.contains("AppCheck", ignoreCase = true) ||
+                rawMsg.contains("appcheck", ignoreCase = true) ||
+                rawMsg.contains("app check", ignoreCase = true) ||
+                rawMsg.contains("403") ||
+                rawMsg.contains("permission_denied", ignoreCase = true) ||
+                rawMsg.contains("unauthorized", ignoreCase = true) ||
+                causeMsg.contains("appcheck", ignoreCase = true)
+
+            val isModelFailure = rawMsg.contains("model", ignoreCase = true) ||
+                rawMsg.contains("404") ||
+                rawMsg.contains("not found", ignoreCase = true) ||
+                rawMsg.contains("unsupported", ignoreCase = true) ||
+                rawMsg.contains("invalid", ignoreCase = true) ||
+                causeMsg.contains("model", ignoreCase = true) ||
+                causeMsg.contains("404")
+
+            val isBackendFailure = rawMsg.contains("500") ||
+                rawMsg.contains("503") ||
+                rawMsg.contains("unavailable", ignoreCase = true) ||
+                rawMsg.contains("backend", ignoreCase = true) ||
+                causeMsg.contains("500") ||
+                causeMsg.contains("503")
+
+            BrailuxDiagnosticLogger.e(
+                "BrailuxDiagnostic",
+                "BrailuxAiService.preguntar(): Fallo en consulta. " +
+                    "Excepción: $errorClass, " +
+                    "Mensaje técnico: $rawMsg, " +
+                    "Causa: $causeClass [$causeMsg], " +
+                    "Fallo AppCheck: $isAppCheckFailure, " +
+                    "Fallo Modelo: $isModelFailure, " +
+                    "Fallo Backend: $isBackendFailure",
+                error,
+            )
+            throw error
         }
     }
 }

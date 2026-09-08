@@ -155,6 +155,7 @@ fun BrailuxApp(
     assistantState: AssistantUiState = AssistantUiState(),
     onAssistantInputChange: (String) -> Unit = {},
     onAssistantSend: () -> Unit = {},
+    onAssistantRetry: () -> Unit = {},
     learningProgress: LearningProgress = LearningProgress(),
     practiceProgress: PracticeProgress = PracticeProgress(),
     engagementProgress: EngagementProgress = EngagementProgress(),
@@ -262,6 +263,7 @@ fun BrailuxApp(
             assistantState = assistantState,
             onAssistantInputChange = onAssistantInputChange,
             onAssistantSend = onAssistantSend,
+            onAssistantRetry = onAssistantRetry,
             learningProgress = learningProgress,
             practiceProgress = practiceProgress,
             engagementProgress = engagementProgress,
@@ -383,6 +385,7 @@ private fun BrailuxNavHost(
     assistantState: AssistantUiState,
     onAssistantInputChange: (String) -> Unit,
     onAssistantSend: () -> Unit,
+    onAssistantRetry: () -> Unit,
     learningProgress: LearningProgress,
     practiceProgress: PracticeProgress,
     engagementProgress: EngagementProgress,
@@ -689,6 +692,7 @@ private fun BrailuxNavHost(
                 state = assistantState,
                 onInputChange = onAssistantInputChange,
                 onSend = onAssistantSend,
+                onRetry = onAssistantRetry,
                 onBack = ::goBack,
             )
         }
